@@ -67,6 +67,13 @@ context.refresh();
 context.showSources();
 const sources = views.filter(x => x.title === 'Sources').pop();
 assert(sources && sources.sections[1].rows[0].title === 'Example Repo');
+data['repository-catalogue.json'].sources.push({name:'Built-in',url:'winterx:built-in',builtIn:true,error:null});
+data['repository-catalogue.json'].packages.push({id:'me.example.animaper',name:'Animaper',author:'WeirdMM',description:'Effects',version:'1.0',source:'winterx:built-in',previews:[]});
+sources.onAppear();
+sources.sections[1].rows[1].onSelect();
+const builtInPage = views.filter(x => x.title === 'Built-in').pop();
+assert(builtInPage && builtInPage.sections[0].rows.length === 1 && builtInPage.sections[0].rows[0].title === 'Animaper');
+
 catalogue.sections[3].rows[1].onSelect();
 const browse = views.find(x => x.title === 'Repositories');
 assert(browse.sections[0].rows[0].title === 'Example Tweak');

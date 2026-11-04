@@ -20,6 +20,10 @@ public class TrustedFilesCheck {
     check(TrustedFiles.resolve(rubyOwn.toFile(),"winterx/").equals(root.toFile().getCanonicalFile()),"Ruby 1.5 root denied");
     Path ruby16=root.resolve("sapps/com.ruby.manager/16/main.js");Files.createDirectories(ruby16.getParent());Files.copy(Paths.get(args[5]),ruby16);
     check(TrustedFiles.resolve(rubyOwn.toFile(),"winterx/").equals(root.toFile().getCanonicalFile()),"Ruby 1.6 root denied");
+    Path ruby17=root.resolve("sapps/com.ruby.manager/17/main.js");Files.createDirectories(ruby17.getParent());Files.copy(Paths.get(args[6]),ruby17);
+    check(TrustedFiles.resolve(rubyOwn.toFile(),"winterx/")!=null,"Ruby 1.7 root denied");
+    Files.writeString(ruby17,"tampered");
+    check(TrustedFiles.resolve(rubyOwn.toFile(),"winterx/")==null,"tampered Ruby 1.7 gained access");
     Path winterx=root.resolve("sapps-data/com.ruby.jailbreak/files"); Files.createDirectories(winterx);
     Path receipt=root.resolve("ruby/boot-ok-v1");Files.createDirectories(receipt.getParent());Files.createFile(receipt);
     check(TrustedFiles.resolve(winterx.toFile(),"winterx/status").equals(receipt.toFile().getCanonicalFile()),"WinterX status not exposed");

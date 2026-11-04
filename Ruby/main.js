@@ -287,9 +287,14 @@ function makeSources() {
       { title: "Refresh Sources", accessory: "disclosure", onSelect: function () { packageRequest("refresh_repositories"); } }
     ] }, { header: "SOURCES", rows: data.sources.length ? data.sources.map(function (source) {
       return { title: source.name, subtitle: source.error || (source.builtIn ? "Built-in source" : source.url), accessory: "disclosure", onSelect: function () {
-        if (source.builtIn) { UIAlertView.show({ title: source.name, message: source.error || "Ruby's built-in development source.", buttons: ["OK"] }); return; }
-        UIAlertView.show({ title: source.name, message: source.error || source.url, buttons: ["Cancel", "Remove"] }, function (index) {
-          if (index === 1) packageRequest("remove_repository", { url: source.url });
+        if (source.builtIn) {
+          if (source.error) { UIAlertView.show({ title: source.name, message: source.error, buttons: ["OK"] }); return; }
+          showRepositoryPackages(repositoryData().packages.filter(function (item) { return item.source === source.url; }), source.name);
+          return;
+        }
+        UIAlertView.show({ title: source.name, message: source.error || source.url, buttons: ["Cancel", "Browse", "Remove"] }, function (index) {
+          if (index === 1) showRepositoryPackages(repositoryData().packages.filter(function (item) { return item.source === source.url; }), source.name);
+          if (index === 2) packageRequest("remove_repository", { url: source.url });
         });
       } };
     }) : [{ title: "No sources added", selectable: false }] } ];
