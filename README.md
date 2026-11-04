@@ -86,7 +86,7 @@ Ruby can enter Safe Mode to temporarily disable tweaks. If Spring cannot start, 
 
 ## For developers
 
-- [Draft `.springys` package format and examples](docs/springys-format.md)
+- [Make a `.springys` package: tutorial, artwork, updates and format reference](docs/springys-format.md)
 - [Creating an experimental Ruby repository](docs/repository-design.md)
 - Source is in `patches/`, `tools/`, `Ruby/`, `RubyJailbreak/`, and `IExplored/`. The standalone built-in repository and additional tweaks are future work.
 
