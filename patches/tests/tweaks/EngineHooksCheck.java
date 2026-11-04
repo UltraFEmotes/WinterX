@@ -16,7 +16,7 @@ public final class EngineHooksCheck {
     }
     public static void main(String[] args) throws Exception {
         ClassLoader loader = EngineHooksCheck.class.getClassLoader();
-        for (String name : new String[]{"I1.T0", "I1.S0", "I1.N0", "I1.j1", "x1.i1", "E1.B0", "E1.b4", "ruby.RubyHooks",
+        for (String name : new String[]{"I1.T0", "I1.S0", "I1.N0", "I1.j1", "I1.h0", "x1.i1", "x1.N1", "E1.O1", "E1.B0", "E1.b4", "ruby.RubyHooks",
                 "com.guille.spring.sapp.QuickJs", "winterx.tweaks.TweakHost", "winterx.coloredbar.ColoredBar",
                 "winterx.appearance.BarArtwork", "winterx.appearance.RubyAppearance"})
             Class.forName(name, false, loader).getDeclaredMethods();

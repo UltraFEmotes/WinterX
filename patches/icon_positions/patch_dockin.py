@@ -5,6 +5,27 @@ DOCK_RENDER = 'smali/I1/j1.smali'
 MODEL = 'smali/E1/t.1.smali'
 
 
+def canvas_wrapper(text, signature, stock_name, replace_once, motion=False):
+    """Direct smali delegation: no reflection or swallowed renderer exceptions."""
+    name = signature.split('(')[0].rsplit(' ', 1)[1]
+    descriptor = signature[signature.index('('):]
+    static = ' static ' in signature
+    last = 7 if static and name == 'e' else 8 if static else 10
+    canvas = 'p0' if static else 'p1'
+    renamed = signature.replace(' ' + name + '(', ' ' + stock_name + '(')
+    owner = 'LI1/j1;' if name == 'e' else 'LI1/h0;'
+    invoke = 'invoke-static' if static else 'invoke-virtual'
+    begin = ('    invoke-static {p1, p3, p8, p10}, Lwinterx/layout/DockIn;->beginMotion(Landroid/graphics/Canvas;LE1/q6;LE1/G1;F)I'
+             if motion else '    invoke-virtual {' + canvas + '}, Landroid/graphics/Canvas;->save()I')
+    wrapper = (signature + '\n    .locals 2\n' + begin + '\n    move-result v0\n'
+        '    :winterx_render_try\n    ' + invoke + '/range {p0 .. p' + str(last) + '}, ' + owner + '->' + stock_name + descriptor + '\n'
+        '    :winterx_render_end\n    invoke-virtual {' + canvas + ', v0}, Landroid/graphics/Canvas;->restoreToCount(I)V\n'
+        '    return-void\n    .catchall {:winterx_render_try .. :winterx_render_end} :winterx_render_failure\n'
+        '    :winterx_render_failure\n    move-exception v1\n'
+        '    invoke-virtual {' + canvas + ', v0}, Landroid/graphics/Canvas;->restoreToCount(I)V\n    throw v1\n.end method\n')
+    return replace_once(text, signature, renamed) + '\n' + wrapper
+
+
 def apply(contents, method, replace_once):
     spring = 'smali/x1.1/i1.1.smali'
     renderer = 'smali/I1/h0.1.smali'
@@ -77,3 +98,25 @@ def apply(contents, method, replace_once):
         return m
     signature = '.method public static p(Landroid/graphics/Canvas;Landroid/graphics/Paint;LE1/q6;LI1/I0;Ljava/util/Map;Ljava/util/Map;FFF)V'
     contents[renderer] = method(contents[renderer], signature, native)
+    contents[renderer] = canvas_wrapper(contents[renderer], signature, 'winterxStockP', replace_once)
+    signature = '.method public static e(Landroid/graphics/Canvas;Landroid/graphics/Paint;LE1/q6;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Bitmap;Ljava/util/Map;LI1/I0;Ljava/util/Map;)V'
+    contents[DOCK_RENDER] = canvas_wrapper(contents[DOCK_RENDER], signature, 'winterxStockE', replace_once)
+    signature = '.method public final r(Landroid/graphics/Canvas;Landroid/graphics/Paint;LE1/q6;LI1/I0;Ljava/util/concurrent/ConcurrentHashMap;Ljava/util/Map;LA/o;LE1/G1;ZF)V'
+    contents[renderer] = method(contents[renderer], signature, lambda m: replace_once(m, '    .locals 36', '    .locals 36'))
+    contents[renderer] = canvas_wrapper(contents[renderer], signature, 'winterxStockR', replace_once, motion=True)
+
+    def frame(m):
+        anchor = '    invoke-direct {v1, v0, v8}, LE1/F1;-><init>(Ljava/util/ArrayList;Ljava/util/ArrayList;)V'
+        return replace_once(m, anchor, anchor + '\n    move-object/from16 v2, p0\n'
+            '    invoke-static {v2, v0, v14, v15}, Lwinterx/layout/DockMotion;->frame(Lx1/i1;Ljava/util/List;J)V')
+    contents[spring] = method(contents[spring], '.method public final a0()LE1/q6;', frame)
+
+    def launch(m, anchor, host, app, dest, count):
+        if m.count(anchor) != count: raise ValueError('Unexpected app-launch size anchors')
+        return m.replace(anchor, '    invoke-static {' + host + ', ' + app + '}, Lwinterx/layout/DockIn;->launchSize(Lx1/i1;Ljava/lang/String;)I\n    move-result ' + dest)
+    contents[spring] = method(contents[spring], '.method public static S2(Lx1/i1;LE1/a;IIZZI)V',
+        lambda m: launch(m, '    iget v13, v2, LE1/i6;->e:I', 'v0', 'v14', 'v13', 1))
+    contents[spring] = method(contents[spring], '.method public final R2(LE1/A0;LE1/a;)V',
+        lambda m: launch(m, '    iget v15, v5, LE1/i6;->e:I', 'v7', 'v4', 'v15', 3))
+    contents[spring] = method(contents[spring], '.method public final N(Ljava/lang/String;Z)Z',
+        lambda m: launch(m, '    iget v8, v2, LE1/i6;->e:I', 'v0', 'v14', 'v8', 1))

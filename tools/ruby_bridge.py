@@ -19,9 +19,22 @@ DEFAULT_BASE = Path.home() / 'Library/Application Support/MacApk/com.guille.spri
 APP_ID = 'com.ruby.manager'
 JAILBREAK_ID = 'com.ruby.jailbreak'
 ID = re.compile(r'^[0-9]+-[0-9]+$')
-spec = importlib.util.spec_from_file_location('spring_pack', SDK)
-pack = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(pack)
+class _SDK:
+    """Only .sapp operations need the separately obtained Spring SDK, not tweak/file requests."""
+    module = None
+
+    def __getattr__(self, name):
+        if self.module is None:
+            if not SDK.is_file():
+                raise RuntimeError('Spring SDK r10 is required for .sapp operations; see README.md')
+            spec = importlib.util.spec_from_file_location('spring_pack', SDK)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self.module = module
+        return getattr(self.module, name)
+
+
+pack = _SDK()
 
 
 def locations(base):
@@ -49,6 +62,29 @@ def same_content(a, b):
                 h.update(chunk)
         return h.digest()
     return a.stat().st_size == b.stat().st_size and digest(a) == digest(b)
+
+
+def running_engine():
+    """A receipt alone or another launcher alongside the overlay never proves capability."""
+    if str(ROOT / 'patches') not in sys.path: sys.path.insert(0, str(ROOT / 'patches'))
+    import macapk_controls
+    import macapk_jailbreak
+    import tweak_runtime
+    return tweak_runtime.active_engine(macapk_jailbreak.STATE, lambda pid, apk, root:
+        macapk_controls.spring_pids() == [pid] and macapk_controls.is_overlay_process(pid, apk, root))
+
+
+def operation_engine():
+    """Keep explicitly requested Safe Mode/legacy operations on the verified current engine."""
+    apk = running_engine()
+    import macapk_jailbreak
+    if apk is not None:
+        sha = macapk_jailbreak.digest(apk)
+        if sha in (macapk_jailbreak.PATCH_SHA, macapk_jailbreak.LOCAL_ALPHA8_SHA,
+                   macapk_jailbreak.BRIDGELESS_ALPHA4_SHA, macapk_jailbreak.BRIDGELESS_ALPHA2_SHA):
+            return apk, sha
+    # Existing verification in safe_mode refuses this fallback unless it really is running.
+    return macapk_jailbreak.PATCHED, macapk_jailbreak.PATCH_SHA
 
 
 def app_lifecycle(base, inbox):
@@ -99,15 +135,17 @@ def process(request, data, inbox, base=DEFAULT_BASE):
             import ruby_packages
             action = record['action']
             def apply_settings(enabled):
+                apk, sha = operation_engine()
                 return safe_mode.set_marker_and_respring(macapk_jailbreak.DATA, macapk_jailbreak.STATE,
-                    macapk_jailbreak.PATCHED, macapk_jailbreak.PATCH_SHA, enabled,
+                    apk, sha, enabled,
                     'settings-test.enabled', 'Settings test')
             def apply_extra(marker, label, enabled):
+                apk, sha = operation_engine()
                 if marker == 'ui-colors.enabled' and enabled:
                     import ruby_theme
                     ruby_theme.stage(macapk_jailbreak.DATA)
                 return safe_mode.set_marker_and_respring(macapk_jailbreak.DATA, macapk_jailbreak.STATE,
-                    macapk_jailbreak.PATCHED, macapk_jailbreak.PATCH_SHA, enabled, marker, label)
+                    apk, sha, enabled, marker, label)
             ruby_data = macapk_jailbreak.DATA / 'files/ruby'
             extra_hooks = {
                 'test.colors': (ruby_data / 'ui-colors.enabled', lambda enabled: apply_extra('ui-colors.enabled', 'Color test', enabled)),
@@ -116,23 +154,27 @@ def process(request, data, inbox, base=DEFAULT_BASE):
             import animaper
             import tweak_runtime
             import macapk_controls
-            running_engine = tweak_runtime.active_engine(macapk_jailbreak.STATE, macapk_controls.is_overlay_process)
-            if running_engine is not None and animaper.supported_by(running_engine):
+            engine = running_engine()
+            if engine is not None and animaper.supported_by(engine):
                 extra_hooks['tweak.animaper'] = (ruby_data / 'animaper.enabled', lambda enabled:
-                    safe_mode.set_live_animaper(macapk_jailbreak.DATA, macapk_jailbreak.STATE, running_engine,
-                        macapk_jailbreak.digest(running_engine), enabled))
-            if running_engine is not None and tweak_runtime.coloredbar_supported_by(running_engine):
+                    safe_mode.set_live_animaper(macapk_jailbreak.DATA, macapk_jailbreak.STATE, engine,
+                        macapk_jailbreak.digest(engine), enabled))
+            if engine is not None and tweak_runtime.coloredbar_supported_by(engine):
                 extra_hooks['tweak.coloredbar'] = (ruby_data / 'coloredbar.enabled', lambda enabled:
-                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, running_engine,
-                        macapk_jailbreak.digest(running_engine), enabled, 'coloredbar.enabled', 'ColoredBar'))
-            if running_engine is not None and tweak_runtime.freeme_supported_by(running_engine):
+                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, engine,
+                        macapk_jailbreak.digest(engine), enabled, 'coloredbar.enabled', 'ColoredBar'))
+            if engine is not None and tweak_runtime.freeme_supported_by(engine):
                 extra_hooks['tweak.freeme'] = (ruby_data / 'freeme.enabled', lambda enabled:
-                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, running_engine,
-                        macapk_jailbreak.digest(running_engine), enabled, 'freeme.enabled', 'FreeMe'))
+                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, engine,
+                        macapk_jailbreak.digest(engine), enabled, 'freeme.enabled', 'FreeMe'))
+            if engine is not None and tweak_runtime.dockin_supported_by(engine):
+                extra_hooks['tweak.dockin'] = (ruby_data / 'dockin.enabled', lambda enabled:
+                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, engine,
+                        macapk_jailbreak.digest(engine), enabled, 'dockin.enabled', 'DockIn'))
             packages = ruby_packages.Packages(data, ruby_data / 'settings-test.enabled', apply_settings,
                                               extra_hooks=extra_hooks,
                                               tweak_root=macapk_jailbreak.DATA / 'files' / 'winterx-tweaks',
-                                              supported_tweaks=running_engine is not None and tweak_runtime.supported_by(running_engine))
+                                              supported_tweaks=engine is not None and tweak_runtime.supported_by(engine))
             if action in ('add_repository', 'remove_repository', 'refresh_repositories'):
                 import ruby_repositories
                 repos = ruby_repositories.Repositories(data, packages, builtin_root=ROOT / 'builtin-repo')
@@ -175,6 +217,7 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                 sys.path.insert(0, str(ROOT / 'patches'))
             import macapk_jailbreak
             import safe_mode
+            apk, sha = operation_engine()
             action = record['action']
             package_hook = {'disable_settings': 'test.settings', 'disable_colors': 'test.colors',
                             'disable_icons': 'test.icons'}.get(action)
@@ -188,11 +231,11 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                     raise ValueError('Safe Mode requires an on or off value')
                 print('Changing Safe Mode; Spring will respring', flush=True)
                 response = safe_mode.set_safe_mode(macapk_jailbreak.DATA, macapk_jailbreak.STATE,
-                    macapk_jailbreak.PATCHED, macapk_jailbreak.PATCH_SHA, record['enabled'])
+                    apk, sha, record['enabled'])
             elif action == 'disable_settings':
                 print('Removing Settings test; Spring will respring', flush=True)
                 response = safe_mode.set_marker_and_respring(macapk_jailbreak.DATA, macapk_jailbreak.STATE,
-                    macapk_jailbreak.PATCHED, macapk_jailbreak.PATCH_SHA, False,
+                    apk, sha, False,
                     'settings-test.enabled', 'Settings test')
             elif action in ('enable_colors', 'disable_colors'):
                 print('Changing color test; Spring will respring', flush=True)
@@ -200,12 +243,12 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                     import ruby_theme
                     ruby_theme.stage(macapk_jailbreak.DATA)
                 response = safe_mode.set_marker_and_respring(macapk_jailbreak.DATA, macapk_jailbreak.STATE,
-                    macapk_jailbreak.PATCHED, macapk_jailbreak.PATCH_SHA, action == 'enable_colors',
+                    apk, sha, action == 'enable_colors',
                     'ui-colors.enabled', 'Color test')
             else:
                 print('Changing icon placement test; Spring will respring', flush=True)
                 response = safe_mode.set_marker_and_respring(macapk_jailbreak.DATA, macapk_jailbreak.STATE,
-                    macapk_jailbreak.PATCHED, macapk_jailbreak.PATCH_SHA, action == 'enable_icons',
+                    apk, sha, action == 'enable_icons',
                     'free-icons.enabled', 'Icon placement test')
             response['action'] = action
             atomic_json(result, response)
@@ -300,7 +343,6 @@ def process_jailbreak(request, data, inbox):
 
 
 def update_live_status(data):
-    state = ROOT / '.ruby-state' / 'active.json'
     active = False
     supported = False
     safe = False
@@ -310,16 +352,12 @@ def update_live_status(data):
     animaper_enabled = False
     animaper_mode = 'wave'
     try:
-        if state.exists():
-            record = json.loads(state.read_text(encoding='utf-8'))
-            if str(ROOT / 'patches') not in sys.path:
-                sys.path.insert(0, str(ROOT / 'patches'))
-            import macapk_controls
+        apk = running_engine()
+        if apk is not None:
             import macapk_jailbreak
-            apk = Path(record.get('apk', str(ROOT / 'builds/RubySpring-0.8.1-settings-fix.apk')))
-            root = ROOT / '.ruby-state/overlay/android'
-            active = macapk_controls.is_overlay_process(int(record['pid']), apk, root)
-            supported = active and record.get('apk_sha256') == macapk_jailbreak.PATCH_SHA and apk == macapk_jailbreak.PATCHED
+            active = True
+            supported = macapk_jailbreak.digest(apk) in (macapk_jailbreak.PATCH_SHA, macapk_jailbreak.LOCAL_ALPHA8_SHA,
+                macapk_jailbreak.BRIDGELESS_ALPHA4_SHA, macapk_jailbreak.BRIDGELESS_ALPHA2_SHA)
             ruby_data = macapk_jailbreak.DATA / 'files/ruby'
             safe = supported and (ruby_data / 'safe-mode.enabled').is_file()
             settings = active and (ruby_data / 'settings-test.enabled').is_file()

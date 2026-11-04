@@ -8,6 +8,7 @@ import winterx.layout.GridSlots;
 import winterx.layout.IconRuntime;
 import winterx.layout.LayoutSettings;
 import winterx.layout.DockIn;
+import winterx.layout.SpringHooks;
 
 /** Actual patched edit, renderer, touch and animation classes, using isolated data only. */
 public class PatchedFreeMeCheck {
@@ -146,6 +147,28 @@ public class PatchedFreeMeCheck {
         intoDock.m.g = profile.c / 2f - 45f + intoDock.m.d; intoDock.w = 0; intoDock.D = null; intoDock.x(4701);
         check(intoDock.r().a.equals(List.of("dock", "one")) && page(intoDock.r(), 0).equals(List.of("two", "three")), "native home-to-dock transfer lost membership");
         check(Arrays.equals(beforeNativeDock, Files.readAllBytes(slotsFile.toPath())), "native dock transfer rewrote sparse preferences");
+        byte[] beforeAvailability = Files.readAllBytes(slotsFile.toPath());
+        E1.O1 refreshed = new E1.O1(moved, 16, 4, callback);
+        refreshed.o(0, 0, 40f, 100f, 4800);
+        ((List<String>)refreshed.e.get(0)).remove("two");
+        ((List<String>)refreshed.e.get(1)).add("new-live-app");
+        refreshed.x(4801);
+        check(!page(refreshed.r(), 0).contains("two") && page(refreshed.r(), 1).contains("new-live-app"), "snapshot overwrote changing app availability");
+        check(Arrays.equals(beforeAvailability, Files.readAllBytes(slotsFile.toPath())), "availability change rewrote sparse preferences");
+        E1.O1 interrupted = new E1.O1(moved, 16, 4, callback);
+        interrupted.o(0, 0, 40f, 100f, 4900);
+        ((List<String>)interrupted.e.get(0)).remove("\u0000hole"); interrupted.f.add("\u0000hole"); interrupted.n = -1; interrupted.o = 1;
+        new File(dir, "freeme.disabled").createNewFile(); interrupted.x(4901);
+        check(interrupted.r().a.equals(moved.a) && page(interrupted.r(), 0).equals(page(moved, 0)), "disabled mid-drag did not restore original memberships");
+        check(Arrays.equals(beforeAvailability, Files.readAllBytes(slotsFile.toPath())), "interrupted drag overwrote saved cells");
+        new File(dir, "freeme.disabled").delete();
+        E1.O1 cancelled = new E1.O1(moved, 16, 4, callback);
+        cancelled.o(0, 0, 40f, 100f, 4950); set(host, "W1", cancelled);
+        cancelled.m.f = 200f; cancelled.m.g = 200f; cancelled.w = 1;
+        SpringHooks.pointer(host, 2); SpringHooks.pointer(host, 3); cancelled.x(4951);
+        check(cancelled.r().a.equals(moved.a) && page(cancelled.r(), 0).equals(page(moved, 0)) && page(cancelled.r(), 1).equals(page(moved, 1)), "cancelled pointer committed cross-page movement");
+        check(Arrays.equals(beforeAvailability, Files.readAllBytes(slotsFile.toPath())), "cancelled pointer changed saved cells");
+        cancelled.j(6000); set(host, "W1", null);
         LayoutSettings.action(LayoutSettings.ACTION + "freeme-toggle", host);
         check(!FreeMe.enabled() && FreeMe.installed(), "disable toggle removed installation");
         check(FreeMe.entries(stock, profile, 0) == stock, "disabled FreeMe changed stock");

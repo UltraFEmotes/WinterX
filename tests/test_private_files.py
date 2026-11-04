@@ -1,5 +1,6 @@
 import hashlib
 import os
+import shlex
 from pathlib import Path
 import subprocess
 import sys
@@ -67,14 +68,15 @@ class PrivateFilesTests(unittest.TestCase):
             store, runner = self.verified_adb(mode, root=mode == 'su')
             args, kwargs = runner.call_args
             self.assertEqual(args[0][0:4], ['adb', '-s', 'emulator-5554', 'exec-out'])
-            self.assertEqual(args[0][4:-1], suffix)
+            self.assertEqual(shlex.split(args[0][4])[:-1], suffix)
+            self.assertEqual(len(args[0]), 5)
             self.assertFalse(kwargs['shell'])
             self.assertNotIn('text', kwargs)
             self.assertEqual(kwargs['timeout'], 20)
         for serial in ['', '-a', 'a; rm', 'a\nb', None]:
             with self.assertRaises(ValueError):
                 AdbFiles(serial)
-        for root in ['/data', '/data/user', '/', 'relative/files', '/data/../files']:
+        for root in ['/data', '/data/user', '/', 'relative/files', '/data/../files', '/data/user/0/other.app/files']:
             with self.assertRaises(ValueError):
                 AdbFiles('emulator-5554', root=root)
 
@@ -112,6 +114,7 @@ class PrivateFilesTests(unittest.TestCase):
         self.assertIn('restorecon -F', script)
         self.assertIn('Enforcing', script)
         self.assertIn(hashlib.sha256(b'#C9253D').hexdigest(), script)
+        self.assertIn(hashlib.sha256(b'#123456').hexdigest(), script)
         self.assertIn('test ! -L', script)
         self.assertIn('set -C', script)
         self.assertLess(script.index('trap '), script.index('cat >'))
@@ -119,6 +122,7 @@ class PrivateFilesTests(unittest.TestCase):
         self.assertNotIn('chmod 777', script)
         self.assertNotIn('setenforce', script)
         self.assertNotIn('am force-stop', script)
+        self.assertIn('10123:10123', script)
         runner.return_value = subprocess.CompletedProcess([], 45, b'', b'')
         with self.assertRaises(ConflictError):
             store.write('ruby/test', b'next', expected=None)
@@ -134,6 +138,47 @@ class PrivateFilesTests(unittest.TestCase):
             runner.return_value = subprocess.CompletedProcess([], 0, value, b'')
             with self.assertRaises((AccessError, ValueError)):
                 store.list_files('ruby')
+
+    def test_failed_reverification_invalidates_previous_identity(self):
+        store, runner = self.verified_adb()
+        runner.return_value = subprocess.CompletedProcess([], 0, b'random', b'')
+        with self.assertRaises(AccessError): store.verify()
+        with self.assertRaises(AccessError): store.write('ruby/test', b'no', expected=None)
+        self.assertIsNone(store.identity)
+
+    @unittest.skipIf(os.name == 'nt', 'Generated shell semantics fixture needs a POSIX host shell')
+    def test_remote_command_preserves_binary_and_multiline_shell_semantics(self):
+        # Execute the generated remote command in a disposable host shell, not ADB.
+        # macOS stat/sha256sum spellings differ from Android's toybox commands.
+        with tempfile.TemporaryDirectory() as name:
+            root = (Path(name) / 'files').resolve(); root.mkdir()
+            device_root = '/data/user/0/com.guille.spring/files'
+            def runner(command, **options):
+                if 'echo denied' in command[-1]:
+                    uid = str(os.getuid())
+                    return subprocess.CompletedProcess(command, 0, (device_root + '\n' + uid + '\n' + uid + ':' + str(os.getgid()) + '\nrw\n').encode(), b'')
+                remote = command[-1].replace(device_root, str(root))
+                remote = remote.replace('stat -c', 'stat -f') if sys.platform == 'darwin' else remote
+                remote = remote.replace('sha256sum ', 'shasum -a 256 ') if sys.platform == 'darwin' else remote
+                result = subprocess.run(['/bin/sh', '-c', remote], **options)
+                result.stdout = result.stdout.replace(str(root).encode(), device_root.encode())
+                return result
+            store = AdbFiles('fixture-only', runner=runner); store.verify()
+            payload = b'\x00\xff\r\n\x80\n'
+            store.write('ruby/binary', payload, expected=None)
+            self.assertEqual(store.read('ruby/binary'), payload)
+            self.assertEqual(store.list_files('ruby'), ['ruby/binary'])
+            store.write('ruby/binary', b'next', expected=payload)
+            def truncated(command, **options):
+                options['input'] = options['input'][:1]
+                return runner(command, **options)
+            store.runner = truncated
+            with self.assertRaises(AccessError): store.write('ruby/binary', b'complete', expected=b'next')
+            self.assertEqual((root / 'ruby/binary').read_bytes(), b'next')
+            self.assertEqual(list((root / 'ruby').iterdir()), [root / 'ruby/binary'])
+            store.runner = runner
+            store.remove('ruby/binary', expected=b'next')
+            self.assertEqual(list((root / 'ruby').iterdir()), [])
 
 
 if __name__ == '__main__':

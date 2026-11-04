@@ -8,23 +8,25 @@ FreeMe places home icons in Spring's normal grid cells rather than arbitrary pix
 
 Implemented hooks cover home drawing, tapping, launch origins, edit positions, hover targets and delete badges. Same-page, cross-page and new-page drops snap to empty cells. A collision or persistence failure restores the original native lists instead of overlapping or discarding icons. Dock-to-home drops also snap to an empty cell and restore both memberships on failure. Existing-folder and home-to-dock transfers retain Spring's native routing. Legacy free-pixel drop handling is skipped while FreeMe is active, including native dock/folder drags without a sparse-grid snapshot.
 
-The source-only `builtin-repo/sources/freeme` package selects `tweak.freeme`. Installation requires `freeme-grid-v1` in a checksum/process-verified running engine, not simply a selected APK or the old free-icon test. Installation/removal changes its live marker without restarting Spring and preserves saved cells and preferences. Alpha6 does **not** implement this ABI; alpha7/7b/8 are separate development builds.
+The source-only `builtin-repo/sources/freeme` package selects `tweak.freeme`. Installation requires `freeme-grid-v1` in a checksum/process-verified running engine, not simply a selected APK or the old free-icon test. Installation/removal changes its live marker without restarting Spring and preserves saved cells and preferences. Alpha6 does **not** implement this ABI. The prepared alpha8 local test does; it does not automatically install the package.
 
-Still required: live UI validation, complete dock/folder transfer workflows, cancellation and changing app availability during a drag. Isolated transient-hole simulations do not validate Spring's complete pointer/event loop.
+Active home-drag snapshots now handle cancellation and disabling the tweak mid-drag without committing sparse cells. An `ACTION_CANCEL` hook marks the snapshot before native pointer dispatch. If Spring changes native app membership while a pointer is held, FreeMe retains the current native lists rather than restoring an obsolete snapshot over additions/removals. These cases pass packaged controller checks; complete dock/folder pointer workflows and live UI validation are still required. Isolated transient-hole simulations do not validate Spring's complete pointer/event loop.
 
 ## DockIn
 
-Native Spring Settings contains the 4–7 capacity choices, with **4 as the default and minimum**. Invalid preferences fall back to 4. Changes are refused if the live icon count is unknown, a drag is active, or reducing capacity would exclude existing dock icons.
+Native Spring Settings contains the 4–7 capacity choices, with **4 as the default and minimum**. Invalid preferences fall back to 4. Changes are refused if the live icon count is unknown, a drag is active or still settling, or reducing capacity would exclude existing dock icons. Settings reads the selection through its native page factory and requests another animation frame after an action, without navigation or a restart.
 
 Alpha8 adds experimental count-aware geometry, uniform per-icon Canvas transforms in both native dock drawing paths, exact tap bounds, delete-badge mapping, launch origins, edit coordinates, hover/admission and native normalization/reorder hooks. The dock shelf and shared artwork remain unchanged. Four-icon geometry stays stock.
 
 Existing 5–7-icon docks keep recovery geometry after removal or Safe Mode, while new-slot admission returns to the normal four-icon limit. The normalizer preserves existing extra icons instead of silently moving them home. This narrow data/access safeguard is distinct from enabling the tweak in Safe Mode.
 
-**DockIn is not yet usable as a released package.** Native edit-motion icon sizes, launch-animation scale, complete drag/controller transitions, exception-path Canvas restoration and live refresh still need integration/validation. No installable DockIn ABI or bridge hook is advertised, and no DockIn package is built or listed. Do not manually enable it in a user's running engine as part of automated tests.
+Alpha8 separates 150 ms smoothstep icon-size interpolation from Spring's native position/rotation animations. `O1.w` keeps its animation and settled-position caches; `O1.v` supplies the new target coordinates. Animation entries are keyed by identity rather than the mutable Kotlin object's hash/equality. Actual app-launch sizes use `H6` through five launch hooks, not folder-transition `S1` geometry. Direct smali renderer wrappers restore Canvas state on both success and exceptions.
+
+**DockIn is not a released/working-catalogue tweak.** Its unlisted `builtin-repo/sources/dockin` draft selects `tweak.dockin` and requires `dockin-native-v1`, motion/controller hooks and app-launch sizing in a checksum/process-verified running engine. A local `DockIn-0.1.0-alpha.springys` was built, not installed or published in the catalogue. Install/remove changes only its live marker and preserves capacity, sparse cells and native layouts. Packaged checks pass; complete native pointer workflows, visual refresh and live animation trials remain required. Do not manually enable it in a user's running engine as part of automated tests.
 
 ## Isolated checks
 
-The 2026-11-05 alpha8 development build converted to 5,186 JVM classes without launching Spring. Tests against the packaged classes cover FreeMe grid/reload/transfer rollback and DockIn 5–7-icon geometry, native touch/launch-origin/edit/hover/normalizer hooks, shrinking/active-drag guards and Safe Mode/removal preservation. Both iOS 4/6 editing modes are exercised. Canvas transform tests record coordinates; they are not a rendered live UI trial.
+The 2026-11-05 alpha8-local build converted to 5,188 JVM classes without launching Spring. All eleven isolated check runners passed, including packaged layout/controller/motion, native Settings, artwork, runtime/lifecycle spies and bootstrap checks. FreeMe coverage includes grid/reload/transfers/rollback, changing app lists and home-drag cancellation. DockIn covers geometry, native touch/delete/edit/hover/normalization, `H6` launch rectangles, native position caches, size interpolation, renderer exceptions, settling guards and Safe Mode/removal preservation. Both iOS 4/6 editing modes are exercised. Canvas checks record coordinates; they are not a rendered live UI trial.
 
 ```sh
 python3 patches/icon_positions/check.py
@@ -33,4 +35,4 @@ python3 patches/tests/check_layout_settings.py path/to/converted-engine.jar --pa
 python3 -m unittest discover -s tests -q
 ```
 
-All test data uses temporary directories. Keep the prepared alpha6 local-test launcher separate from development outputs; never replace, restart or install over a running Spring session to test these hooks.
+All test data uses temporary directories. `--source-layout` overlays current layout sources for development only; it is not packaged-engine verification. The selected local test is **alpha8-local**, checksum `e1fc328e5cb794f8d8ebbac713e9cfaba6d7db08af14c5c13345c80137b6c6db`. Never replace, restart or install over a running Spring session to test these hooks. See [current development status](development-status.md).

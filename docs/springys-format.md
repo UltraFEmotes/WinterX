@@ -154,8 +154,10 @@ Text fields cannot contain NUL characters or consist only of whitespace. Unknown
 | `test.icons` | Free icon placement test | Requires a compatible engine; affects home-screen placement. |
 | `tweak.animaper` | Home-screen page animation | Requires compatible hooks in the checksum-verified running engine. |
 | `tweak.coloredbar` | Presets, exact RGB and app exclusions | Preferences are in Spring Settings; updated engines always exclude Ruby. |
+| `tweak.freeme` | Sparse normal-grid cells and cross-page placement | Unlisted draft; requires `freeme-grid-v1` in the verified running engine. |
+| `tweak.dockin` | Native 4–7-icon dock, default/minimum 4 | Unlisted draft; requires `dockin-native-v1`, motion and app-launch hooks. |
 
-These are development hooks, not a stable public API. Ruby's special `app.iexplored` handling is not a general-purpose `.springys` app installer. A v1 manifest cannot ship new code; use v2 for independent Settings behaviour. Generic home-screen/animation extensions still require engine development. Developer examples and the three test hooks are not published in the built-in repository.
+These are development hooks, not a stable public API. FreeMe/DockIn's packaged checks do not establish live correctness; see [layout development](layout-tweaks.md). Their live-marker installs/removals do not restart Spring or erase saved layout/preferences. Ruby's special `app.iexplored` handling is not a general-purpose `.springys` app installer. A v1 manifest cannot ship new code; use v2 for independent Settings behaviour. Generic home-screen/animation extensions still require engine development. Developer examples, layout drafts and the three test hooks are not published in the working built-in index.
 
 ## Artwork and archive limits
 

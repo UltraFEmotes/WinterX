@@ -31,7 +31,7 @@ public final class LayoutSettings {
         if ((PAGE + "dockin").equals(id) && DockIn.installed()) {
             for (int value = DockIn.MIN; value <= DockIn.MAX; value++)
                 rows.add(row(ACTION + "dockin-" + value, (value == DockIn.capacity() ? "✓ " : "") + value + " icons"));
-            return new T6(id, "DockIn", Collections.singletonList(new W6("DOCK CAPACITY", null, "Default: 4. Move extra icons home before reducing capacity. Runtime geometry is still in development.", null, rows)));
+            return new T6(id, "DockIn", Collections.singletonList(new W6("DOCK CAPACITY", null, "Default: 4. Move extra icons home before reducing capacity. Finish any icon drag before changing this setting.", null, rows)));
         }
         return null;
     }

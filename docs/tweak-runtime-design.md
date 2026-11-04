@@ -4,6 +4,8 @@ Status: **experimental source implementation; basic live execution confirmed on 
 
 ## Goal
 
+The actual custom-code implementation is published source, not only a proposed format: `patches/icon_positions/src/winterx/tweaks/TweakHost.java` and `TweakSettings.java`, the QuickJS factory/bootstrap patches, `tools/springys.py`, `springys_registry.py`, `ruby_packages.py`, `ruby_bridge.py`, and `examples/code-tweak/`. Alpha8-local includes this runtime and passed packaged lifecycle/Settings spies. It was prepared locally, not launched during this update. The portable Android inventory bridge deliberately refuses executable-tweak installation until running-engine/reconciliation support exists.
+
 Allow a tweak author to package code that adds behavior to Spring, such as a Settings page or a home-screen page animation, without requiring every user to rebuild WinterX. Ruby should install, update and remove the package. Safe Mode must disable the code before it runs, so a broken tweak does not prevent recovery.
 
 ## Implemented first slice

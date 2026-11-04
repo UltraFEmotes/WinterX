@@ -98,11 +98,21 @@ public final class SpringHooks {
             return null;
         }
     }
+    /** DockIn must retain Spring's cached reorder/settling motion, whose targets use patched v(). */
+    public static M1.b animatedLocation(O1 edit, int page, int index) {
+        if (page == -1 && DockIn.editLocation(edit, page, index, profile(edit)) != null) return null;
+        return editLocation(edit, page, index);
+    }
+    public static void pointer(x1.i1 spring, int action) {
+        if (action != 3) return;
+        if (spring != null && spring.W1 != null) FreeMe.cancel(spring.W1);
+    }
 
     /** Preserve original lists before Spring starts its temporary grid reorder. */
     public static synchronized void begin(O1 edit, int page, int index) {
         FreeMe.begin(edit, page, index);
         if (edit.m != null) return;
+        DockMotion.begin(edit, profile(edit));
         snapshots.remove(edit);
         if (FreeMe.enabled()) return;
         if (!IconRuntime.enabled() || page < 0) return;

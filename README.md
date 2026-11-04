@@ -12,7 +12,8 @@ WinterX is WeirdMM's fan-made jailbreak and tweak project for **Spring**, the iO
 - **Executable `.springys/2` tweaks:** independently authored JavaScript can add native Spring Settings pages, actions, toggles, scoped storage and alerts. Basic execution and callbacks were live-confirmed on Mac.APK. This is not a general home-screen hooking API or a hardened sandbox; runtime limits and recovery still need live checks.
 - **Rooted Android and emulators:** **not supported yet**. There is no working Android installer, root service, or LAN bridge in this version. The patched APK produced here is unsigned and intended for Mac.APK; do not install it as an Android update. Root access alone does not make this release compatible. Android support and a tested installation guide are planned.
 - **Built-in tweak repository:** includes **Animaper and ColoredBar**. ColoredBar has presets, exact RGB colours and app exclusions in Spring Settings. Updated engines keep Ruby's own red navigation and bottom tabs, even without tweaks or in Safe Mode. SnowyHome, SSH, FreeMe and DockIn are unfinished and are not published as working tweaks.
-- **Layout development:** [FreeMe and DockIn](docs/layout-tweaks.md) have isolated native-grid/dock/Settings checks, but still need complete drag/edit-motion integration and live UI trials. Alpha6 remains the prepared local test; later layout engines are separate development builds, not automatic updates.
+- **Layout development:** [FreeMe and DockIn](docs/layout-tweaks.md) have packaged native-grid/dock/Settings, cache-preserving motion, launch-size and Canvas-exception checks. **Alpha8-local is prepared, not automatically launched or installed**; complete native pointer/folder and rendered-motion trials remain required. Both drafts stay outside the working catalogue. See [development status](docs/development-status.md).
+- **Portable bridge progress:** bounded directory/ADB/SSH-client transfers, recovery journals and Ruby inventory/repository requests are implemented in source. This is not an Android jailbreak/installer or the on-device SSH tweak. Tweak install/remove requests fail closed until Android running-engine and reconciliation support exists. No server or network connection was started during development.
 - **Ruby 1.8:** includes **Join our Discord** on its home page: [WinterX community](https://discord.gg/4JTe27ZRNd). Tapping uses Spring's confirmation before opening Safari; nothing opens automatically. This app requires the updated engine's trusted-script pin.
 - **WinterX companion 0.6:** displays only supported Spring **0.8.1**, with no preview selector. Its app description links this repository and explains the required bridge/local engine.
 
@@ -94,15 +95,17 @@ Ruby can enter Safe Mode to temporarily disable tweaks. If Spring cannot start, 
 
 ## For developers
 
+Run `python3 tools/check_source_tests.py` for the explicitly fixture-independent Python suite (108 passing tests), plus the four JavaScript smoke runners in the [testing guide](docs/testing-winterx.md). Full development discovery passed 116 tests where local SDK/APK/theme inputs exist; a source-only checkout does not include those inputs.
+
 - [Make a `.springys` package: tutorial, artwork, updates and format reference](docs/springys-format.md)
 - [Creating an experimental Ruby repository](docs/repository-design.md)
 - [Executable-tweak runtime and supported API](docs/tweak-runtime-design.md)
 - [ColoredBar preferences, coverage and Ruby branding](docs/coloredbar.md)
 - [Testing and recovery](docs/testing-winterx.md) · [Release checklist](docs/release-checklist.md)
-- [Windows/Linux and Android bridge development](docs/android-bridge.md) — access transport exists; full Android deployment/bridge support is not ready.
+- [Windows/Linux and Android bridge development](docs/android-bridge.md) — inventory/repositories, bounded transports and host recovery exist; Android engine deployment/tweak reconciliation and real-platform validation are not ready.
 - Source is in `patches/`, `tools/`, `Ruby/`, `RubyJailbreak/`, and `IExplored/`. The [built-in repository](https://github.com/UltraFEmotes/Ruby-Repo) contains Animaper and ColoredBar. Developer examples remain source-only, outside its index.
 
-A v1 `.springys` archive selects a compiled hook. A v2 archive contains its author's `tweak/main.js`, runs in a separate QuickJS worker and uses the documented WinterX API. Java/reflection, shell execution, networking, arbitrary home-icon mutation and custom animation hooks are not exposed. Repository downloads use HTTPS and verify package hashes, but a matching hash does not make a source trustworthy. Install executable tweaks only from authors you trust.
+A v1 `.springys` archive selects a compiled hook. A v2 archive contains its author's `tweak/main.js`, runs in a separate QuickJS worker and uses the documented WinterX API. The actual runtime/Settings, registry/bridge, QuickJS bootstrap and authoring example are published here—not only a format proposal. Java/reflection, shell execution, networking, arbitrary home-icon mutation and custom animation hooks are not exposed to tweak code. Repository downloads use HTTPS and verify package hashes, but a matching hash does not make a source trustworthy. Install executable tweaks only from authors you trust.
 
 With the SDK, APK, generated theme, and Pillow in place, run `python -m unittest discover -s tests -q`. JavaScript checks include `node tests/ruby_ui_smoke.js` and `node tests/tweak_runtime_smoke.js`. Packaged-helper checks are listed in the testing guide. Node and JVM-spy checks do not replace native QuickJS or live UI testing. Ruby's new red bars/Discord button and the Settings/App Store coverage fixes still need a user trial; earlier basic ColoredBar and executable-example behaviour were live-confirmed.
 

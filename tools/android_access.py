@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from private_files import AdbFiles, DirectoryFiles, write_probe
+from private_files import AdbFiles, DirectoryFiles, SshFiles, write_probe
 
 
 def main(argv=None):
@@ -12,12 +12,18 @@ def main(argv=None):
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument('--serial', help='Explicit ADB serial (USB or already paired ADB endpoint)')
     target.add_argument('--directory', type=Path, help='Already accessible/mounted Spring private files folder')
+    target.add_argument('--ssh-host', help='Already configured Android SSH server with a pinned host key')
+    parser.add_argument('--ssh-port', type=int, default=22)
+    parser.add_argument('--ssh', default='ssh', help='Path to the OpenSSH client')
     parser.add_argument('--files-root', default='/data/user/0/com.guille.spring/files')
     parser.add_argument('--access', choices=('shell', 'run-as', 'su'), default='shell')
     parser.add_argument('--adb', default='adb', help='Path to platform-tools adb / adb.exe')
     parser.add_argument('--write-probe', action='store_true', help='Explicitly create, read and remove one unique probe file')
     args = parser.parse_args(argv)
-    if args.serial:
+    if args.ssh_host:
+        store = SshFiles(args.ssh_host, args.files_root, args.access, args.ssh_port, args.ssh)
+        info = store.verify()
+    elif args.serial:
         store = AdbFiles(args.serial, args.files_root, args.access, args.adb)
         info = store.verify()
     else:

@@ -20,6 +20,7 @@ public final class FreeMe {
     private static final class Snapshot {
         final int page, index;
         final String id;
+        boolean cancelled;
         final ArrayList<ArrayList<String>> pages = new ArrayList<>();
         final ArrayList<String> dock;
         Snapshot(O1 edit, int page, int index, String id) {
@@ -140,6 +141,11 @@ public final class FreeMe {
             snapshots.put(edit, new Snapshot(edit, page, index, id));
         } catch (RuntimeException ex) { android.util.Log.e("WinterXFreeMe", "Could not begin grid drag", ex); }
     }
+    /** Mark the snapshot before Spring dispatches ACTION_CANCEL to its native controller. */
+    public static synchronized void cancel(O1 edit) {
+        Snapshot saved = snapshots.get(edit);
+        if (saved != null) saved.cancelled = true;
+    }
     private static void restore(O1 edit, Snapshot saved, int page, int index, ArrayList<ArrayList<String>> pages) {
         restore(edit, saved, page, index, pages, saved.dock);
     }
@@ -150,12 +156,28 @@ public final class FreeMe {
         ((List<String>)edit.s(page)).set(index, HOLE);
         edit.n = page; edit.o = index; edit.D = null; edit.P++;
     }
+    private static java.util.Set<String> members(List<?> pages, List<?> dock) {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (Object id : dock) if (id instanceof String && !((String)id).startsWith("\u0000")) ids.add((String)id);
+        for (Object page : pages) for (Object id : (List<?>)page)
+            if (id instanceof String && !((String)id).startsWith("\u0000")) ids.add((String)id);
+        return ids;
+    }
     /** Returns true only for a handled home drop; dock and folder transfers retain native behavior. */
     public static synchronized boolean beforeDrop(O1 edit, i6 profile) {
         Snapshot saved = snapshots.remove(edit);
         if (saved == null) return false;
         if (edit.m == null || profile == null || !saved.id.equals(edit.m.a)) return false;
-        if (!enabled()) { restore(edit, saved, saved.page, saved.index, saved.pages); return true; }
+        // Spring can refresh app availability while a pointer is held. Never restore an old
+        // snapshot over its additions/removals; let the current native controller settle.
+        java.util.Set<String> current = members(edit.e, edit.f);
+        current.add(edit.m.a);
+        if (!current.equals(members(saved.pages, saved.dock))) {
+            edit.D = null;
+            android.util.Log.w("WinterXFreeMe", "App membership changed during drag; retained live native lists");
+            return true;
+        }
+        if (saved.cancelled || !enabled()) { restore(edit, saved, saved.page, saved.index, saved.pages); return true; }
         float scale = profile.b / 320.0f;
         float x = (edit.m.f - edit.m.c - (E1.t.j ? 30f : 29.5f)) * scale;
         float y = (edit.m.g - edit.m.d - 37f) * scale;

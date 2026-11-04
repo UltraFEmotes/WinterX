@@ -136,6 +136,11 @@ TAP_PATCH = '''    :cond_32
     move-result v10
     if-eqz v10, :winterx_code_page
     invoke-static {v0, v1}, Lwinterx/layout/LayoutSettings;->action(Ljava/lang/String;Lx1/i1;)V
+    # Page factories are live-read. Request a new native frame without navigating/restarting.
+    iget-object v10, v1, Lx1/i1;->a:Lcom/guille/spring/LauncherActivity;
+    if-eqz v10, :winterx_layout_refreshed
+    invoke-static {v10}, Lcom/guille/spring/LauncherActivity;->access$startAnimationLoop(Lcom/guille/spring/LauncherActivity;)V
+    :winterx_layout_refreshed
     const/4 v0, 0x1
     return v0
     :winterx_code_page

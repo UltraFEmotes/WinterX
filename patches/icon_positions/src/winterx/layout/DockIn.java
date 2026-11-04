@@ -7,8 +7,9 @@ import E1.O1;
 import E1.i6;
 import android.graphics.Canvas;
 
-/** Experimental count-aware dock hooks; not yet advertised as an installable ABI. */
+/** Development count-aware dock hooks; live UI verification is still required. */
 public final class DockIn {
+    public static final String ABI = "dockin-native-v1";
     public static final int MIN = 4, MAX = 7;
     private DockIn() {}
     public static boolean installed() {
@@ -51,9 +52,32 @@ public final class DockIn {
         if (cell == null) return -1;
         int saved = canvas.save();
         float scale = cell.size / (float)frame.a.e;
-        canvas.translate(cell.left - stockX * scale, cell.top - stockY * scale);
-        canvas.scale(scale, scale);
+        try {
+            canvas.translate(cell.left - stockX * scale, cell.top - stockY * scale);
+            canvas.scale(scale, scale);
+        } catch (RuntimeException | Error ex) { canvas.restoreToCount(saved); throw ex; }
         return saved;
+    }
+    /** The wrapper restores even when Spring's renderer throws after nested saves. */
+    public static int beginMotion(Canvas canvas, E1.q6 frame, E1.G1 entry, float offset) {
+        int saved = canvas.save();
+        try {
+            float scale = DockMotion.scale(frame, entry);
+            if (scale != 1f) canvas.scale(scale, scale, entry.c * 2f, entry.d * 2f + offset);
+        } catch (RuntimeException | Error ex) { canvas.restoreToCount(saved); throw ex; }
+        return saved;
+    }
+    /** H6, not the folder transition S1, owns the actual app-launch icon rectangle. */
+    public static int launchSize(x1.i1 spring, String id) {
+        if (spring == null || spring.e == null) return 0;
+        if (spring.M1 != null && id != null) for (int i = 0; i < spring.M1.size(); i++) {
+            E1.a app = (E1.a)spring.M1.get(i);
+            if (id.equals(app.a)) {
+                DockGeometry.Cell cell = cell(spring.e, i, spring.M1.size());
+                if (cell != null) return cell.size;
+            }
+        }
+        return spring.e.e;
     }
     public static int beginNative(Canvas canvas, E1.q6 frame, int index) {
         if (frame == null || frame.c == null || !extended(frame.c.size())) return -1;
@@ -100,12 +124,12 @@ public final class DockIn {
     }
     public static int liveCount(x1.i1 spring) {
         if (spring == null || spring.M1 == null) return -1;
-        if (spring.W1 != null && spring.W1.m != null) return -1;
+        if (spring.W1 != null && (spring.W1.m != null || spring.W1.z != null)) return -1;
         return spring.W1 == null ? spring.M1.size() : spring.W1.f.size();
     }
     /** Delegate the stock folder/insertion classifier in a virtual four-icon coordinate space. */
     public static E1.I1 hover(O1 edit, float x, float y, int page, i6 profile) {
-        if (edit == null || edit.m == null || edit.J != null || profile == null ||
+        if (edit == null || edit.m == null || edit.J != null || profile == null || profile.k == null || profile.l == null ||
             !Float.isFinite(x) || !Float.isFinite(y)) return null;
         float screenScale = profile.b / 320f;
         float threshold = E1.t.f - (E1.t.j ? 112f : 109f);

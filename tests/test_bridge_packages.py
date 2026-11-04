@@ -157,6 +157,7 @@ class BridgePackageTests(unittest.TestCase):
                 self.assertFalse((target / 'enabled').exists())
             with patch.object(macapk_jailbreak, 'DATA', data), patch.object(macapk_jailbreak, 'STATE', state), \
                  patch.object(macapk_jailbreak, 'PATCHED', root / 'older-selected.apk'), \
+                 patch.object(safe_mode.control, 'spring_pids', return_value=[42]), \
                  patch.object(safe_mode.control, 'is_overlay_process', return_value=True), \
                  patch.object(safe_mode.control, 'stop_spring') as stop, \
                  patch.object(safe_mode.control, 'start_overlay') as start:

@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT / 'patches'))
 import macapk_controls as control
 import macapk_jailbreak as jailbreak
 
-TEST_SHA = '6bdbd8e566b6ad436cb73d57330be17f360ea3832e5b70bba5cc221822604157'
+TEST_SHA = 'e1fc328e5cb794f8d8ebbac713e9cfaba6d7db08af14c5c13345c80137b6c6db'
 
 
 def verify(plan):
@@ -49,6 +49,10 @@ def launch(plan, timeout=120):
                 if receipt_at is None:
                     receipt_at = time.monotonic()
                 if time.monotonic() - receipt_at >= 3:
+                    if (control.spring_pids() != [child.pid] or
+                            not control.is_overlay_process(child.pid, apk, root) or
+                            jailbreak.digest(apk) != TEST_SHA):
+                        raise RuntimeError('The startup receipt does not match the only running test engine.')
                     record = {'pid': child.pid, 'apk': str(apk), 'apk_sha256': TEST_SHA,
                               'backup': plan['backup'], 'localTest': True}
                     active = jailbreak.STATE / 'active.json'
@@ -73,10 +77,11 @@ def launch(plan, timeout=120):
 def main():
     plan = json.loads((jailbreak.STATE / 'local-test.json').read_text(encoding='utf-8'))
     record = launch(plan)
-    print('Local alpha6 engine started. Unlock Spring and open Settings.')
+    print('Local alpha8 engine started. Unlock Spring and open Settings.')
     print('Try ColoredBar, Animaper, then Code Tweak Example → Run My Code.')
     print('Saved-layout backup: ' + record['backup'])
     print('For Ruby package operations, start the Ruby bridge separately.')
+    print('FreeMe and DockIn are unlisted development packages, not automatically installed.')
 
 
 if __name__ == '__main__':

@@ -12,6 +12,7 @@ SPRING = 'smali/x1.1/i1.1.smali'
 STATUS = 'smali/I1/k0.1.smali'
 FILES = 'smali/J1/I.smali'
 SAPP_MANAGER = 'smali/J1/y.1.smali'
+POINTER = 'smali/x1.1/N1.smali'
 
 
 def method(text, start, transform):
@@ -39,7 +40,7 @@ def invoke_grid(text, profile, entry, row, page):
 
 
 def apply(root):
-    paths = {name: Path(root) / name for name in (RENDER, CONTROLLER, SPRING, STATUS, FILES, SAPP_MANAGER,
+    paths = {name: Path(root) / name for name in (RENDER, CONTROLLER, SPRING, STATUS, FILES, SAPP_MANAGER, POINTER,
                                                  patch_dockin.DOCK_RENDER, patch_dockin.MODEL)}
     contents = {name: path.read_text() for name, path in paths.items()}
     if os.environ.get('WINTERX_BUILD_TRUSTED_FILES') == '1':
@@ -146,6 +147,19 @@ def apply(root):
     contents[CONTROLLER] = method(contents[CONTROLLER], start, insert_entry(start, '.locals 12', '    invoke-static {p0, p1, p2}, Lwinterx/layout/SpringHooks;->begin(LE1/O1;II)V'))
     start = '.method public final x(J)V'
     contents[CONTROLLER] = method(contents[CONTROLLER], start, insert_entry(start, '.locals 9', '    invoke-static {p0}, Lwinterx/layout/SpringHooks;->beforeDrop(LE1/O1;)V'))
+    def pointer(m):
+        anchor = '    invoke-virtual/range {p1 .. p1}, Landroid/view/MotionEvent;->getActionMasked()I'
+        first = m.index(anchor)
+        result = m.index('    move-result v0', first) + len('    move-result v0')
+        if '    move-object/from16 v7, p0' not in m[:first]:
+            raise ValueError('Unexpected pointer dispatcher receiver')
+        body = ('\n    iget-object v1, v7, Lx1/N1;->V:Lx1/g1;\n'
+                '    if-eqz v1, :winterx_pointer_checked\n'
+                '    iget-object v1, v1, Lx1/g1;->b:Lx1/i1;\n'
+                '    invoke-static {v1, v0}, Lwinterx/layout/SpringHooks;->pointer(Lx1/i1;I)V\n'
+                '    :winterx_pointer_checked')
+        return m[:result] + body + m[result:]
+    contents[POINTER] = method(contents[POINTER], '.method public final onTouchEvent(Landroid/view/MotionEvent;)Z', pointer)
     start = '.method public final p(FFI)LE1/I1;'
     contents[CONTROLLER] = method(contents[CONTROLLER], start, insert_entry(start, '.locals 16',
         '    invoke-static/range {p0 .. p3}, Lwinterx/layout/SpringHooks;->hover(LE1/O1;FFI)LE1/I1;\n'
@@ -153,7 +167,8 @@ def apply(root):
         '    return-object v0\n    :winterx_native_hover'))
     for name, locals_decl in [('v(II)LM1/b;', '.locals 5'), ('w(IIJLjava/lang/String;)LM1/b;', '.locals 1')]:
         start = '.method public final ' + name
-        body = ('    invoke-static {p0, p1, p2}, Lwinterx/layout/SpringHooks;->editLocation(LE1/O1;II)LM1/b;\n'
+        hook = 'animatedLocation' if name.startswith('w(') else 'editLocation'
+        body = ('    invoke-static {p0, p1, p2}, Lwinterx/layout/SpringHooks;->' + hook + '(LE1/O1;II)LM1/b;\n'
                 '    move-result-object v0\n    if-eqz v0, :winterx_grid_fallback\n'
                 '    return-object v0\n    :winterx_grid_fallback')
         contents[CONTROLLER] = method(contents[CONTROLLER], start, insert_entry(start, locals_decl, body))

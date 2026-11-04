@@ -6,6 +6,6 @@ ColoredBar provides presets, exact RGB hex colours and app exclusions. Updated e
 
 Settings Button Test, UI Color Test, Free Icon Placement Test and the executable developer example stay outside this index. Preserve existing users' test data; do not silently uninstall it. SnowyHome, SSH, FreeMe and DockIn remain unfinished.
 
-The `sources/freeme` manifest is an unlisted draft requiring a verified running engine with `freeme-grid-v1`; alpha6 is not compatible. DockIn has no installable package/ABI yet. See [layout development status](../docs/layout-tweaks.md) before attempting a developer trial.
+The `sources/freeme` and `sources/dockin` manifests are unlisted drafts requiring verified running engines with `freeme-grid-v1` and `dockin-native-v1`, respectively. Alpha6 is incompatible; the prepared alpha8-local engine includes both. Neither draft is installed automatically. See [layout development status](../docs/layout-tweaks.md) before attempting a developer trial.
 
 See the [package guide](../docs/springys-format.md), [ColoredBar notes](../docs/coloredbar.md) and [repository guide](../docs/repository-design.md).

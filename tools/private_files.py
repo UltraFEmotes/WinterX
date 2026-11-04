@@ -1,4 +1,4 @@
-"""Bounded private-folder transports. No APK installation, process control or networking."""
+"""Bounded private-folder transports. No APK installation, process control or automatic service setup."""
 import hashlib
 import os
 from pathlib import Path, PurePosixPath
@@ -8,10 +8,13 @@ import subprocess
 import tempfile
 import uuid
 
+from bounded_process import run as bounded_run
+
 MAX_FILE = 24 * 1024 * 1024
 SAFE_PART = re.compile(r'^[A-Za-z0-9_.-]+$')
 SERIAL = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$')
 PACKAGE = 'com.guille.spring'
+APP_ROOT = re.compile(r'^/data/(?:data|user/[0-9]+)/com\.guille\.spring/files$')
 MISSING = 44
 RESERVED = {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}
 
@@ -124,7 +127,7 @@ class DirectoryFiles:
 
 class AdbFiles:
     """ADB exec-out avoids Windows shell quoting and binary/newline conversion."""
-    def __init__(self, serial, root='/data/user/0/com.guille.spring/files', access='shell', adb='adb', runner=subprocess.run):
+    def __init__(self, serial, root='/data/user/0/com.guille.spring/files', access='shell', adb='adb', runner=bounded_run):
         if not isinstance(serial, str) or not SERIAL.fullmatch(serial):
             raise ValueError('Choose one explicit, valid ADB serial')
         if access not in ('shell', 'run-as', 'su'):
@@ -132,7 +135,7 @@ class AdbFiles:
         if not isinstance(root, str) or not root.startswith('/'):
             raise ValueError('Android private folder must be absolute')
         relative_path(root[1:])
-        if PurePosixPath(root).name != 'files' or len(PurePosixPath(root).parts) < 4:
+        if not APP_ROOT.fullmatch(root):
             raise ValueError('Select Spring\'s private files directory, not a broad device root')
         self.serial, self.root, self.access = serial, root, access
         self.adb, self.runner = str(adb), runner
@@ -140,28 +143,38 @@ class AdbFiles:
 
     def _run(self, script, payload=None, missing=False):
         command = [self.adb, '-s', self.serial, 'exec-out']
+        command.append(shlex.join(self._remote(script)))
+        return self._capture(command, payload, missing, 'ADB')
+
+    def _remote(self, script):
         if self.access == 'su':
-            command += ['su', '-c', script]
+            remote = ['su', '-c', script]
         elif self.access == 'run-as':
-            command += ['run-as', PACKAGE, 'sh', '-c', script]
+            remote = ['run-as', PACKAGE, 'sh', '-c', script]
         else:
-            command += ['sh', '-c', script]
+            remote = ['sh', '-c', script]
+        # ADB executes a remote command string, not a preserved argv vector. Quote the
+        # entire sh -c argument, including newlines, traps and inner single quotes.
+        return remote
+
+    def _capture(self, command, payload, missing, transport):
         try:
             result = self.runner(command, input=payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  timeout=20, check=False, shell=False)
         except (OSError, subprocess.TimeoutExpired) as exc:
-            raise AccessError('ADB could not reach the selected device: ' + str(exc)) from exc
+            raise AccessError(transport + ' could not reach the selected device: ' + str(exc)) from exc
         if missing and result.returncode == MISSING:
             return None
         if result.returncode:
             if result.returncode == 45:
                 raise ConflictError('Android private file changed; operation refused')
             detail = result.stderr.decode('utf-8', errors='replace').strip()[:200]
-            raise AccessError('ADB private-folder access failed' + (': ' + detail if detail else ''))
+            raise AccessError(transport + ' private-folder access failed' + (': ' + detail if detail else ''))
         return result.stdout
 
     def verify(self):
         """Read-only identity/path/permission check; does not grant or enable root."""
+        self.identity = None
         q = shlex.quote(self.root)
         raw = self._run('set -eu\ntest -d ' + q + '\ncd ' + q + '\npwd -P\nid -u\nstat -c \'%u:%g\' .\n'
                         'if test -r . && test -w . && test -x .; then echo rw; else echo denied; fi\n')
@@ -169,7 +182,7 @@ class AdbFiles:
         if len(lines) != 4 or not lines[0].startswith('/') or not re.fullmatch(r'[0-9]+', lines[1]) or not re.fullmatch(r'[0-9]+:[0-9]+', lines[2]):
             raise AccessError('Unexpected Android private-folder identity response')
         relative_path(lines[0][1:])
-        if PurePosixPath(lines[0]).name != 'files':
+        if not APP_ROOT.fullmatch(lines[0]):
             raise AccessError('Resolved path is not a private files directory')
         uid = int(lines[1]); owner, group = map(int, lines[2].split(':'))
         if lines[3] != 'rw' or uid not in (0, owner) or owner == 0:
@@ -184,6 +197,10 @@ class AdbFiles:
         parts = relative_path(relative).split('/')
         path = self.root
         script = 'set -eu\ntest -d ' + shlex.quote(path) + '\ntest ! -L ' + shlex.quote(path) + '\n'
+        script += ('test "$(id -u)" = ' + str(self.identity['uid']) + '\n'
+                   'test "$(stat -c \'%u:%g\' ' + shlex.quote(path) + ')" = '
+                   + str(self.identity['owner']) + ':' + str(self.identity['group']) + '\n'
+                   'test "$(cd ' + shlex.quote(path) + ' && pwd -P)" = ' + shlex.quote(path) + '\n')
         for index, part in enumerate(parts):
             path += '/' + part
             q = shlex.quote(path)
@@ -234,6 +251,10 @@ class AdbFiles:
         script += '(umask 077; set -C; : > ' + temp + ')\n'
         script += 'trap ' + shlex.quote('rm -f ' + temp) + ' EXIT\n'
         script += 'cat > ' + temp + '\n'
+        # A disconnected stdin can look like a clean EOF to the remote cat. Verify
+        # the complete replacement before touching the existing destination.
+        script += ('received=$(sha256sum ' + temp + ')\n'
+                   'test "${received%% *}" = ' + hashlib.sha256(value).hexdigest() + ' || exit 47\n')
         script += self._owner(temp)
         script += self._compare(q, expected) + 'mv ' + temp + ' ' + q + '\n'
         self._run(script, value)
@@ -270,6 +291,26 @@ class AdbFiles:
         if len(result) > limit:
             raise AccessError('Android directory exceeds the file limit')
         return sorted(result)
+
+
+class SshFiles(AdbFiles):
+    """An already configured Android SSH server. Never installs/enables a daemon or accepts new host keys."""
+    def __init__(self, host, root='/data/user/0/com.guille.spring/files', access='shell', port=22,
+                 ssh='ssh', runner=bounded_run):
+        if not isinstance(host, str) or not re.fullmatch(r'(?:[A-Za-z0-9][A-Za-z0-9_.-]{0,79}@)?[A-Za-z0-9][A-Za-z0-9_.-]{0,199}', host):
+            raise ValueError('Select an explicit SSH host or configured alias, without shell options')
+        if not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535:
+            raise ValueError('Invalid SSH port')
+        super().__init__('ssh-target', root, access, runner=runner)
+        self.host, self.port, self.ssh = host, port, str(ssh)
+
+    def _run(self, script, payload=None, missing=False):
+        command = [self.ssh, '-T', '-p', str(self.port), '-o', 'BatchMode=yes',
+                   '-o', 'StrictHostKeyChecking=yes', '-o', 'ConnectTimeout=10',
+                   '-o', 'ClearAllForwardings=yes', '-o', 'ControlMaster=no', '-o', 'ControlPath=none',
+                   '-o', 'ForwardAgent=no', '-o', 'ForwardX11=no', '-o', 'PermitLocalCommand=no',
+                   self.host, shlex.join(self._remote(script))]
+        return self._capture(command, payload, missing, 'SSH')
 
 
 def write_probe(store):

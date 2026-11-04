@@ -5,6 +5,7 @@ import java.util.*;
 import sun.misc.Unsafe;
 import winterx.layout.DockIn;
 import winterx.layout.DockGeometry;
+import winterx.layout.DockMotion;
 import winterx.layout.LayoutSettings;
 
 /** Real converted Spring classes, no launcher, imports, process control or user data. */
@@ -21,6 +22,7 @@ public final class PatchedDockInCheck {
         public int save() { return 12; }
         public void translate(float x, float y) { tx = x; ty = y; }
         public void scale(float x, float y) { sx = x; sy = y; }
+        public void scale(float x, float y, float px, float py) { sx = x; sy = y; tx = px * (1f - x); ty = py * (1f - y); }
         public void restoreToCount(int saved) { check(saved == 12, "wrong canvas restore count"); restores++; }
     }
     public static void main(String[] args) throws Exception {
@@ -55,6 +57,11 @@ public final class PatchedDockInCheck {
                 check(hit != null && hit.a == E1.z0.w && hit.b == i, "native touch targeted wrong slot");
                 M1.b launch = host.n4(hit);
                 check(((Number)launch.h).intValue() == cell.left && ((Number)launch.w).intValue() == cell.top, "native launch origin disagrees");
+                check(DockIn.launchSize(host, icons.get(i).a) == cell.size, "launch size not the actual dock rectangle");
+                set(host, "b", E1.r7.x); set(icons.get(i), "d", "test-app");
+                host.R2(hit, icons.get(i));
+                check(host.B.c == cell.left && host.B.d == cell.top && host.B.e == cell.size, "native H6 app launch rectangle disagrees");
+                set(host, "b", E1.r7.T); set(host, "B", null);
                 M1.b stock = I1.h0.j(profile, i, count);
                 int saved = DockIn.beginNative(canvas, frame, i);
                 check(Math.abs(((Number)stock.h).floatValue() * canvas.sx + canvas.tx - cell.left) < 0.01f &&
@@ -72,6 +79,29 @@ public final class PatchedDockInCheck {
             check(DockIn.editCapacity(edit) == count, "controller capacity wrong");
             M1.b editPoint = edit.v(-1, count - 1);
             check(Math.abs(((Number)editPoint.h).floatValue() * 2f - DockIn.cell(profile, count - 1, count).left) < 0.1f, "native edit coordinate wrong");
+            edit.y.put(ids.get(0), new M1.b(12f, 13f));
+            M1.b cached = edit.w(-1, 0, 1000, ids.get(0));
+            check(((Number)cached.h).floatValue() == 12f, "DockIn bypassed native position-animation cache");
+            edit.y.clear();
+            set(host, "W1", edit);
+            DockMotion.begin(edit, profile);
+            E1.G1 moving = new E1.G1(icons.get(0), -2, 30f, 400f, 0f, 1f, 1f, 0f, -1, 1f, 1f, 0f, 0f, 0);
+            edit.o(-1, 0, 40f, 420f, 900);
+            DockMotion.frame(host, List.of(moving), 1000);
+            float small = DockIn.cell(profile, 0, count).size / (float)profile.e;
+            check(Math.abs(DockMotion.scale(frame, moving) - small) < .001f, "dock pickup grew to stock size immediately");
+            edit.f.remove("\u0000hole"); ((List<String>)edit.e.get(0)).add("\u0000hole"); edit.n = 0; edit.o = 1;
+            DockMotion.frame(host, List.of(moving), 1100);
+            DockMotion.frame(host, List.of(moving), 1175);
+            float halfway = DockMotion.scale(frame, moving);
+            check(halfway > small && halfway < 1f, "dock-to-home size did not interpolate");
+            DockMotion.frame(host, List.of(moving), 1250);
+            check(DockMotion.scale(frame, moving) == 1f, "home destination retained dock size");
+            edit.x(1260);
+            check(edit.r().a.size() == count - 1 && ((List<?>)edit.r().b.get(0)).contains(ids.get(0)), "native settling lost transferred icon");
+            check(DockIn.liveCount(host) == -1, "capacity changed during settling");
+            set(host, "W1", null);
+            edit = new E1.O1(model, 16, 4, callback);
             edit.o(0, 0, 40f, 100f, 1000);
             DockGeometry.Cell last = DockIn.cell(profile, count - 1, count);
             E1.I1 hover = edit.p((last.left + last.size / 2f) / 2f, (last.top + last.size / 2f) / 2f, 0);
@@ -91,7 +121,20 @@ public final class PatchedDockInCheck {
         }
         set(host, "M1", new ArrayList<E1.a>());
         check(DockIn.cell(profile, 0, 4) == null, "four-icon stock geometry replaced");
+        check(DockIn.launchSize(host, "not-in-dock") == profile.e, "home launch size changed");
+        RecordingCanvas errors = (RecordingCanvas)unsafe().allocateInstance(RecordingCanvas.class);
+        for (int path = 0; path < 3; path++) {
+            int beforeRestore = errors.restores;
+            try {
+                if (path == 0) I1.j1.e(errors, null, null, null, null, null, null, null);
+                else if (path == 1) I1.h0.p(errors, null, null, null, null, null, 0f, 0f, 0f);
+                else ((I1.h0)unsafe().allocateInstance(I1.h0.class)).r(errors, null, null, null, null, null, null, null, false, 0f);
+                throw new AssertionError("renderer exception swallowed");
+            } catch (NullPointerException expected) {
+                check(errors.restores == beforeRestore + 1, "renderer exception leaked Canvas state");
+            }
+        }
         for (String name : List.of("ios4_pages.json", "ios6_pages.json", "ios7_pages.json")) check(Files.readString(new File(root, name).toPath()).equals("protected " + name), "native layout file overwritten");
-        System.out.println("DockIn packaged geometry/touch/launch-origin/edit/hover/normalizer, shrink/drag guards and Safe Mode/removal data protection passed; live drawing/edit-motion still unverified");
+        System.out.println("DockIn packaged geometry/touch/H6 launch sizing/native position caches/size interpolation/settling/hover/normalizer and exception restoration passed; live UI remains unverified");
     }
 }

@@ -46,6 +46,8 @@ public class LayoutSettingsCheck {
         for (int value = 4; value <= 7; value++) {
             LayoutSettings.action(LayoutSettings.ACTION + "dockin-" + value, host);
             check(DockIn.capacity() == value, "valid DockIn selection failed");
+            E1.T6 live = E1.b4.a.a(LayoutSettings.PAGE + "dockin");
+            if (packaged) check(((E1.V6)((E1.W6)live.c.get(0)).c.get(value - 4)).b.contains("✓"), "native page factory cached stale selection");
         }
         LayoutSettings.action(LayoutSettings.ACTION + "dockin-3", null);
         check(DockIn.capacity() == 7 && !DockIn.select(4, 7), "invalid/reducing selection changed capacity");

@@ -49,3 +49,16 @@ def freeme_supported_by(apk):
                     and b'winterx/layout/SpringHooks' in archive.read('classes.dex'))
     except (OSError, KeyError, zipfile.BadZipFile):
         return False
+
+
+def dockin_supported_by(apk):
+    """Require the native dock ABI, layout/controller hooks and actual launch-size integration."""
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            primary = archive.read('classes.dex')
+            helpers = archive.read('classes3.dex')
+            return (b'dockin-native-v1' in helpers and b'winterx/layout/DockMotion' in helpers
+                    and b'winterx/layout/DockIn' in primary and b'launchSize' in primary
+                    and b'winterx/layout/SpringHooks' in primary)
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False

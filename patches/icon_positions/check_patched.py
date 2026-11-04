@@ -11,6 +11,7 @@ JAVA = Path.home() / 'Library/Application Support/Mac.apk/runtime/Resources/jre/
 JAVAC = Path('/opt/homebrew/opt/openjdk/bin/javac')
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('jar', type=Path, help='Mac.APK-converted jar from the patched APK')
+parser.add_argument('--source-layout', action='store_true', help='Overlay current layout sources for development; not a packaged-build verification')
 args = parser.parse_args()
 jar = args.jar.resolve(strict=True)
 with tempfile.TemporaryDirectory(prefix='winterx-patched-icons-') as temp:
@@ -18,6 +19,9 @@ with tempfile.TemporaryDirectory(prefix='winterx-patched-icons-') as temp:
     classes = root / 'classes'; classes.mkdir()
     data = root / 'data'; data.mkdir()
     sources = list((HERE / 'test/android').rglob('*.java')) + list((HERE / 'integration').glob('Patched*Check.java'))
+    if args.source_layout:
+        print('DEVELOPMENT SOURCE OVERLAY: results do not verify the packaged layout implementation', flush=True)
+        sources += list((HERE / 'src/winterx/layout').glob('*.java'))
     subprocess.run([str(JAVAC), '--release', '21', '-cp', str(jar) + ':' + str(FRAMEWORK), '-d', str(classes), *(str(s) for s in sources)], check=True)
     cp = ':'.join((str(classes), str(jar), str(FRAMEWORK)))
     disabled = root / 'disabled'; disabled.mkdir()

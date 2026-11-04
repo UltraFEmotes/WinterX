@@ -1,0 +1,9 @@
+{
+  "format": "winterx.springys/1",
+  "id": "com.winterx.dockin",
+  "name": "DockIn",
+  "version": "0.1.0-alpha",
+  "author": "WeirdMM",
+  "hook": "tweak.dockin",
+  "description": "Experimental Spring 0.8.1 native dock capacity. Choose 4–7 icons in Spring Settings; default/minimum 4. Move excess icons home before shrinking and finish icon drags before changing capacity. Requires the DockIn native engine ABI. Packaged checks pass; live UI testing remains required. Not included in the working catalogue."
+}
