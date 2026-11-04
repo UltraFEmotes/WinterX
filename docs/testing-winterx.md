@@ -14,7 +14,7 @@ node tests/iexplored_ui_smoke.js
 node tests/winterx_status_smoke.js
 ```
 
-The 2026-11-05 development workspace passed 71 Python tests. These cover package validation, staged revisions/rollback, running-engine gates, artwork and bridge behaviour. UI/bootstrap checks use JavaScript mocks, not Spring's native runtime. Some regression fixtures need locally built apps or historical build artifacts; missing gitignored fixtures in a fresh checkout are not live runtime failures.
+The 2026-11-05 development workspace passed 82 Python tests. These cover package validation, staged revisions/rollback, running-engine gates, artwork, bridge behaviour and portable locking/private-folder transports. Windows APIs and ADB use simulated/mocked tests on the current macOS host, not live platform verification. UI/bootstrap checks use JavaScript mocks, not Spring's native runtime. Some regression fixtures need locally built apps or historical build artifacts; missing gitignored fixtures in a fresh checkout are not live runtime failures.
 
 To check a newly built APK, first convert it with Mac.APK's DEX converter **without launching Spring**, then run against the resulting JAR:
 

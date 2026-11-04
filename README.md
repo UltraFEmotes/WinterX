@@ -13,6 +13,7 @@ WinterX is WeirdMM's fan-made jailbreak and tweak project for **Spring**, the iO
 - **Rooted Android and emulators:** **not supported yet**. There is no working Android installer, root service, or LAN bridge in this version. The patched APK produced here is unsigned and intended for Mac.APK; do not install it as an Android update. Root access alone does not make this release compatible. Android support and a tested installation guide are planned.
 - **Built-in tweak repository:** includes **Animaper and ColoredBar**. ColoredBar has presets, exact RGB colours and app exclusions in Spring Settings. Updated engines keep Ruby's own red navigation and bottom tabs, even without tweaks or in Safe Mode. SnowyHome, SSH, FreeMe and DockIn are unfinished and are not published as working tweaks.
 - **Ruby 1.8:** includes **Join our Discord** on its home page: [WinterX community](https://discord.gg/4JTe27ZRNd). Tapping uses Spring's confirmation before opening Safari; nothing opens automatically. This app requires the updated engine's trusted-script pin.
+- **WinterX companion 0.6:** displays only supported Spring **0.8.1**, with no preview selector. Its app description links this repository and explains the required bridge/local engine.
 
 No Spring APK, Spring SDK, Mac.APK, built binaries, personal app data, or third-party artwork is distributed here. Get the original Spring and SDK from their respective distributors. Spring: [spring.elguille.me](https://spring.elguille.me/).
 
@@ -97,6 +98,7 @@ Ruby can enter Safe Mode to temporarily disable tweaks. If Spring cannot start, 
 - [Executable-tweak runtime and supported API](docs/tweak-runtime-design.md)
 - [ColoredBar preferences, coverage and Ruby branding](docs/coloredbar.md)
 - [Testing and recovery](docs/testing-winterx.md) · [Release checklist](docs/release-checklist.md)
+- [Windows/Linux and Android bridge development](docs/android-bridge.md) — access transport exists; full Android deployment/bridge support is not ready.
 - Source is in `patches/`, `tools/`, `Ruby/`, `RubyJailbreak/`, and `IExplored/`. The [built-in repository](https://github.com/UltraFEmotes/Ruby-Repo) contains Animaper and ColoredBar. Developer examples remain source-only, outside its index.
 
 A v1 `.springys` archive selects a compiled hook. A v2 archive contains its author's `tweak/main.js`, runs in a separate QuickJS worker and uses the documented WinterX API. Java/reflection, shell execution, networking, arbitrary home-icon mutation and custom animation hooks are not exposed. Repository downloads use HTTPS and verify package hashes, but a matching hash does not make a source trustworthy. Install executable tweaks only from authors you trust.

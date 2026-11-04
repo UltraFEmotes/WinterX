@@ -4,8 +4,6 @@ The caller supplies an idempotent reconcile(desired_hooks, desired_tweaks) funct
 apply the desired supported hooks, respring as needed and raise on failure.
 The registry never executes code from a package.
 """
-from contextlib import contextmanager
-import fcntl
 import hashlib
 import json
 import os
@@ -13,6 +11,7 @@ from pathlib import Path
 import tempfile
 
 import springys
+from file_lock import exclusive_lock
 
 
 class RegistryError(ValueError):
@@ -68,14 +67,8 @@ class Registry:
         self.index = self.root / 'installed.json'
         self.journal = self.root / 'operation.json'
 
-    @contextmanager
     def _lock(self):
-        with (self.root / '.lock').open('a+b') as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
-            try:
-                yield
-            finally:
-                fcntl.flock(lock, fcntl.LOCK_UN)
+        return exclusive_lock(self.root / '.lock')
 
     def _read(self):
         if not self.index.exists():
