@@ -1,9 +1,14 @@
 var current = storage.get("jailbreak.request.v1") || null;
-var selectedVersion = storage.get("winterx.version.v1") || "0.8.1";
+var selectedVersion = "0.8.1";
+if (storage.get("winterx.version.v1") && storage.get("winterx.version.v1") !== selectedVersion) {
+  current = null;
+  storage.remove("jailbreak.request.v1");
+}
+storage.set("winterx.version.v1", selectedVersion);
 var screen = new UIViewController({ title: "WinterX", background: "#e4e5e8" });
 screen.add(new UILabel({ frame: [20, 30, 280, 46], text: "WinterX", size: 25, bold: true, align: "center", color: "#1d467d" }));
 screen.add(new UILabel({ frame: [30, 90, 260, 54], text: "Jailbreak Spring", size: 16, align: "center", lines: 2, color: "#444444" }));
-var versionButton = screen.add(new UIButton({ frame: [55, 142, 210, 38], title: "Spring " + selectedVersion, onTap: selectVersion }));
+screen.add(new UILabel({ frame: [55, 142, 210, 38], text: "Supports Spring " + selectedVersion, size: 14, align: "center", color: "#444444" }));
 var message = screen.add(new UILabel({ frame: [25, 185, 270, 80], text: "Start the Ruby bridge on your Mac, then tap Jailbreak.", size: 14, lines: 4, align: "center", color: "#555555" }));
 var button = screen.add(new UIButton({ frame: [45, 280, 230, 44], title: "Jailbreak", onTap: jailbreak }));
 screen.add(new UIButton({ frame: [85, 340, 150, 38], title: "Check Status", onTap: refresh }));
@@ -16,11 +21,6 @@ function refresh() {
       return;
     }
   } catch (e) {}
-  if (selectedVersion !== "0.8.1") {
-    button.enabled = false;
-    message.text = "Spring 0.9 Preview 1 support is being developed.";
-    return;
-  }
   if (!current) { button.enabled = true; message.text = "Start the Ruby bridge on your Mac, then tap Jailbreak."; return; }
   var result = "results/" + current + ".json";
   if (!files.exists(result)) { button.enabled = false; message.text = "Waiting for the Ruby bridge. Spring will restart during jailbreak."; return; }
@@ -49,16 +49,6 @@ function refresh() {
       message.text = "Jailbreak is not active. Open the original Spring and tap Jailbreak.";
     }
   } catch (e) { message.text = "Could not read the bridge response."; }
-}
-function selectVersion() {
-  UIAlertView.show({ title: "Spring Version", message: "Choose the version installed in Mac.APK.",
-    buttons: ["Cancel", "0.8.1", "0.9 Preview 1"] }, function (index) {
-      if (index !== 1 && index !== 2) return;
-      selectedVersion = index === 1 ? "0.8.1" : "0.9 Preview 1";
-      storage.set("winterx.version.v1", selectedVersion);
-      versionButton.title = "Spring " + selectedVersion;
-      refresh();
-    });
 }
 function jailbreak() {
   var id = String(Date.now()) + "-" + String(Math.floor(Math.random() * 1000000000));
