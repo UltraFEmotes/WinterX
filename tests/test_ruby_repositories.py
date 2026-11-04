@@ -56,7 +56,7 @@ class RepositoryTests(unittest.TestCase):
                                                 builtin_root=ROOT / 'builtin-repo')
         data = repo.refresh()
         self.assertTrue(data['sources'][0]['builtIn'])
-        self.assertEqual(data['packages'], [])
+        self.assertEqual([item['hook'] for item in data['packages']], ['tweak.animaper'])
         self.assertIsNone(data['sources'][0]['error'])
 
     def test_rejects_bad_hash_without_installing(self):

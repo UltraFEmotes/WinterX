@@ -10,7 +10,7 @@ WinterX is WeirdMM's fan-made jailbreak and tweak project for **Spring**, the iO
 
 - **Mac.APK:** experimental source build for the specific Spring 0.8.1 APK below. The jailbreak uses a local Mac bridge and a patched launcher. Ruby can manage supported packages; several features are still in development.
 - **Rooted Android and emulators:** **not supported yet**. There is no working Android installer, root service, or LAN bridge in this version. The patched APK produced here is unsigned and intended for Mac.APK; do not install it as an Android update. Root access alone does not make this release compatible. Android support and a tested installation guide are planned.
-- **Built-in tweak repository:** under development and intentionally empty in this release. Animaper and other functionality are experimental; not all planned tweaks are available.
+- **Built-in tweak repository:** includes Animaper. Other tweaks are still in development and will be added later.
 
 No Spring APK, Spring SDK, Mac.APK, built binaries, personal app data, or third-party artwork is distributed here. Get the original Spring and SDK from their respective distributors. Spring: [spring.elguille.me](https://spring.elguille.me/).
 
@@ -88,7 +88,7 @@ Ruby can enter Safe Mode to temporarily disable tweaks. If Spring cannot start, 
 
 - [Make a `.springys` package: tutorial, artwork, updates and format reference](docs/springys-format.md)
 - [Creating an experimental Ruby repository](docs/repository-design.md)
-- Source is in `patches/`, `tools/`, `Ruby/`, `RubyJailbreak/`, and `IExplored/`. The standalone built-in repository and additional tweaks are future work.
+- Source is in `patches/`, `tools/`, `Ruby/`, `RubyJailbreak/`, and `IExplored/`. The [built-in repository](https://github.com/UltraFEmotes/Ruby-Repo) currently contains Animaper; additional tweaks are future work.
 
 A `.springys` archive is currently declarative and can only enable hooks that already exist in WinterX. It is not yet a way to run arbitrary tweak code. Repository downloads use HTTPS and verify package hashes, but a matching hash does not make a source trustworthy.
 

@@ -91,4 +91,4 @@ The index is limited to 512 KiB. Each downloaded archive is limited to 12 MiB an
 - **Package won't install:** the target WinterX version must implement its hook; a correct hash doesn't add new functionality. Check the bridge terminal for the error.
 - **Changes not showing:** refresh sources, then return to the package list. Confirm the index and archive served over HTTPS are the new files.
 
-A hash detects mismatched content; it does not authenticate the publisher or guarantee that a source is safe. Only add sources you trust. The included [`builtin-repo/`](../builtin-repo/) is an empty development placeholder; the planned separately hosted built-in repository is not released yet.
+A hash detects mismatched content; it does not authenticate the publisher or guarantee that a source is safe. Only add sources you trust. The included [`builtin-repo/`](../builtin-repo/) contains a local copy of Animaper; the [hosted built-in repository](https://github.com/UltraFEmotes/Ruby-Repo) also contains Animaper.

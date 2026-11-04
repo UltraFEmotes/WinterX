@@ -1,1 +1,10 @@
-{"format":"winterx.repository/1","name":"WinterX development repository","packages":[]}
+{
+  "format": "winterx.repository/1",
+  "name": "Ruby's Built-in Repository",
+  "packages": [
+    {
+      "url": "packages/animaper.springys",
+      "sha256": "bf623620e96512f03a00b12f248ce64ea02603cc89e83baa937afce79852d856"
+    }
+  ]
+}
