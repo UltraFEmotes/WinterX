@@ -122,6 +122,24 @@ TAP_PATCH = '''    :cond_32
     return v0
     :winterx_tw_page
     iget-object v0, v9, LE1/V6;->a:Ljava/lang/String;
+    const-string v10, "winterx-layout-p/"
+    invoke-virtual {v0, v10}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v10
+    if-eqz v10, :winterx_layout_action
+    invoke-virtual {v1, v0, v5}, Lx1/i1;->t3(Ljava/lang/String;LE1/L6;)V
+    const/4 v0, 0x1
+    return v0
+    :winterx_layout_action
+    iget-object v0, v9, LE1/V6;->a:Ljava/lang/String;
+    const-string v10, "winterx-layout-a/"
+    invoke-virtual {v0, v10}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v10
+    if-eqz v10, :winterx_code_page
+    invoke-static {v0, v1}, Lwinterx/layout/LayoutSettings;->action(Ljava/lang/String;Lx1/i1;)V
+    const/4 v0, 0x1
+    return v0
+    :winterx_code_page
+    iget-object v0, v9, LE1/V6;->a:Ljava/lang/String;
     const-string v10, "winterx-tw-p/"
     invoke-virtual {v0, v10}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
     move-result v10
@@ -323,6 +341,11 @@ HOOKS = '''.class public final Lruby/RubyHooks;
     invoke-direct {v0, v1, v3, v2}, LE1/T6;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
     return-object v0
     :missing
+    invoke-static {p0}, Lwinterx/layout/LayoutSettings;->page(Ljava/lang/String;)LE1/T6;
+    move-result-object v0
+    if-eqz v0, :winterx_code_settings_page
+    return-object v0
+    :winterx_code_settings_page
     invoke-static {p0}, Lwinterx/tweaks/TweakSettings;->page(Ljava/lang/String;)LE1/T6;
     move-result-object v0
     if-eqz v0, :winterx_cb_page

@@ -125,6 +125,10 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                 extra_hooks['tweak.coloredbar'] = (ruby_data / 'coloredbar.enabled', lambda enabled:
                     safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, running_engine,
                         macapk_jailbreak.digest(running_engine), enabled, 'coloredbar.enabled', 'ColoredBar'))
+            if running_engine is not None and tweak_runtime.freeme_supported_by(running_engine):
+                extra_hooks['tweak.freeme'] = (ruby_data / 'freeme.enabled', lambda enabled:
+                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, running_engine,
+                        macapk_jailbreak.digest(running_engine), enabled, 'freeme.enabled', 'FreeMe'))
             packages = ruby_packages.Packages(data, ruby_data / 'settings-test.enabled', apply_settings,
                                               extra_hooks=extra_hooks,
                                               tweak_root=macapk_jailbreak.DATA / 'files' / 'winterx-tweaks',

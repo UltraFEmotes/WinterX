@@ -1,0 +1,9 @@
+{
+  "format": "winterx.springys/1",
+  "id": "com.winterx.freeme",
+  "name": "FreeMe",
+  "version": "0.1.0-alpha",
+  "author": "WeirdMM",
+  "hook": "tweak.freeme",
+  "description": "Experimental Spring 0.8.1 home-screen grid placement. Snap icons to normal cells, leave empty slots and move between home pages. Uses native Spring Settings and separate saved grid data; dock and folder contents stay stock. Requires an engine with the FreeMe grid runtime. Automated checks have passed, but live UI testing is still required. Not yet included in the built-in catalogue."
+}

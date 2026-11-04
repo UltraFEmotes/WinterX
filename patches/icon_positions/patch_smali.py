@@ -4,6 +4,7 @@ import argparse
 import os
 from pathlib import Path
 import re
+import patch_dockin
 
 RENDER = 'smali/I1/h0.1.smali'
 CONTROLLER = 'smali/E1/O1.smali'
@@ -38,7 +39,8 @@ def invoke_grid(text, profile, entry, row, page):
 
 
 def apply(root):
-    paths = {name: Path(root) / name for name in (RENDER, CONTROLLER, SPRING, STATUS, FILES, SAPP_MANAGER)}
+    paths = {name: Path(root) / name for name in (RENDER, CONTROLLER, SPRING, STATUS, FILES, SAPP_MANAGER,
+                                                 patch_dockin.DOCK_RENDER, patch_dockin.MODEL)}
     contents = {name: path.read_text() for name, path in paths.items()}
     if os.environ.get('WINTERX_BUILD_TRUSTED_FILES') == '1':
         file_start = '.method public final f(Ljava/lang/String;)Ljava/io/File;'
@@ -66,6 +68,10 @@ def apply(root):
         contents[SAPP_MANAGER] = method(contents[SAPP_MANAGER], constructor, watch_inbox)
     # Renderer has separate row/column registers; leave its page-scroll offset unchanged.
     def render(m):
+        anchor = '    invoke-interface {v6}, Ljava/lang/Iterable;->iterator()Ljava/util/Iterator;'
+        m = replace_once(m, anchor,
+            '    invoke-static {v6, v13, v12}, Lwinterx/layout/FreeMe;->entries(Ljava/util/List;LE1/i6;I)Ljava/util/List;\n'
+            '    move-result-object v6\n' + anchor)
         pattern = r'    iget v8, v7, LE1/c;->b:I(?:(?!\n\.end method).)*?    iget v9, v7, LE1/c;->c:I(?:(?!\n\.end method).)*?    invoke-static \{v13, v8, v9\}, LE1/d4;->w\(LE1/i6;II\)LM1/b;'
         call = ('    invoke-static {v13, v7, v12, v14}, Lwinterx/animaper/Animaper;->location(LE1/i6;LE1/c;II)LM1/b;'
                 if os.environ.get('WINTERX_BUILD_ANIMAPER') == '1' else
@@ -94,8 +100,28 @@ def apply(root):
         return m.replace(old, new)
     contents[STATUS] = method(contents[STATUS], status_start, status)
     contents[RENDER] = method(contents[RENDER], '.method public static i0(LE1/q6;)Ljava/util/ArrayList;', render)
-    contents[SPRING] = method(contents[SPRING], '.method public final o1(FF)LE1/A0;', lambda m: invoke_grid(m, 'v0', 'v7', 'v8', 'v2'))
+    def hit_home(m):
+        anchor = '    invoke-interface {v4}, Ljava/lang/Iterable;->iterator()Ljava/util/Iterator;'
+        m = replace_once(m, anchor,
+            '    invoke-static {v4, v0, v2}, Lwinterx/layout/FreeMe;->entries(Ljava/util/List;LE1/i6;I)Ljava/util/List;\n'
+            '    move-result-object v4\n' + anchor)
+        return invoke_grid(m, 'v0', 'v7', 'v8', 'v2')
+    contents[SPRING] = method(contents[SPRING], '.method public final o1(FF)LE1/A0;', hit_home)
+    def delete_home(m):
+        anchor = '    div-float/2addr p2, v0'
+        return replace_once(m, anchor, anchor + '\n'
+            '    invoke-static {}, Lwinterx/layout/FreeMe;->enabled()Z\n'
+            '    move-result v0\n    if-eqz v0, :winterx_native_delete\n'
+            '    invoke-static {p0, p1, p2}, Lwinterx/layout/FreeMe;->deleteHit(Lx1/i1;FF)Ljava/lang/String;\n'
+            '    move-result-object v0\n    if-eqz v0, :cond_1\n    return-object v0\n'
+            '    :winterx_native_delete')
+    contents[SPRING] = method(contents[SPRING], '.method public final I(FF)Ljava/lang/String;', delete_home)
     def position(m):
+        start = '.method public final n4(LE1/A0;)LM1/b;\n    .locals 5'
+        m = replace_once(m, start, start + '\n'
+            '    invoke-static {p0, p1}, Lwinterx/layout/FreeMe;->animation(Lx1/i1;LE1/A0;)LM1/b;\n'
+            '    move-result-object v0\n    if-eqz v0, :winterx_native_animation\n'
+            '    return-object v0\n    :winterx_native_animation')
         # Save A0.c before p1 is reused for the icon object on secondary pages.
         anchor = '    iget p1, p1, LE1/A0;->c:I'
         m = replace_once(m, anchor, anchor + '\n    move v4, p1')
@@ -120,12 +146,18 @@ def apply(root):
     contents[CONTROLLER] = method(contents[CONTROLLER], start, insert_entry(start, '.locals 12', '    invoke-static {p0, p1, p2}, Lwinterx/layout/SpringHooks;->begin(LE1/O1;II)V'))
     start = '.method public final x(J)V'
     contents[CONTROLLER] = method(contents[CONTROLLER], start, insert_entry(start, '.locals 9', '    invoke-static {p0}, Lwinterx/layout/SpringHooks;->beforeDrop(LE1/O1;)V'))
+    start = '.method public final p(FFI)LE1/I1;'
+    contents[CONTROLLER] = method(contents[CONTROLLER], start, insert_entry(start, '.locals 16',
+        '    invoke-static/range {p0 .. p3}, Lwinterx/layout/SpringHooks;->hover(LE1/O1;FFI)LE1/I1;\n'
+        '    move-result-object v0\n    if-eqz v0, :winterx_native_hover\n'
+        '    return-object v0\n    :winterx_native_hover'))
     for name, locals_decl in [('v(II)LM1/b;', '.locals 5'), ('w(IIJLjava/lang/String;)LM1/b;', '.locals 1')]:
         start = '.method public final ' + name
         body = ('    invoke-static {p0, p1, p2}, Lwinterx/layout/SpringHooks;->editLocation(LE1/O1;II)LM1/b;\n'
                 '    move-result-object v0\n    if-eqz v0, :winterx_grid_fallback\n'
                 '    return-object v0\n    :winterx_grid_fallback')
         contents[CONTROLLER] = method(contents[CONTROLLER], start, insert_entry(start, locals_decl, body))
+    patch_dockin.apply(contents, method, replace_once)
     for name, text in contents.items():
         paths[name].write_text(text)
 

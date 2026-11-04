@@ -35,6 +35,7 @@ def main():
             sources += sorted((ROOT / 'patches/icon_positions/src/winterx/tweaks').glob('*.java'))
             sources += sorted((ROOT / 'patches/icon_positions/src/winterx/coloredbar').glob('*.java'))
             sources += sorted((ROOT / 'patches/icon_positions/src/winterx/appearance').glob('*.java'))
+            sources += sorted((ROOT / 'patches/icon_positions/src/winterx/layout').glob('*.java'))
         cp = str(args.jar.resolve(strict=True)) + ':' + str(FRAMEWORK)
         subprocess.run([str(JAVAC), '--release', '21', '-cp', cp, '-d', str(classes), *(str(s) for s in sources)], check=True)
         subprocess.run([str(JAVA), '-Druby.test.dir=' + str(data), '-cp', str(classes) + ':' + cp,

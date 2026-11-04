@@ -29,3 +29,9 @@ with tempfile.TemporaryDirectory(prefix='winterx-patched-icons-') as temp:
     subprocess.run([str(JAVA), '-cp', cp, 'PatchedControllerCheck', str(data)], check=True)
     (data / 'ruby/safe-mode.enabled').unlink()
     subprocess.run([str(JAVA), '-cp', cp, 'PatchedPersistenceCheck', str(data)], check=True)
+    for variant in ('false', 'true'):
+        freeme = root / ('freeme-' + variant); freeme.mkdir()
+        subprocess.run([str(JAVA), '-cp', cp, 'PatchedFreeMeCheck', str(freeme), variant], check=True)
+        subprocess.run([str(JAVA), '-cp', cp, 'PatchedFreeMePersistenceCheck', str(freeme)], check=True)
+        dockin = root / ('dockin-' + variant); dockin.mkdir()
+        subprocess.run([str(JAVA), '-cp', cp, 'PatchedDockInCheck', str(dockin), variant], check=True)

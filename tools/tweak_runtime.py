@@ -38,3 +38,14 @@ def coloredbar_supported_by(apk):
                     and b'winterx/coloredbar/ColoredBar' in archive.read('classes.dex'))
     except (OSError, KeyError, zipfile.BadZipFile):
         return False
+
+
+def freeme_supported_by(apk):
+    """Require the sparse-grid ABI and its native hooks, not the older pixel-position test."""
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            return (b'freeme-grid-v1' in archive.read('classes3.dex')
+                    and b'winterx/layout/FreeMe' in archive.read('classes.dex')
+                    and b'winterx/layout/SpringHooks' in archive.read('classes.dex'))
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False

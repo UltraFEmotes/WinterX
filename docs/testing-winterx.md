@@ -14,7 +14,9 @@ node tests/iexplored_ui_smoke.js
 node tests/winterx_status_smoke.js
 ```
 
-The 2026-11-05 development workspace passed 82 Python tests. These cover package validation, staged revisions/rollback, running-engine gates, artwork, bridge behaviour and portable locking/private-folder transports. Windows APIs and ADB use simulated/mocked tests on the current macOS host, not live platform verification. UI/bootstrap checks use JavaScript mocks, not Spring's native runtime. Some regression fixtures need locally built apps or historical build artifacts; missing gitignored fixtures in a fresh checkout are not live runtime failures.
+The 2026-11-05 development workspace passed 91 Python tests. These cover package validation, staged revisions/rollback, running-engine gates, artwork, bridge behaviour, FreeMe package/data protection, verified dock patch anchors and portable locking/private-folder transports. Windows APIs and ADB use simulated/mocked tests on the current macOS host, not live platform verification. UI/bootstrap checks use JavaScript mocks, not Spring's native runtime. Some regression fixtures need locally built apps or historical build artifacts; missing gitignored fixtures in a fresh checkout are not live runtime failures.
+
+The source-only public checkout passed 68 fixture-independent tests. Its full discovery reports eight missing-input errors without the SDK/APK/generated theme; those fixtures are intentionally not distributed. Ruby UI, executable bootstrap and WinterX status/request smoke checks also passed there.
 
 To check a newly built APK, first convert it with Mac.APK's DEX converter **without launching Spring**, then run against the resulting JAR:
 
@@ -24,6 +26,8 @@ python3 patches/tests/check_tweak_settings.py path/to/converted-engine.jar --pac
 python3 patches/tests/check_tweak_lifecycle.py path/to/converted-engine.jar --packaged
 python3 patches/tests/check_engine_hooks.py path/to/converted-engine.jar
 python3 patches/tests/run_hook_check.py path/to/converted-engine.jar
+python3 patches/tests/check_layout_settings.py path/to/converted-engine.jar --packaged
+python3 patches/icon_positions/check_patched.py path/to/converted-engine.jar
 ```
 
 `--packaged` loads the helpers actually present in that engine, not recompiled replacement helpers. ColoredBar checks use Mac.APK's actual Bitmap/Canvas and draw a real Settings header. Lifecycle checks use a QuickJS JNI spy: they verify worker affinity, limit requests, cleanup and isolation logic, **not native deadline enforcement**. None starts or installs a launcher.
@@ -32,6 +36,8 @@ python3 patches/tests/run_hook_check.py path/to/converted-engine.jar
 
 - User-confirmed in alpha4: basic ColoredBar behaviour and independently packaged code. Logs confirm native QuickJS startup, an alert Promise callback and native Settings toggle callbacks.
 - Alpha6 isolated packaged checks: Settings lazy loaders/header drawing, preferences, permanent Ruby exclusion and independent red navigation/bottom bars; Settings routing, controller/renderer verification and lifecycle logic. App Store asset selection and dock-app discovery have isolated coverage.
+- The alpha6 local-test launcher/checksum were prepared with a stopped-session backup before layout development. A later read-only process/overlay verification confirmed alpha6 running; the agent did not start or replace that session. Alpha7/7b/8 are separate, unselected development builds.
+- Alpha8 isolated packaged checks cover [FreeMe/DockIn development](layout-tweaks.md), including dock-to-home snapping/rollback, 5–7-icon dock geometry, native touch/launch origins/edit coordinates/hover/normalization and native Settings. Edit-motion sizing, full event-loop transfers, rendered UI and live refresh remain unfinished/unverified; neither tweak is a working catalogue entry.
 - Still needs a live trial: Ruby 1.8's red bars/Discord button, Settings/App Store/Phone fixes, exclusion refresh, transitions, concurrent alerts, infinite-loop interruption, heap/stack limits, multi-tweak failure isolation, install/update/uninstall cleanup and Safe Mode recovery. Do not call the runtime a hardened sandbox.
 
 ## Safe live testing

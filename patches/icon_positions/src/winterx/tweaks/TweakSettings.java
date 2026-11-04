@@ -52,10 +52,11 @@ public final class TweakSettings {
                 }
             }
             if (winterx.coloredbar.ColoredBar.enabled()) rows.add(row("winterx-cb-picker", "ColoredBar"));
+            winterx.layout.LayoutSettings.rows(rows);
             if (rows.isEmpty()) return page;
             for (Object section : page.c) for (Object entry : ((W6) section).c) {
                 String id = ((V6) entry).a;
-                if (id.startsWith(PAGE_PREFIX) || "winterx-cb-picker".equals(id)) return page;
+                if (id.startsWith(PAGE_PREFIX) || "winterx-cb-picker".equals(id) || id.startsWith(winterx.layout.LayoutSettings.PAGE)) return page;
             }
             sections.add(new W6("WINTERX TWEAKS", null, null, null, rows));
             return new T6(page.a, page.b, sections);

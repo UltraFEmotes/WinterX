@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
-/** Version-specific Spring 0.8.1 hooks, not yet installed into Spring. */
+/** Version-specific Spring 0.8.1 hooks shared by FreeMe and the legacy position test. */
 public final class SpringHooks {
     private static final WeakHashMap<O1, Snapshot> snapshots = new WeakHashMap<>();
     private static final class Snapshot {
@@ -36,6 +36,11 @@ public final class SpringHooks {
     private static int availableHeight(i6 profile) {
         float dockPoints = E1.t.j ? 96.0f : 89.0f;
         return Math.max(profile.e + 1, profile.c - Math.round(dockPoints * editScale(profile)));
+    }
+    public static E1.I1 hover(O1 edit, float x, float y, int page) {
+        i6 profile = profile(edit);
+        E1.I1 dock = DockIn.hover(edit, x, y, page, profile);
+        return dock != null ? dock : FreeMe.hover(edit, x, y, page, profile);
     }
 
     private static boolean occupied(Snapshot snapshot, O1 edit, i6 profile, float x, float y) {
@@ -68,12 +73,16 @@ public final class SpringHooks {
     /** Shared by the home renderer and hit testing; retain Spring's position when absent. */
     public static M1.b location(i6 profile, c entry, int page) {
         M1.b original = E1.d4.w(profile, entry.b, entry.c);
+        if (FreeMe.enabled()) return original;
         int[] position = IconRuntime.position(page, entry.a.a, profile.b, availableHeight(profile), profile.e, profile.e);
         return position == null ? original : new M1.b(Integer.valueOf(position[0]), Integer.valueOf(position[1]));
     }
 
     /** Return an edit-mode position, or null to retain Spring's animation/grid logic. */
     public static M1.b editLocation(O1 edit, int page, int index) {
+        M1.b dock = DockIn.editLocation(edit, page, index, profile(edit));
+        if (dock != null) return dock;
+        if (FreeMe.enabled()) return FreeMe.editLocation(edit, page, index, profile(edit));
         if (page < 0 || !IconRuntime.enabled()) return null;
         try {
             List<?> list = edit.s(page);
@@ -92,8 +101,10 @@ public final class SpringHooks {
 
     /** Preserve original lists before Spring starts its temporary grid reorder. */
     public static synchronized void begin(O1 edit, int page, int index) {
+        FreeMe.begin(edit, page, index);
         if (edit.m != null) return;
         snapshots.remove(edit);
+        if (FreeMe.enabled()) return;
         if (!IconRuntime.enabled() || page < 0) return;
         if (profile(edit) == null) {
             android.util.Log.w("WinterXIcons", "Free drag unavailable: Spring profile could not be resolved");
@@ -116,6 +127,9 @@ public final class SpringHooks {
 
     /** Save same-page drops and restore the original order before Spring finishes its drag. */
     public static synchronized void beforeDrop(O1 edit) {
+        if (FreeMe.beforeDrop(edit, profile(edit))) return;
+        // Dock/folder drags without a FreeMe snapshot are native, never legacy free-pixel drags.
+        if (FreeMe.enabled()) return;
         Snapshot snapshot = snapshots.remove(edit);
         if (!IconRuntime.enabled()) return;
         if (snapshot == null) {
