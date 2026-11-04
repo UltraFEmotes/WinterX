@@ -20,6 +20,8 @@ public final class SnowySettings {
         {"Green", "#34C759"}, {"Purple", "#AF52DE"}, {"Orange", "#FF9500"}, {"Graphite", "#2C2C2E"}};
     private static final String[] CORNERS = {"Stock", "Square", "Subtle", "Rounded", "Soft", "Circle"};
     private static final double[] RADII = {-1, 0, .10, .18, .30, .50};
+    private static volatile String importStatus = "Copy pack ZIPs into ruby/snowyhome/inbox, then choose one here. Imports do not select or delete packs.";
+    private static final java.util.concurrent.atomic.AtomicBoolean importing = new java.util.concurrent.atomic.AtomicBoolean();
     private SnowySettings() {}
     private static V6 row(String id, String title) { return Z3.g(Z3.a, id, title, null, null, null, 0x18); }
     public static void rows(List<V6> rows) { if (SnowyHome.enabled()) rows.add(row(PAGE + "main", "SnowyHome")); }
@@ -48,8 +50,12 @@ public final class SnowySettings {
         } else if (id.equals(PAGE + "packs")) {
             String selected = preferences.optString("pack", "stock");
             rows.add(row(ACTION + "pack/stock", (selected.equals("stock") ? "✓ " : "") + "Stock Icons"));
+            rows.add(row(PAGE + "import", "Import Icon Pack"));
             for (IconPack pack : packs().values()) rows.add(row(ACTION + "pack/" + pack.revision, (selected.equals(pack.revision) ? "✓ " : "") + pack.name));
-            title = "Icon Pack"; footer = "Developer packs must be exported and copied into ruby/snowyhome/packs first. Missing or invalid icons fall back to Spring originals. Shows up to 32 revisions.";
+            title = "Icon Pack"; footer = "Import a ZIP from the private inbox, then select its verified revision. Missing or invalid icons fall back to Spring originals. Shows up to 32 revisions.";
+        } else if (id.equals(PAGE + "import")) {
+            for (Map.Entry<String, String> pack : PackImport.inbox().entrySet()) rows.add(row(ACTION + "import/" + pack.getKey(), pack.getValue()));
+            title = "Import Icon Pack"; footer = importStatus;
         } else if (id.equals(PAGE + "badges")) {
             for (int i = 0; i < COLORS.length; i++) rows.add(row(ACTION + "badge/" + i,
                 (COLORS[i][1].equalsIgnoreCase(preferences.optString("badge", "stock")) ? "✓ " : "") + COLORS[i][0]));
@@ -64,6 +70,15 @@ public final class SnowySettings {
     public static boolean action(String id) {
         if (!SnowyHome.enabled() || id == null || !id.startsWith(ACTION)) return false;
         String suffix = id.substring(ACTION.length());
+        if (suffix.matches("import/[0-9a-f]{64}")) {
+            if (!importing.compareAndSet(false, true)) return false;
+            final String token = suffix.substring(7); importStatus = "Validating and importing…";
+            Thread worker = new Thread(() -> {
+                try { String revision = PackImport.install(token); importStatus = "Imported " + revision.substring(0, 12) + ". Return to Icon Pack to select it."; }
+                catch (Exception failure) { importStatus = "Not imported: " + failure.getMessage(); }
+                finally { importing.set(false); }
+            }, "WinterX-pack-import"); worker.setDaemon(true); worker.start(); return true;
+        }
         if (suffix.equals("labels")) return SnowyHome.select("hideLabels", !SnowyHome.preferences().optBoolean("hideLabels"));
         if (suffix.matches("badge/[0-6]")) return SnowyHome.select("badge", COLORS[suffix.charAt(suffix.length() - 1) - '0'][1]);
         if (suffix.matches("corners/[0-5]")) return SnowyHome.select("corners", RADII[suffix.charAt(suffix.length() - 1) - '0']);

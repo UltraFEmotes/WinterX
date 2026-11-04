@@ -1,0 +1,11 @@
+{
+  "format": "winterx.springys/1",
+  "id": "com.winterx.ssh",
+  "version": "0.1.0",
+  "name": "SSH",
+  "author": "WinterX contributors",
+  "description": "Unlisted development hook for the optional on-device SSH engine. Public-key-only, loopback-only, explicitly started from native Settings. SFTP and Android shell exec run as Spring's UID, never root. Not live-verified; not included in the working catalogue.",
+  "hook": "tweak.ssh",
+  "icon": null,
+  "previews": []
+}

@@ -31,7 +31,7 @@ def set_live_animaper(data, state, patched, expected_sha, enabled):
 
 def set_live_tweak(data, state, patched, expected_sha, enabled, marker_name, label):
     """Enable only known live-read built-ins; never restart a Spring activity."""
-    if marker_name not in ('animaper.enabled', 'coloredbar.enabled', 'freeme.enabled', 'dockin.enabled', 'snowyhome.enabled'):
+    if marker_name not in ('animaper.enabled', 'coloredbar.enabled', 'freeme.enabled', 'dockin.enabled', 'snowyhome.enabled', 'ssh.enabled', 'messageplus.enabled'):
         raise ValueError('Unsupported live tweak marker')
     if not isinstance(enabled, bool):
         raise ValueError(label + ' state must be a boolean')

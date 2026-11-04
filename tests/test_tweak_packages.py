@@ -62,6 +62,19 @@ class TweakPackageTests(unittest.TestCase):
         self.assertEqual(self.packages.registry.list(), {})
         self.assertFalse((self.target() / 'enabled').exists())
 
+    def test_home_capabilities_are_explicit_validated_preserved_and_engine_gated(self):
+        self.package(manifest=dict(self.manifest, capabilities=['home.read', 'home.grid']))
+        with self.assertRaisesRegex(ValueError, 'home API'):
+            self.packages.install('test.springys')
+        self.assertEqual(self.packages.registry.list(), {})
+        self.packages.registry.supported_capabilities = frozenset(('home.read', 'home.grid'))
+        record = self.packages.install('test.springys')
+        self.assertEqual(record['capabilities'], ['home.read', 'home.grid'])
+        self.assertEqual(json.loads((self.target() / 'manifest.json').read_text())['capabilities'], record['capabilities'])
+        for invalid in (['home.read', 'home.read'], ['home.root'], {}, [None], 'home.read'):
+            self.package(manifest=dict(self.manifest, capabilities=invalid))
+            with self.assertRaises(ValueError): springys.inspect(self.packages.imports / 'test.springys')
+
     def test_runtime_capacity_is_enforced_before_staging(self):
         for number in range(springys.MAX_TWEAKS):
             self.package(manifest=dict(self.manifest, id='me.example.tweak' + str(number)))

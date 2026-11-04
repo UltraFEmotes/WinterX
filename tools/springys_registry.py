@@ -58,11 +58,12 @@ def _same_tree(base, code_digest):
 
 
 class Registry:
-    def __init__(self, root, reconcile, supported_hooks=('test.settings',), supported_tweaks=False):
+    def __init__(self, root, reconcile, supported_hooks=('test.settings',), supported_tweaks=False, supported_capabilities=()):
         self.root = Path(root)
         self.reconcile = reconcile
         self.supported = frozenset(supported_hooks)
         self.supported_tweaks = supported_tweaks
+        self.supported_capabilities = frozenset(supported_capabilities)
         self.root.mkdir(parents=True, exist_ok=True)
         self.index = self.root / 'installed.json'
         self.journal = self.root / 'operation.json'
@@ -131,6 +132,8 @@ class Registry:
         tweak = metadata.get('type') == 'tweak'
         if tweak and not self.supported_tweaks:
             raise RegistryError('This WinterX engine does not support executable tweaks yet')
+        if tweak and not set(metadata.get('capabilities', [])).issubset(self.supported_capabilities):
+            raise RegistryError('The running engine does not support the requested home API capabilities')
         if not tweak and metadata['hook'] not in self.supported:
             raise RegistryError('This WinterX version does not support hook ' + metadata['hook'])
         with self._lock():

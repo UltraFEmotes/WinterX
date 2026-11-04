@@ -20,12 +20,18 @@ public final class LayoutSettings {
     private static V6 row(String id, String title) { return Z3.g(Z3.a, id, title, null, null, null, 0x18); }
     public static void rows(List<V6> rows) {
         winterx.snowy.SnowySettings.rows(rows);
+        winterx.ssh.SshSettings.rows(rows);
+        winterx.messages.MessagePlus.rows(rows);
         if (FreeMe.installed()) rows.add(row(PAGE + "freeme", "FreeMe"));
         if (DockIn.installed()) rows.add(row(PAGE + "dockin", "DockIn"));
     }
     public static T6 page(String id) {
         T6 snowy = winterx.snowy.SnowySettings.page(id);
         if (snowy != null) return snowy;
+        T6 ssh = winterx.ssh.SshSettings.page(id);
+        if (ssh != null) return ssh;
+        T6 messages = winterx.messages.MessagePlus.page(id);
+        if (messages != null) return messages;
         List<V6> rows = new ArrayList<>();
         if ((PAGE + "freeme").equals(id) && FreeMe.installed()) {
             rows.add(row(ACTION + "freeme-toggle", (FreeMe.enabled() ? "✓ " : "") + "Enable FreeMe"));
@@ -52,6 +58,12 @@ public final class LayoutSettings {
         finally { if (temp != null) temp.delete(); }
     }
     public static void action(String id, x1.i1 spring) {
+        if (id != null && id.startsWith("winterx-layout-a/messageplus/")) {
+            winterx.messages.MessagePlus.action(id); return;
+        }
+        if (id != null && id.startsWith("winterx-layout-a/ssh/")) {
+            winterx.ssh.SshSettings.action(id); return;
+        }
         if (id != null && id.startsWith("winterx-layout-a/snowy/")) {
             winterx.snowy.SnowySettings.action(id); return;
         }

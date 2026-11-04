@@ -10,12 +10,12 @@ import launch_local_test as launcher
 
 
 class LocalTestLauncherTests(unittest.TestCase):
-    def test_alpha8_is_pinned_and_old_alpha6_plan_is_rejected(self):
-        self.assertEqual(launcher.TEST_SHA, 'e1fc328e5cb794f8d8ebbac713e9cfaba6d7db08af14c5c13345c80137b6c6db')
+    def test_combined_engine_is_pinned_and_old_alpha8_plan_is_rejected(self):
+        self.assertEqual(launcher.TEST_SHA, '49bf7482544ab22bc528c482c25e5133c1ddef94cff4e5192bc8383abd52bc9f')
         with patch.object(launcher.control, 'spring_pids', return_value=[]), \
              patch.object(launcher.control, 'start_overlay') as start:
             with self.assertRaises(ValueError):
-                launcher.launch({'status': 'prepared', 'apk_sha256': '6bdbd8e566b6ad436cb73d57330be17f360ea3832e5b70bba5cc221822604157'})
+                launcher.launch({'status': 'prepared', 'apk_sha256': 'e1fc328e5cb794f8d8ebbac713e9cfaba6d7db08af14c5c13345c80137b6c6db'})
             start.assert_not_called()
 
     def test_running_spring_is_never_stopped_or_replaced(self):

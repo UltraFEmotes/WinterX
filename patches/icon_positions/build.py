@@ -77,6 +77,16 @@ def build(source, output):
         run(JAVAC, '--release', '8', '-cp', str(original_jar) + ':' + str(FRAMEWORK), '-d', classes, *sources)
         helpers = temp / 'helpers.jar'
         run(JAR, 'cf', helpers, '-C', classes, 'winterx')
+        ssh_library = os.environ.get('WINTERX_SSH_LIBRARY')
+        if ssh_library:
+            # Development-only library from patches/ssh/build.py; never selected or installed here.
+            with zipfile.ZipFile(ssh_library) as library, zipfile.ZipFile(helpers, 'a') as merged:
+                existing = set(merged.namelist())
+                for info in library.infolist():
+                    if info.is_dir() or info.filename.startswith('META-INF/'):
+                        continue
+                    if info.filename in existing: raise ValueError('Duplicate optional SSH class/resource: ' + info.filename)
+                    merged.writestr(info, library.read(info.filename)); existing.add(info.filename)
         dex_dir = temp / 'dex'; dex_dir.mkdir()
         run(JAVA, '-Xmx1g', '-cp', D8, 'com.android.tools.r8.D8', '--min-api', '24',
             '--classpath', original_jar, '--lib', FRAMEWORK, '--output', dex_dir, helpers)
@@ -102,9 +112,18 @@ def build(source, output):
                 else:
                     with stock.open(info) as src, out.open(info, 'w') as dst: shutil.copyfileobj(src, dst, 1024 * 1024)
             out.writestr('classes3.dex', helper_dex, compress_type=zipfile.ZIP_DEFLATED)
+            if ssh_library:
+                with zipfile.ZipFile(ssh_library) as library:
+                    for name in library.namelist():
+                        if not name.endswith(('.class', '/')) and not name.startswith('META-INF/'):
+                            target = 'winterx-ssh/' + name if name.startswith('licenses/') else name
+                            if target in out.namelist() or '..' in target.split('/') or target.startswith('/'):
+                                raise ValueError('Unsafe/duplicate optional SSH resource: ' + target)
+                            out.writestr(target, library.read(name))
         with zipfile.ZipFile(source) as stock, zipfile.ZipFile(assembled) as result:
             before = {i.filename: (i.CRC, i.file_size) for i in stock.infolist() if not signature(i.filename) and i.filename != 'classes.dex' and i.filename not in BOOT_RESOURCES}
-            after = {i.filename: (i.CRC, i.file_size) for i in result.infolist() if i.filename not in ('classes.dex', 'classes3.dex') and i.filename not in BOOT_RESOURCES}
+            extra = set(result.namelist()) - set(stock.namelist()) - {'classes3.dex'} if ssh_library else set()
+            after = {i.filename: (i.CRC, i.file_size) for i in result.infolist() if i.filename not in ('classes.dex', 'classes3.dex') and i.filename not in BOOT_RESOURCES and i.filename not in extra}
             if before != after: raise ValueError('Unexpected modification to stock APK resources')
             for name in BOOT_RESOURCES:
                 if result.read(name) != BOOT_LOGO.read_bytes(): raise ValueError('Boot logo was not installed')

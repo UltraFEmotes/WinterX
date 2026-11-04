@@ -11,9 +11,9 @@ import prepare_local_test as preparation
 
 
 class LocalTestPreparationTests(unittest.TestCase):
-    def test_backup_preserves_history_layout_and_state_without_install_or_launch(self):
+    def test_backup_preserves_history_layout_and_state_before_activation_without_launch(self):
         with tempfile.TemporaryDirectory() as name:
-            root = Path(name); state = root / 'state'; data = root / 'data'
+            root = Path(name).resolve(); state = root / 'state'; data = root / 'data'
             (state / 'overlay/android').mkdir(parents=True)
             (data / 'files/ruby').mkdir(parents=True)
             for relative in preparation.PROTECTED:
@@ -26,6 +26,9 @@ class LocalTestPreparationTests(unittest.TestCase):
             with patch.object(preparation.launcher.jailbreak, 'STATE', state), \
                  patch.object(preparation.launcher.jailbreak, 'DATA', data), \
                  patch.object(preparation.launcher, 'TEST_SHA', hashlib.sha256(apk.read_bytes()).hexdigest()), \
+                 patch.object(preparation.bundle, 'inputs', return_value=[{'id': 'test'}]), \
+                 patch.object(preparation.bundle, 'activate') as activate, \
+                 patch.object(preparation.bundle, 'verify'), \
                  patch.object(preparation.launcher.control, 'spring_pids', return_value=[]), \
                  patch.object(preparation.launcher.control, 'start_overlay') as start, \
                  patch.object(preparation.launcher.control, 'stop_spring') as stop:
@@ -35,7 +38,8 @@ class LocalTestPreparationTests(unittest.TestCase):
                 self.assertEqual(preparation.hashes(Path(plan['backup']) / 'files'), plan['layout_sha256'])
                 self.assertEqual((state / 'active.json').read_bytes(), receipt)
                 self.assertEqual((Path(plan['backup']) / 'active-before.json').read_bytes(), receipt)
-                self.assertFalse(plan['engine_launched']); self.assertFalse(plan['draft_tweaks_installed'])
+                self.assertFalse(plan['engine_launched']); self.assertTrue(plan['draft_tweaks_installed'])
+                activate.assert_called_once()
                 start.assert_not_called(); stop.assert_not_called()
 
     def test_running_session_cannot_be_backed_up_or_reselected(self):

@@ -4,7 +4,7 @@ Status: **experimental source implementation; basic live execution confirmed on 
 
 ## Goal
 
-The actual custom-code implementation is published source, not only a proposed format: `patches/icon_positions/src/winterx/tweaks/TweakHost.java` and `TweakSettings.java`, the QuickJS factory/bootstrap patches, `tools/springys.py`, `springys_registry.py`, `ruby_packages.py`, `ruby_bridge.py`, and `examples/code-tweak/`. Alpha8-local includes this runtime and passed packaged lifecycle/Settings spies. It was prepared locally, not launched during this update. The portable Android inventory bridge deliberately refuses executable-tweak installation until running-engine/reconciliation support exists.
+The actual custom-code implementation is source, not only a proposed format: `patches/icon_positions/src/winterx/tweaks/TweakHost.java`, `TweakSettings.java` and `HomeApi.java`, the QuickJS factory/bootstrap patches, `tools/springys.py`, `springys_registry.py`, `ruby_packages.py`, `ruby_bridge.py`, and the independent `examples/code-tweak/` and `examples/home-tweak/`. The selected combined test includes the earlier runtime, not the new home API. Separate batch2 adds home capabilities and passed packaged lifecycle/Settings/home-model spies without selection or launch. The portable Android inventory bridge refuses executable-tweak installation until running-engine/reconciliation/deployment can be completed.
 
 Allow a tweak author to package code that adds behavior to Spring, such as a Settings page or a home-screen page animation, without requiring every user to rebuild WinterX. Ruby should install, update and remove the package. Safe Mode must disable the code before it runs, so a broken tweak does not prevent recovery.
 
@@ -26,7 +26,23 @@ Allow a tweak author to package code that adds behavior to Spring, such as a Set
 - `WinterX.state.get()` / `.set(object)`: read/replace the tweak's JSON state. `.read(key)` / `.write(key, value)` are convenience calls. The reserved `settings` object holds native toggle values under `page/row` keys as `"on"`/`"off"`.
 - `WinterX.data.read(name)` / `.write(name, text)`: scoped UTF-8 files. Only simple filenames are accepted; paths, traversal and symlinks are refused. Each file and the state file are limited to 256 KB; data allows at most 64 files and 8 MB in total.
 
-There is **no** arbitrary Java/reflection, shell execution, networking, home-screen mutation or custom animation API in this first slice. Those user-requested extension points still need real implementation; the Settings example is not a general hooking system. Built-in tweaks such as Animaper and ColoredBar continue using their compiled adapters.
+There is **no** arbitrary Java/reflection, shell execution, networking, unrestricted home mutation or custom animation API. The newer home API below is narrowly scoped, not a general hooking system. SSH is a separately compiled, explicitly started service, not a shell API for JavaScript tweaks. Built-in tweaks such as Animaper and ColoredBar continue using their compiled adapters.
+
+## Experimental home API
+
+New engines with ABI **`winterx-home-grid-v1`** expose `WinterX.home.snapshot()` and `WinterX.home.move(request)` as Promises. V2 manifests must explicitly declare `"capabilities": ["home.read", "home.grid"]` (or only `home.read` for read-only code). Unknown, duplicate or unsupported capabilities are refused; the installer requires the matching capability in the verified **running** engine. The selected experimental2 does not provide it.
+
+- `snapshot()` requires `home.read`. Returns `abi`, `columns`, per-page `capacity`, `pages` (arrays of `{id, slot}`), `dock` (IDs), `gridEnabled` and a `revision` hash. Home editing and Safe Mode refuse access. Snapshots are bounded to 100 additional pages/500 home icons; they are not a folder-content API.
+- `move({id, page, slot, revision})` requires `home.grid` and enabled FreeMe. Page/slot are zero-based integers. It moves an existing non-folder icon **within its current page** to an empty normal grid cell, rejects stale revisions/collisions, and saves only FreeMe's sparse cells. Native page JSON, app membership, dock and folders are preserved.
+- Requests run on Spring's UI thread, then return to the package worker. At most eight are pending per package. Failed/not-ready/disabled/updated packages, unavailable UI dispatch, changed revisions, editing or Safe Mode fail closed.
+
+```js
+WinterX.home.snapshot().then(function (home) {
+  WinterX.log(home.pages.length, home.gridEnabled, home.revision);
+});
+```
+
+The unlisted [`examples/home-tweak`](../examples/home-tweak/) shows a snapshot and asks for explicit confirmation before moving a first-page icon to a gap. Build/inspect it with `tools/springys_tool.py`; it is not bundled into working catalogues. Current packaged model checks and JavaScript mocks do not establish a live native home callback or hardened runtime isolation. Cross-page/dock/folder mutations and custom animation/home hooks remain unsupported.
 
 ## Installation layout
 

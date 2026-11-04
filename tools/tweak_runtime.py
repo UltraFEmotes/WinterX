@@ -15,6 +15,16 @@ def supported_by(apk):
         return False
 
 
+def messageplus_supported_by(apk):
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            helpers = archive.read('classes3.dex')
+            return (b'messageplus-settings-photo-v1' in helpers and b'winterx/messages/MessagePlus' in helpers
+                    and b'winterx/messages/MessagePlus' in archive.read('classes.dex'))
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False
+
+
 def active_engine(state, is_running):
     """Only a hash-verified RUNNING overlay proves capability, not a selected APK."""
     try:
@@ -72,5 +82,26 @@ def snowyhome_supported_by(apk):
             return (b'snowyhome-render-v1' in helpers and b'winterx/snowy/SnowySettings' in helpers
                     and b'winterx/snowy/SnowyHome' in primary and b'winterxStockIcon' in primary
                     and b'hiddenLabels' in primary and b'artwork' in primary)
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False
+
+
+def home_supported_by(apk):
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            helpers = archive.read('classes3.dex')
+            return (b'winterx-home-grid-v1' in helpers and b'winterxHome' in helpers
+                    and b'winterx/tweaks/HomeApi' in helpers and supported_by(apk))
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False
+
+
+def ssh_supported_by(apk):
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            helpers = archive.read('classes3.dex')
+            return (b'winterx-sshd-auth-v1' in helpers and b'winterx/ssh/SshServerEngine' in helpers
+                    and b'org/apache/sshd/server/SshServer' in helpers and b'winterx/ssh/SshSettings' in helpers
+                    and b'winterx/tweaks/TweakSettings' in helpers)
     except (OSError, KeyError, zipfile.BadZipFile):
         return False

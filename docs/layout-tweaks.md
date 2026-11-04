@@ -1,6 +1,6 @@
 # FreeMe and DockIn development
 
-These are **unfinished Spring 0.8.1 tweaks**, not working catalogue entries. The published built-in catalogue still contains only Animaper and ColoredBar. No FreeMe or DockIn package was installed during these checks.
+These are **unfinished Spring 0.8.1 tweaks**, not working catalogue entries. The built-in catalogue still contains only Animaper and ColoredBar. Their drafts were installed/enabled with SnowyHome in the selected combined local test after a fresh stopped-session backup; preparation did not launch Spring or replace saved layouts. Complete live UI checks remain outstanding. Newer development builds remain separate and unselected; see [development status](development-status.md).
 
 ## FreeMe
 

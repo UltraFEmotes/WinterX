@@ -175,10 +175,19 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                 extra_hooks['tweak.snowyhome'] = (ruby_data / 'snowyhome.enabled', lambda enabled:
                     safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, engine,
                         macapk_jailbreak.digest(engine), enabled, 'snowyhome.enabled', 'SnowyHome'))
+            if engine is not None and tweak_runtime.ssh_supported_by(engine):
+                extra_hooks['tweak.ssh'] = (ruby_data / 'ssh.enabled', lambda enabled:
+                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, engine,
+                        macapk_jailbreak.digest(engine), enabled, 'ssh.enabled', 'SSH'))
+            if engine is not None and tweak_runtime.messageplus_supported_by(engine):
+                extra_hooks['tweak.messageplus'] = (ruby_data / 'messageplus.enabled', lambda enabled:
+                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, engine,
+                        macapk_jailbreak.digest(engine), enabled, 'messageplus.enabled', 'Message+'))
             packages = ruby_packages.Packages(data, ruby_data / 'settings-test.enabled', apply_settings,
                                               extra_hooks=extra_hooks,
                                               tweak_root=macapk_jailbreak.DATA / 'files' / 'winterx-tweaks',
-                                              supported_tweaks=engine is not None and tweak_runtime.supported_by(engine))
+                                              supported_tweaks=engine is not None and tweak_runtime.supported_by(engine),
+                                              supported_capabilities=('home.read', 'home.grid') if engine is not None and tweak_runtime.home_supported_by(engine) else ())
             if action in ('add_repository', 'remove_repository', 'refresh_repositories'):
                 import ruby_repositories
                 repos = ruby_repositories.Repositories(data, packages, builtin_root=ROOT / 'builtin-repo')

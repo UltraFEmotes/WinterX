@@ -84,7 +84,7 @@ def icon_thumbnail(root, payload, directory='package-art'):
 
 
 class Packages:
-    def __init__(self, app_files, marker, apply, extra_hooks=None, tweak_root=None, supported_tweaks=False):
+    def __init__(self, app_files, marker, apply, extra_hooks=None, tweak_root=None, supported_tweaks=False, supported_capabilities=()):
         self.files = Path(app_files)
         self.imports = self.files / 'imports'
         self.marker = Path(marker)
@@ -95,7 +95,8 @@ class Packages:
         if extra_hooks:
             self.hooks.update(extra_hooks)
         self.registry = springys_registry.Registry(self.files / 'package-registry', self._reconcile,
-                                                     supported_hooks=tuple(self.hooks), supported_tweaks=supported_tweaks)
+                                                     supported_hooks=tuple(self.hooks), supported_tweaks=supported_tweaks,
+                                                     supported_capabilities=supported_capabilities)
 
     def _reconcile(self, hooks, tweaks=None):
         # Change only hooks and tweaks owned by this transaction. Other manually

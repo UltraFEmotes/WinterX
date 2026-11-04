@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import patch_dockin
 import patch_snowy
+import patch_messageplus
 
 RENDER = 'smali/I1/h0.1.smali'
 CONTROLLER = 'smali/E1/O1.smali'
@@ -41,8 +42,9 @@ def invoke_grid(text, profile, entry, row, page):
 
 
 def apply(root):
-    paths = {name: Path(root) / name for name in (RENDER, CONTROLLER, SPRING, STATUS, FILES, SAPP_MANAGER, POINTER,
-                                                 patch_dockin.DOCK_RENDER, patch_dockin.MODEL)}
+    names = (RENDER, CONTROLLER, SPRING, STATUS, FILES, SAPP_MANAGER, POINTER, patch_dockin.DOCK_RENDER, patch_dockin.MODEL)
+    if os.environ.get('WINTERX_BUILD_MESSAGEPLUS') == '1': names += patch_messageplus.PATHS
+    paths = {name: Path(root) / name for name in names}
     contents = {name: path.read_text() for name, path in paths.items()}
     if os.environ.get('WINTERX_BUILD_TRUSTED_FILES') == '1':
         file_start = '.method public final f(Ljava/lang/String;)Ljava/io/File;'
@@ -176,6 +178,8 @@ def apply(root):
     patch_dockin.apply(contents, method, replace_once)
     if os.environ.get('WINTERX_BUILD_SNOWYHOME') == '1':
         patch_snowy.apply(contents, method, replace_once)
+    if os.environ.get('WINTERX_BUILD_MESSAGEPLUS') == '1':
+        patch_messageplus.apply(contents, method, replace_once)
     for name, text in contents.items():
         paths[name].write_text(text)
 

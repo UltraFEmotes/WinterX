@@ -197,6 +197,11 @@ def _inspect_v2(archive, names, manifest, digest, include_code):
         raise PackageError('v2 entry must be tweak/main.js')
     if 'hook' in manifest:
         raise PackageError('v2 code tweaks cannot select built-in marker hooks')
+    capabilities = manifest.get('capabilities', [])
+    if (not isinstance(capabilities, list) or len(capabilities) > 2 or
+            any(not isinstance(value, str) or value not in ('home.read', 'home.grid') for value in capabilities) or
+            len(capabilities) != len(set(capabilities))):
+        raise PackageError('capabilities may contain only distinct home.read and home.grid permissions')
     if 'tweak/main.js' not in names:
         raise PackageError('v2 package is missing tweak/main.js')
     settings = manifest.get('settings')
@@ -249,6 +254,8 @@ def _read_package(archive, names, manifest, digest, hook=None, code_name=None, i
         result['entry'] = CODE_ENTRY
         if 'settings' in manifest:
             result['settings'] = manifest['settings']
+        if 'capabilities' in manifest:
+            result['capabilities'] = manifest['capabilities']
     if hook:
         result['hook'] = hook
     result['type'] = 'tweak' if code_name else 'hook'

@@ -34,7 +34,7 @@ public final class TweakHost {
     private static final long TURN_MS = 1000;
     private static final String[] NAMES = {
         "winterxLog", "winterxStateRead", "winterxStateWrite",
-        "winterxDataRead", "winterxDataWrite", "winterxAlert"
+        "winterxDataRead", "winterxDataWrite", "winterxAlert", "winterxHome"
     };
     private static final Map<String, Instance> LOADED = new HashMap<>();
     private static final AtomicInteger ALERT_ID = new AtomicInteger();
@@ -204,6 +204,7 @@ public final class TweakHost {
         final ScheduledThreadPoolExecutor worker;
         final AtomicInteger pending = new AtomicInteger();
         final Map<Integer, Boolean> alerts = new HashMap<>();
+        final AtomicInteger homePending = new AtomicInteger();
         QuickJs js;
         String codeRevision;
         String manifestRevision;
@@ -335,6 +336,7 @@ public final class TweakHost {
                         || !writeText(target, String.valueOf(args[1]))) throw new IOException("Data write failed or exceeded tweak storage quota");
                     return null;
                 case 5: return alert(text);
+                case 6: return home(text);
                 default: throw new IllegalArgumentException("Unknown WinterX operation");
             }
         }
@@ -342,6 +344,36 @@ public final class TweakHost {
         File dataFile(String name) throws IOException {
             if (!name.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,79}") || name.contains("..")) throw new IOException("Invalid data filename");
             return file(id, "data/" + name);
+        }
+
+        Integer home(String text) throws Exception {
+            if (text.length() > 4096) throw new IOException("Home request exceeds limit");
+            final JSONObject request = new JSONObject(text); String operation = request.getString("op");
+            if (!operation.equals("snapshot") && !operation.equals("move")) throw new IOException("Unknown home operation");
+            JSONObject manifest = manifestOf(id); JSONArray permissions = manifest == null ? null : manifest.optJSONArray("capabilities");
+            String needed = operation.equals("snapshot") ? "home.read" : "home.grid"; boolean granted = false;
+            if (permissions != null) for (int i = 0; i < permissions.length(); i++) if (needed.equals(permissions.optString(i))) granted = true;
+            if (!granted) throw new IOException("Manifest must declare " + needed);
+            if (homePending.incrementAndGet() > 8) { homePending.decrementAndGet(); throw new IOException("Too many pending home requests"); }
+            final int ticket = ALERT_ID.incrementAndGet();
+            boolean posted = new Handler(Looper.getMainLooper()).post(new Runnable() {
+                public void run() {
+                    JSONObject reply = new JSONObject();
+                    try {
+                        if (failed || !ready || !currentRevision()) throw new IOException("Tweak disabled, failed or updated");
+                        LauncherActivity activity = launcher.get();
+                        if (activity == null) throw new IOException("Launcher unavailable");
+                        x1.i1 spring = (x1.i1)LauncherActivity.class.getDeclaredMethod("access$getController$p", LauncherActivity.class).invoke(null, activity);
+                        JSONObject value = request.getString("op").equals("snapshot") ? HomeApi.snapshot(spring) : HomeApi.move(spring, request);
+                        reply.put("ok", true).put("value", value);
+                    } catch (Exception failure) {
+                        try { reply.put("ok", false).put("error", bounded(String.valueOf(failure.getMessage()), 300)); } catch (Exception ignored) {}
+                    } finally { homePending.decrementAndGet(); }
+                    event("home", ticket, reply.toString());
+                }
+            });
+            if (!posted) { homePending.decrementAndGet(); throw new IOException("UI dispatcher unavailable"); }
+            return ticket;
         }
 
         boolean currentRevision() {
@@ -396,13 +428,17 @@ public final class TweakHost {
     /** Spring registers native functions on __host and calls methods on __spring. */
     static final String BOOTSTRAP =
         "(function(host){'use strict';\n"
-        + "var listeners=Object.create(null),requests=Object.create(null);\n"
+        + "var listeners=Object.create(null),requests=Object.create(null),homeRequests=Object.create(null);\n"
         + "function emit(name,a,b){var list=(listeners[name]||[]).slice();for(var i=0;i<list.length;i++)list[i](a,b);}\n"
         + "globalThis.__spring={settingsTap:function(page,row){emit('settingsTap',page,row);},\n"
-        + " alert:function(id,index){var resolve=requests[id];delete requests[id];if(resolve)resolve(index);}};\n"
+        + " alert:function(id,index){var resolve=requests[id];delete requests[id];if(resolve)resolve(index);},\n"
+        + " home:function(id,text){var pending=homeRequests[id];delete homeRequests[id];if(pending){var reply=JSON.parse(text);if(reply.ok)pending[0](reply.value);else pending[1](new Error(reply.error));}}};\n"
+        + "function homeCall(opts){return new Promise(function(resolve,reject){var id=host.winterxHome(JSON.stringify(opts));homeRequests[id]=[resolve,reject];});}\n"
         + "globalThis.WinterX={version:1,\n"
         + " on:function(name,fn){if(typeof name!=='string'||typeof fn!=='function')throw new TypeError('WinterX.on(name, fn)');(listeners[name]=listeners[name]||[]).push(fn);},\n"
         + " log:function(){host.winterxLog(Array.prototype.map.call(arguments,String).join(' '));},\n"
+        + " home:{snapshot:function(){return homeCall({op:'snapshot'});},\n"
+        + "  move:function(opts){if(!opts||typeof opts!=='object')throw new TypeError('Home move needs id, page, slot and revision');return homeCall({op:'move',id:opts.id,page:opts.page,slot:opts.slot,revision:opts.revision});}},\n"
         + " alert:function(opts){opts=opts||{};return new Promise(function(resolve){\n"
         + "  var id=host.winterxAlert(JSON.stringify({title:opts.title||'',message:opts.message||'',buttons:opts.buttons||['OK']}));requests[id]=resolve;});},\n"
         + " state:{get:function(){return JSON.parse(host.winterxStateRead()||'{}');},\n"

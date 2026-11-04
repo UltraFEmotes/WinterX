@@ -1,0 +1,20 @@
+{
+  "format": "winterx.springys/2",
+  "type": "tweak",
+  "id": "me.example.homeapi",
+  "name": "Home API Example",
+  "version": "0.1.0",
+  "author": "WinterX contributors",
+  "description": "Unlisted development example. Reads the current native home layout and, only after a confirmation, moves a same-page icon into a free grid cell. Needs the experimental home API engine and FreeMe for moves. Not a working-catalogue release.",
+  "entry": "tweak/main.js",
+  "capabilities": ["home.read", "home.grid"],
+  "settings": {
+    "main": {
+      "title": "Home API Example",
+      "sections": [{"title": "CUSTOM HOME CODE", "rows": [
+        {"id": "inspect", "title": "Inspect Home Layout", "type": "button"},
+        {"id": "move", "title": "Move First Icon to a Gap", "type": "button"}
+      ]}]
+    }
+  }
+}

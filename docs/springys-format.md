@@ -117,7 +117,7 @@ WinterX.on("settingsTap", function (page, row) {
 
 Build and inspect with the same commands as v1, using your new folder and a new output filename. Install through Ruby on a checksum-verified **running runtime-capable engine**, then deliberately fully quit and reopen Spring. The installer stages the code; it never automatically restarts the launcher. Open **Settings → My Code Tweak → Say Hello**. A newly installed or updated script runs on the next full engine launch, not merely when Ruby is reopened.
 
-See [`examples/code-tweak`](../examples/code-tweak/) for nested pages, toggles, state/data and an alert Promise callback, and the [runtime API](tweak-runtime-design.md) for supported calls and limits. Developer examples are source-only, not entries in the built-in repository. There is no arbitrary home-icon manipulation API yet.
+See [`examples/code-tweak`](../examples/code-tweak/) for nested pages/toggles/storage/alerts and [`examples/home-tweak`](../examples/home-tweak/) for capability-declared snapshots and confirmed same-page grid moves in new engines. The [runtime API](tweak-runtime-design.md#experimental-home-api) documents the gates and limits. Developer examples are source-only, not working catalogue entries; unrestricted home/dock/folder manipulation and custom animation APIs remain unsupported.
 
 ## Manifest reference
 
@@ -144,6 +144,7 @@ Text fields cannot contain NUL characters or consist only of whitespace. Unknown
 - Each page may have `title` (at most 60 characters) and must have 1–40 `sections`. A section may have `id` and `title`, and needs 1–40 `rows`. Keep pages short enough to remain usable.
 - Each row requires a page-unique `id`, nonempty `title` (at most 60 characters), and `type`: `button`, `toggle` or `page`. A `page` row also needs `page`, pointing to an existing page ID.
 - Page/section/row IDs use lowercase letters, digits and hyphens, 1–40 characters. The native Settings UI handles navigation. Buttons/toggles dispatch `settingsTap`; toggle values persist as `"on"`/`"off"` in `WinterX.state.get().settings[page + "/" + row]`.
+- Optional v2 `capabilities` is a unique list drawn from `home.read` and `home.grid`. These require the versioned home API in the verified running engine; `home.grid` also requires enabled FreeMe for moves. Unknown/duplicate capabilities are refused. V1 packages select compiled hooks and cannot grant code permissions. See the [experimental home API](tweak-runtime-design.md#experimental-home-api).
 
 ### Hooks in this experimental code
 
@@ -156,6 +157,9 @@ Text fields cannot contain NUL characters or consist only of whitespace. Unknown
 | `tweak.coloredbar` | Presets, exact RGB and app exclusions | Preferences are in Spring Settings; updated engines always exclude Ruby. |
 | `tweak.freeme` | Sparse normal-grid cells and cross-page placement | Unlisted draft; requires `freeme-grid-v1` in the verified running engine. |
 | `tweak.dockin` | Native 4–7-icon dock, default/minimum 4 | Unlisted draft; requires `dockin-native-v1`, motion and app-launch hooks. |
+| `tweak.snowyhome` | Icon packs, badges, labels and corners | Unlisted draft; requires actual `snowyhome-render-v1` hooks; import needs a newer engine. |
+| `tweak.ssh` | Explicit native Start/Stop, loopback key-authenticated SSH/SFTP | Unlisted draft; requires optional `winterx-sshd-auth-v1` engine/library; Android runtime unverified. |
+| `tweak.messageplus` | Messages main-list Settings and JPEG photo quality | Unlisted draft; requires `messageplus-settings-photo-v1` and native calls; video/reactions not implemented. |
 
 These are development hooks, not a stable public API. FreeMe/DockIn's packaged checks do not establish live correctness; see [layout development](layout-tweaks.md). Their live-marker installs/removals do not restart Spring or erase saved layout/preferences. Ruby's special `app.iexplored` handling is not a general-purpose `.springys` app installer. A v1 manifest cannot ship new code; use v2 for independent Settings behaviour. Generic home-screen/animation extensions still require engine development. Developer examples, layout drafts and the three test hooks are not published in the working built-in index.
 

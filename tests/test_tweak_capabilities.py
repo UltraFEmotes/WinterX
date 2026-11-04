@@ -37,6 +37,19 @@ class CapabilityTests(unittest.TestCase):
             (state / 'active.json').write_text(json.dumps({'apk': str(apk), 'apk_sha256': 'bad', 'pid': 123}))
             self.assertIsNone(tweak_runtime.active_engine(state, lambda *args: True))
 
+    def test_messageplus_needs_both_versioned_helper_and_native_calls(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            apk = Path(tmp) / 'engine.apk'
+            for native, helper, supported in (
+                (b'old engine', b'messageplus-settings-photo-v1 winterx/messages/MessagePlus', False),
+                (b'winterx/messages/MessagePlus', b'winterx/messages/MessagePlus', False),
+                (b'winterx/messages/MessagePlus', b'messageplus-settings-photo-v1 winterx/messages/MessagePlus', True),
+            ):
+                with zipfile.ZipFile(apk, 'w') as archive:
+                    archive.writestr('classes.dex', native)
+                    archive.writestr('classes3.dex', helper)
+                self.assertEqual(tweak_runtime.messageplus_supported_by(apk), supported)
+
 
 if __name__ == '__main__':
     unittest.main()

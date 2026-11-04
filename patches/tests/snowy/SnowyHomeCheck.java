@@ -44,6 +44,21 @@ public final class SnowyHomeCheck {
         E1.a mail = app("mail"); check(SnowyHome.icon(mail, original) == original, "uninstalled icon changed");
         check(LayoutSettings.page(PAGE + "main") == null, "uninstalled Settings page visible");
         File marker = new File(ruby, "snowyhome.enabled"); marker.createNewFile();
+        check(row(LayoutSettings.page(PAGE + "packs"), PAGE + "import") != null, "native import row missing");
+        String token = IconPack.sha("test.zip".getBytes(StandardCharsets.UTF_8));
+        File revisionDir = new File(folder, "packs/" + args[0]); revisionDir.mkdirs();
+        File existing = new File(revisionDir, "keep.txt"); Files.writeString(existing.toPath(), "existing invalid revision");
+        try { PackImport.install(token); throw new AssertionError("invalid existing revision overwritten"); }
+        catch (java.io.IOException expected) {}
+        check(Files.readString(existing.toPath()).equals("existing invalid revision"), "existing revision changed on refusal");
+        Files.delete(existing.toPath()); Files.delete(revisionDir.toPath());
+        byte[] inboxBytes = Files.readAllBytes(new File(folder, "inbox/test.zip").toPath());
+        String imported = PackImport.install(token);
+        check(imported.equals(args[0]) && PackImport.install(token).equals(imported), "import/idempotence failed");
+        check(!new File(folder, "preferences.json").exists(), "import selected or rewrote preferences");
+        check(new File(folder, "inbox/test.zip").isFile(), "import deleted source archive");
+        try { PackImport.install(String.join("", java.util.Collections.nCopies(64, "0"))); throw new AssertionError("missing inbox pack imported"); }
+        catch (java.io.IOException expected) {}
         check(SnowyHome.icon(mail, original) == original, "stock preference changed icon");
         check(LayoutSettings.page(PAGE + "main") != null, "native Settings model missing");
         ArrayList<V6> rows = new ArrayList<>(); LayoutSettings.rows(rows);
@@ -51,6 +66,10 @@ public final class SnowyHomeCheck {
         check(row(LayoutSettings.page(PAGE + "packs"), ACTION + "pack/" + args[0]) != null, "verified pack not listed");
         check(!SnowySettings.action(ACTION + "pack/" + String.join("", java.util.Collections.nCopies(64, "0"))), "missing pack selected");
         check(SnowySettings.action(ACTION + "pack/" + args[0]), "pack selection failed");
+        byte[] selectedPrefs = Files.readAllBytes(new File(folder, "preferences.json").toPath());
+        check(PackImport.install(token).equals(imported), "selected revision reimport failed");
+        check(java.util.Arrays.equals(selectedPrefs, Files.readAllBytes(new File(folder, "preferences.json").toPath())), "reimport rewrote selected preferences");
+        check(java.util.Arrays.equals(inboxBytes, Files.readAllBytes(new File(folder, "inbox/test.zip").toPath())), "import rewrote inbox ZIP");
         Bitmap themed = SnowyHome.icon(mail, original);
         if (args.length > 1 && Boolean.parseBoolean(args[1])) {
             java.lang.reflect.Method resolver = I1.h0.class.getMethod("c", E1.a.class, E1.q6.class, I1.I0.class, Map.class);
@@ -93,6 +112,9 @@ public final class SnowyHomeCheck {
         check(new HashMap(view).get(key) == tinted && view.get("wallpaper") == original, "map view semantics incorrect");
         check(SnowySettings.action(ACTION + "pack/stock") && SnowySettings.action(ACTION + "corners/0"), "stock reset failed");
         File image = new File(folder, "packs/" + args[0] + "/icons/mail.png"); Files.write(image.toPath(), new byte[]{1, 2, 3});
+        try { PackImport.install(token); throw new AssertionError("tampered existing icon replaced on import"); }
+        catch (java.io.IOException expected) {}
+        check(java.util.Arrays.equals(Files.readAllBytes(image.toPath()), new byte[]{1, 2, 3}), "tampered revision overwritten");
         check(SnowySettings.action(ACTION + "pack/" + args[0]), "manifest selection failed");
         check(SnowyHome.icon(mail, original) == original, "tampered icon did not fall back");
         File preferences = new File(folder, "preferences.json"); byte[] saved = Files.readAllBytes(preferences.toPath());
@@ -100,6 +122,7 @@ public final class SnowyHomeCheck {
         check(SnowyHome.icon(mail, original) == original && SnowyHome.artwork(stock) == stock && !SnowyHome.hiddenLabels(), "Safe Mode did not restore stock");
         check(view.get(key) == badge, "retained artwork view ignored Safe Mode");
         check(LayoutSettings.page(PAGE + "main") == null && !SnowySettings.action(ACTION + "labels"), "Safe Mode allowed preferences");
+        try { PackImport.install(token); throw new AssertionError("Safe Mode imported pack"); } catch (java.io.IOException expected) {}
         marker.delete(); check(java.util.Arrays.equals(saved, Files.readAllBytes(preferences.toPath())), "removal erased preferences");
         check(!themed.isRecycled(), "cached displayed bitmap recycled after preference change");
         check(new String(Files.readAllBytes(pages.toPath()), StandardCharsets.UTF_8).equals("preserved layout"), "saved pages modified");

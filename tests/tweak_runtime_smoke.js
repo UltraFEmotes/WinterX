@@ -13,16 +13,18 @@ function runtime() {
   const data = new Map();
   const logs = [];
   const alerts = [];
+  const home = [];
   const context = vm.createContext({__host: {
     winterxLog(text) { logs.push(text); },
     winterxStateRead() { return JSON.stringify(state); },
     winterxStateWrite(text) { state = JSON.parse(text); },
     winterxDataRead(name) { return data.get(name) ?? null; },
     winterxDataWrite(name, value) { data.set(name, value); },
-    winterxAlert(text) { alerts.push(JSON.parse(text)); return alerts.length; }
+    winterxAlert(text) { alerts.push(JSON.parse(text)); return alerts.length; },
+    winterxHome(text) { home.push(JSON.parse(text)); return home.length; }
   }});
   vm.runInContext(bootstrap, context);
-  return {context, logs, alerts, data, state: () => state};
+  return {context, logs, alerts, data, home, state: () => state};
 }
 
 (async function () {
@@ -41,6 +43,15 @@ function runtime() {
   assert.equal(first.data.get('example.txt'), 'Hello from my custom tweak!\n');
   assert.equal(second.state().helloCount, undefined);
   assert.equal(second.alerts.length, 0);
+  const snapshot = first.context.WinterX.home.snapshot();
+  assert.deepEqual(first.home[0], {op: 'snapshot'});
+  first.context.__spring.home(1, JSON.stringify({ok: true, value: {revision: 'test', pages: []}}));
+  assert.equal((await snapshot).revision, 'test');
+  const move = first.context.WinterX.home.move({id: 'mail', page: 0, slot: 2, revision: 'test'});
+  assert.deepEqual(first.home[1], {op: 'move', id: 'mail', page: 0, slot: 2, revision: 'test'});
+  first.context.__spring.home(2, JSON.stringify({ok: false, error: 'Cell occupied'}));
+  await assert.rejects(move, /Cell occupied/);
+  assert.equal(second.home.length, 0);
   assert.throws(() => first.context.WinterX.state.set([]), /State must be an object/);
   first.context.WinterX.on('settingsTap', () => { throw new Error('bad handler'); });
   assert.throws(() => first.context.__spring.settingsTap('main', 'unknown'), /bad handler/);

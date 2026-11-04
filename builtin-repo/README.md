@@ -4,7 +4,7 @@ This local index contains **Animaper and ColoredBar**, with matching source and 
 
 ColoredBar provides presets, exact RGB hex colours and app exclusions. Updated engines permanently exclude Ruby, whose red navigation and bottom tabs are its own built-in appearance. Basic ColoredBar behaviour was live-confirmed on Mac.APK; newer coverage fixes and recovery remain experimental.
 
-Settings Button Test, UI Color Test, Free Icon Placement Test and the executable developer example stay outside this index. Preserve existing users' test data; do not silently uninstall it. SnowyHome, SSH, FreeMe and DockIn remain unfinished.
+Settings Button Test, UI Color Test, Free Icon Placement Test and executable developer examples stay outside this index. Preserve existing users' test data; do not silently uninstall it. SnowyHome, SSH, FreeMe, DockIn and Message+ remain development drafts, not working catalogue entries. The selected home test and newer unselected batch are documented in [development status](../docs/development-status.md).
 
 See the [package guide](../docs/springys-format.md), [ColoredBar notes](../docs/coloredbar.md) and [repository guide](../docs/repository-design.md).
 

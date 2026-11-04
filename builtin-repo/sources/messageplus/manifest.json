@@ -1,0 +1,11 @@
+{
+  "format": "winterx.springys/1",
+  "id": "com.winterx.messageplus",
+  "version": "0.1.0",
+  "name": "Message+",
+  "author": "WinterX contributors",
+  "description": "Unlisted development hook: Messages list Edit becomes a native Settings button, with JPEG photo quality choices and native Spring Settings. Video sending and reactions are unavailable until their actual Messages protocol is implemented and verified. Not live-verified; not in the working catalogue.",
+  "hook": "tweak.messageplus",
+  "icon": null,
+  "previews": []
+}

@@ -11,8 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'patches'))
 import macapk_controls as control
 import macapk_jailbreak as jailbreak
+import local_test_bundle as bundle
 
-TEST_SHA = 'e1fc328e5cb794f8d8ebbac713e9cfaba6d7db08af14c5c13345c80137b6c6db'
+TEST_SHA = bundle.ENGINE_SHA
 
 
 def verify(plan):
@@ -25,6 +26,7 @@ def verify(plan):
         raise ValueError('The local test APK failed its checksum check.')
     if not Path(plan['backup']).is_dir():
         raise ValueError('The stopped-session backup is missing.')
+    bundle.verify(jailbreak.DATA, plan.get('bundled_packages'))
     return apk
 
 
@@ -77,11 +79,12 @@ def launch(plan, timeout=120):
 def main():
     plan = json.loads((jailbreak.STATE / 'local-test.json').read_text(encoding='utf-8'))
     record = launch(plan)
-    print('Local alpha8 engine started. Unlock Spring and open Settings.')
+    print('Combined SnowyHome + DockIn + FreeMe experimental engine started.')
+    print('Unlock Spring and open Settings for the three installed tweaks.')
     print('Try ColoredBar, Animaper, then Code Tweak Example → Run My Code.')
     print('Saved-layout backup: ' + record['backup'])
     print('For Ruby package operations, start the Ruby bridge separately.')
-    print('FreeMe and DockIn are unlisted development packages, not automatically installed.')
+    print('These are local development packages, not working-catalogue releases.')
 
 
 if __name__ == '__main__':
