@@ -9,8 +9,10 @@ WinterX is WeirdMM's fan-made jailbreak and tweak project for **Spring**, the iO
 ## Current status
 
 - **Mac.APK:** experimental source build for the specific Spring 0.8.1 APK below. The jailbreak uses a local Mac bridge and a patched launcher. Ruby can manage supported packages; several features are still in development.
+- **Executable `.springys/2` tweaks:** independently authored JavaScript can add native Spring Settings pages, actions, toggles, scoped storage and alerts. Basic execution and callbacks were live-confirmed on Mac.APK. This is not a general home-screen hooking API or a hardened sandbox; runtime limits and recovery still need live checks.
 - **Rooted Android and emulators:** **not supported yet**. There is no working Android installer, root service, or LAN bridge in this version. The patched APK produced here is unsigned and intended for Mac.APK; do not install it as an Android update. Root access alone does not make this release compatible. Android support and a tested installation guide are planned.
-- **Built-in tweak repository:** includes Animaper. Other tweaks are still in development and will be added later.
+- **Built-in tweak repository:** includes **Animaper and ColoredBar**. ColoredBar has presets, exact RGB colours and app exclusions in Spring Settings. Updated engines keep Ruby's own red navigation and bottom tabs, even without tweaks or in Safe Mode. SnowyHome, SSH, FreeMe and DockIn are unfinished and are not published as working tweaks.
+- **Ruby 1.8:** includes **Join our Discord** on its home page: [WinterX community](https://discord.gg/4JTe27ZRNd). Tapping uses Spring's confirmation before opening Safari; nothing opens automatically. This app requires the updated engine's trusted-script pin.
 
 No Spring APK, Spring SDK, Mac.APK, built binaries, personal app data, or third-party artwork is distributed here. Get the original Spring and SDK from their respective distributors. Spring: [spring.elguille.me](https://spring.elguille.me/).
 
@@ -58,6 +60,8 @@ python SpringSDK-r10/tools/spring_pack.py pack Ruby -o builds/Ruby.sapp
 
 The generated theme uses resources from your own APK and stays on your machine. The build refuses to overwrite an existing output. The local configuration records the build's SHA-256, which the bridge checks before launching it.
 
+The builder decodes only bytecode/metadata instead of duplicating Spring's large asset library. Final assembly verifies stock resources remain unchanged apart from WinterX's boot images. This reduces temporary disk use without removing assets from the finished launcher.
+
 ### 3. Install the apps in Spring
 
 Enable Spring's sideloading/developer mode if needed. Copy both apps into the Spring inbox:
@@ -80,6 +84,8 @@ python tools/ruby_bridge.py
 
 Open the original Spring Launcher, open **WinterX**, and tap **Jailbreak**. The bridge checks the original and patched APKs, backs up app data, and starts the patched launcher. Ruby should be available after Spring starts. Some local features work without the bridge, but jailbreak and parts of package management still require it. On Mac.APK, a respring can leave Spring stuck on its loading screen: fully quit and reopen the launcher when needed.
 
+**Updating:** do not replace an engine APK in use. Keep the old APK and data backup, fully quit Spring, build to a new filename, configure that file, then deliberately reopen the launcher. Engine changes and newly installed/updated executable tweaks require a full launcher reopen. A v2 install reports staging, not successful execution, and does not automatically restart Spring. Native ColoredBar/Animaper marker changes do not need a respring on compatible engines. Never run stock and patched Spring simultaneously.
+
 ## Safe Mode and recovery
 
 Ruby can enter Safe Mode to temporarily disable tweaks. If Spring cannot start, fully close Spring Launcher, activate the virtual environment, run `python tools/prepare_safe_mode.py`, then start the original launcher, start the bridge and jailbreak again. Safe Mode is experimental. Backups made by the bridge are stored under the checkout's `.ruby-state/backups/`; preserve them if recovering data.
@@ -88,11 +94,14 @@ Ruby can enter Safe Mode to temporarily disable tweaks. If Spring cannot start, 
 
 - [Make a `.springys` package: tutorial, artwork, updates and format reference](docs/springys-format.md)
 - [Creating an experimental Ruby repository](docs/repository-design.md)
-- Source is in `patches/`, `tools/`, `Ruby/`, `RubyJailbreak/`, and `IExplored/`. The [built-in repository](https://github.com/UltraFEmotes/Ruby-Repo) currently contains Animaper; additional tweaks are future work.
+- [Executable-tweak runtime and supported API](docs/tweak-runtime-design.md)
+- [ColoredBar preferences, coverage and Ruby branding](docs/coloredbar.md)
+- [Testing and recovery](docs/testing-winterx.md) · [Release checklist](docs/release-checklist.md)
+- Source is in `patches/`, `tools/`, `Ruby/`, `RubyJailbreak/`, and `IExplored/`. The [built-in repository](https://github.com/UltraFEmotes/Ruby-Repo) contains Animaper and ColoredBar. Developer examples remain source-only, outside its index.
 
-A `.springys` archive is currently declarative and can only enable hooks that already exist in WinterX. It is not yet a way to run arbitrary tweak code. Repository downloads use HTTPS and verify package hashes, but a matching hash does not make a source trustworthy.
+A v1 `.springys` archive selects a compiled hook. A v2 archive contains its author's `tweak/main.js`, runs in a separate QuickJS worker and uses the documented WinterX API. Java/reflection, shell execution, networking, arbitrary home-icon mutation and custom animation hooks are not exposed. Repository downloads use HTTPS and verify package hashes, but a matching hash does not make a source trustworthy. Install executable tweaks only from authors you trust.
 
-With the SDK, APK, generated theme, and Pillow in place, run `python -m unittest discover -s tests -q`. The UI smoke checks are `node tests/ruby_ui_smoke.js`, `node tests/iexplored_ui_smoke.js`, and `node tests/winterx_status_smoke.js`. These do not replace testing in Spring. The in-development Animaper Settings integration has not yet been verified in a running launcher.
+With the SDK, APK, generated theme, and Pillow in place, run `python -m unittest discover -s tests -q`. JavaScript checks include `node tests/ruby_ui_smoke.js` and `node tests/tweak_runtime_smoke.js`. Packaged-helper checks are listed in the testing guide. Node and JVM-spy checks do not replace native QuickJS or live UI testing. Ruby's new red bars/Discord button and the Settings/App Store coverage fixes still need a user trial; earlier basic ColoredBar and executable-example behaviour were live-confirmed.
 
 ## License
 

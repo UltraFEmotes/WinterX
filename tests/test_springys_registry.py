@@ -15,7 +15,8 @@ class RegistryTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
         self.calls = []
-        self.registry = springys_registry.Registry(self.root / 'registry', self.calls.append)
+        self.registry = springys_registry.Registry(self.root / 'registry',
+                                                   lambda hooks, tweaks=None: self.calls.append(hooks))
         self.png = (Path(__file__).resolve().parents[1] / 'Ruby/icon.png').read_bytes()
 
     def tearDown(self):
@@ -51,7 +52,7 @@ class RegistryTests(unittest.TestCase):
         self.registry.install(self.package('me.example.one'))
         old = self.registry.list()
         calls = []
-        def reconcile(desired):
+        def reconcile(desired, tweaks=None):
             calls.append(desired)
             if len(calls) == 1:
                 raise RuntimeError('respring failed')

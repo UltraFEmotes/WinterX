@@ -60,6 +60,43 @@ class SafeModeTests(unittest.TestCase):
         self.assertFalse(result['ok']); self.assertFalse(self.marker.exists())
         self.assertEqual(json.loads((self.state / 'active.json').read_text())['pid'], 43)
 
+    def test_animaper_changes_live_without_restart(self):
+        marker = self.data / 'files/ruby/animaper.enabled'
+        with patch.object(safe_mode.control, 'spring_pids', return_value=[42]), \
+             patch.object(safe_mode.control, 'is_overlay_process', return_value=True), \
+             patch.object(safe_mode.control, 'stop_spring') as stop, \
+             patch.object(safe_mode.control, 'start_overlay') as start:
+            self.assertTrue(safe_mode.set_live_animaper(self.data, self.state, self.apk, self.sha, True)['ok'])
+            self.assertTrue(marker.is_file())
+            self.assertTrue(safe_mode.set_live_animaper(self.data, self.state, self.apk, self.sha, False)['ok'])
+            self.assertFalse(marker.exists())
+            stop.assert_not_called(); start.assert_not_called()
+
+    def test_animaper_rejects_unverified_session(self):
+        with patch.object(safe_mode.control, 'spring_pids', return_value=[]):
+            with self.assertRaises(ValueError):
+                safe_mode.set_live_animaper(self.data, self.state, self.apk, self.sha, True)
+        self.assertFalse((self.data / 'files/ruby/animaper.enabled').exists())
+
+    def test_coloredbar_changes_live_and_preserves_preferences(self):
+        folder = self.data / 'files/ruby'
+        folder.mkdir(parents=True)
+        color = folder / 'coloredbar.color'
+        color.write_text('139BD7')
+        with patch.object(safe_mode.control, 'spring_pids', return_value=[42]), \
+             patch.object(safe_mode.control, 'is_overlay_process', return_value=True), \
+             patch.object(safe_mode.control, 'stop_spring') as stop, \
+             patch.object(safe_mode.control, 'start_overlay') as start:
+            for enabled in (True, False):
+                reply = safe_mode.set_live_tweak(self.data, self.state, self.apk, self.sha,
+                                                 enabled, 'coloredbar.enabled', 'ColoredBar')
+                self.assertTrue(reply['ok'])
+                self.assertEqual((folder / 'coloredbar.enabled').exists(), enabled)
+            self.assertEqual(color.read_text(), '139BD7')
+            stop.assert_not_called(); start.assert_not_called()
+        with self.assertRaises(ValueError):
+            safe_mode.set_live_tweak(self.data, self.state, self.apk, self.sha, True, '../bad', 'Unknown')
+
     def test_modified_apk_is_rejected(self):
         self.apk.write_bytes(b'tampered')
         with self.assertRaises(ValueError):

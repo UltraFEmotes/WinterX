@@ -1,0 +1,10 @@
+{
+  "format": "winterx.springys/1",
+  "id": "me.weirdmm.coloredbar",
+  "name": "ColoredBar",
+  "version": "0.1.0",
+  "author": "WeirdMM",
+  "description": "Recolour navigation bars with presets or an exact RGB hex colour. Configure in Spring Settings → ColoredBar, including per-app exclusions. Requires a compatible WinterX ColoredBar engine. Basic behaviour is live-tested on Mac.APK; exclusions and recovery remain experimental. New engines always leave Ruby's own red navigation and bottom bars unchanged.",
+  "hook": "tweak.coloredbar",
+  "previews": []
+}

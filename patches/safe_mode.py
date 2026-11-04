@@ -10,16 +10,51 @@ import macapk_controls as control
 import overlay_flow
 
 
-def set_marker_and_respring(data, state, patched, expected_sha, enabled, marker_name, label):
-    data, state, patched = Path(data), Path(state), Path(patched).resolve(strict=True)
-    active_path = state / 'active.json'
-    active = json.loads(active_path.read_text(encoding='utf-8'))
+def verified_session(state, patched, expected_sha):
+    """Require the configured WinterX overlay to be the only running Spring process."""
+    state, patched = Path(state), Path(patched).resolve(strict=True)
+    active = json.loads((state / 'active.json').read_text(encoding='utf-8'))
     pid = int(active['pid'])
     root = state / 'overlay/android'
     actual_sha = hashlib.sha256(patched.read_bytes()).hexdigest()
-    if (actual_sha != expected_sha or active.get('apk_sha256') != expected_sha or Path(active.get('apk', '')).resolve() != patched or
+    if (actual_sha != expected_sha or active.get('apk_sha256') != expected_sha or
+            Path(active.get('apk', '')).resolve() != patched or
             control.spring_pids() != [pid] or not control.is_overlay_process(pid, patched, root)):
         raise ValueError('The Safe Mode-compatible WinterX session must be running')
+    return active
+
+
+def set_live_animaper(data, state, patched, expected_sha, enabled):
+    """Apply Animaper's live-read flag without recreating Spring's activity."""
+    return set_live_tweak(data, state, patched, expected_sha, enabled, 'animaper.enabled', 'Animaper')
+
+
+def set_live_tweak(data, state, patched, expected_sha, enabled, marker_name, label):
+    """Enable only known live-read built-ins; never restart a Spring activity."""
+    if marker_name not in ('animaper.enabled', 'coloredbar.enabled'):
+        raise ValueError('Unsupported live tweak marker')
+    if not isinstance(enabled, bool):
+        raise ValueError(label + ' state must be a boolean')
+    verified_session(state, patched, expected_sha)
+    folder = Path(data) / 'files/ruby'
+    if folder.is_symlink() or (folder.exists() and not folder.is_dir()):
+        raise ValueError('Unexpected WinterX data directory')
+    folder.mkdir(parents=True, exist_ok=True)
+    marker = folder / marker_name
+    if marker.is_symlink() or (marker.exists() and not marker.is_file()):
+        raise ValueError('Unexpected ' + label + ' marker')
+    if enabled:
+        marker.touch(exist_ok=True)
+    else:
+        marker.unlink(missing_ok=True)
+    return {'ok': True, 'message': label + ' ' + ('enabled' if enabled else 'disabled')}
+
+
+def set_marker_and_respring(data, state, patched, expected_sha, enabled, marker_name, label):
+    data, state, patched = Path(data), Path(state), Path(patched).resolve(strict=True)
+    active = verified_session(state, patched, expected_sha)
+    active_path = state / 'active.json'
+    root = state / 'overlay/android'
     if marker_name not in ('safe-mode.enabled', 'settings-test.enabled', 'ui-colors.enabled', 'free-icons.enabled', 'animaper.enabled'):
         raise ValueError('Unsupported tweak marker')
     marker = data / 'files/ruby' / marker_name

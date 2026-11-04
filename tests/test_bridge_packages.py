@@ -1,4 +1,6 @@
 import json
+import hashlib
+import shutil
 from pathlib import Path
 import sys
 import tempfile
@@ -80,6 +82,37 @@ class BridgePackageTests(unittest.TestCase):
                 self.assertEqual(json.loads((files / 'packages.json').read_text())['installed'], [])
             self.assertEqual(actions, [True, False])
 
+    def test_animaper_package_install_and_remove_do_not_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); files = root / 'ruby'; imports = files / 'imports'
+            imports.mkdir(parents=True)
+            shutil.copy2(ROOT / 'builtin-repo/packages/animaper.springys', imports / 'animaper.springys')
+            apk = root / 'engine.apk'; apk.write_bytes(b'test engine')
+            sha = hashlib.sha256(apk.read_bytes()).hexdigest()
+            state = root / 'state'; state.mkdir()
+            (state / 'active.json').write_text(json.dumps({'pid': 42, 'apk': str(apk), 'apk_sha256': sha}))
+            data = root / 'spring'; marker = data / 'files/ruby/animaper.enabled'
+            def request(number, action, **values):
+                path = files / ('requests/' + number + '-0.json')
+                path.parent.mkdir(exist_ok=True)
+                path.write_text(json.dumps({'id': number + '-0', 'action': action, **values}))
+                ruby_bridge.process(path, files, root / 'inbox')
+                reply = json.loads((files / ('results/' + number + '-0.json')).read_text())
+                self.assertTrue(reply['ok'], reply)
+            import animaper
+            with patch.object(macapk_jailbreak, 'DATA', data), patch.object(macapk_jailbreak, 'STATE', state), \
+                 patch.object(macapk_jailbreak, 'PATCHED', apk), patch.object(macapk_jailbreak, 'PATCH_SHA', sha), \
+                 patch.object(animaper, 'supported_by', return_value=True), \
+                 patch.object(safe_mode.control, 'spring_pids', return_value=[42]), \
+                 patch.object(safe_mode.control, 'is_overlay_process', return_value=True), \
+                 patch.object(safe_mode.control, 'stop_spring') as stop, \
+                 patch.object(safe_mode.control, 'start_overlay') as start:
+                request('1', 'install_package', filename='animaper.springys')
+                self.assertTrue(marker.is_file())
+                request('2', 'remove_package', packageId='me.weirdmm.animaper')
+                self.assertFalse(marker.exists())
+                stop.assert_not_called(); start.assert_not_called()
+
     def test_scan_writes_catalogue_and_reply(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -93,6 +126,45 @@ class BridgePackageTests(unittest.TestCase):
             self.assertTrue(reply['ok'])
             self.assertEqual(reply['action'], 'scan_packages')
             self.assertEqual(json.loads((files / 'packages.json').read_text()), {'available': [], 'installed': []})
+
+    def test_code_install_uses_running_engine_and_reports_reopen(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); files = root / 'ruby'; imports = files / 'imports'
+            imports.mkdir(parents=True)
+            manifest = json.loads((ROOT / 'examples/code-tweak/manifest.json').read_text())
+            with zipfile.ZipFile(imports / 'code.springys', 'w') as archive:
+                archive.writestr('manifest.json', json.dumps(manifest))
+                archive.writestr('tweak/main.js', 'WinterX.log("my own code");')
+            apk = root / 'running.apk'
+            with zipfile.ZipFile(apk, 'w') as archive:
+                archive.writestr('classes.dex', b'winterxCreate')
+                archive.writestr('classes3.dex', b'winterx/tweaks/TweakHost winterx/tweaks/TweakSettings')
+            state = root / 'state'; state.mkdir()
+            (state / 'active.json').write_text(json.dumps({'pid': 42, 'apk': str(apk),
+                'apk_sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}))
+            data = root / 'spring'; pages = data / 'files/ios6_pages.json'
+            pages.parent.mkdir(parents=True); pages.write_text('saved icon positions')
+            target = data / 'files/winterx-tweaks' / manifest['id']
+            def request(number):
+                path = files / ('requests/' + number + '-0.json'); path.parent.mkdir(exist_ok=True)
+                path.write_text(json.dumps({'id': number + '-0', 'action': 'install_package', 'filename': 'code.springys'}))
+                ruby_bridge.process(path, files, root / 'inbox')
+                return json.loads((files / ('results/' + number + '-0.json')).read_text())
+            with patch.object(macapk_jailbreak, 'DATA', data), patch.object(macapk_jailbreak, 'STATE', state), \
+                 patch.object(macapk_jailbreak, 'PATCHED', root / 'older-selected.apk'), \
+                 patch.object(safe_mode.control, 'is_overlay_process', return_value=False):
+                self.assertFalse(request('1')['ok'])
+                self.assertFalse((target / 'enabled').exists())
+            with patch.object(macapk_jailbreak, 'DATA', data), patch.object(macapk_jailbreak, 'STATE', state), \
+                 patch.object(macapk_jailbreak, 'PATCHED', root / 'older-selected.apk'), \
+                 patch.object(safe_mode.control, 'is_overlay_process', return_value=True), \
+                 patch.object(safe_mode.control, 'stop_spring') as stop, \
+                 patch.object(safe_mode.control, 'start_overlay') as start:
+                reply = request('2')
+                self.assertTrue(reply['ok'], reply); self.assertTrue(reply['restartRequired'])
+                self.assertTrue((target / 'enabled').is_file())
+                self.assertEqual(pages.read_text(), 'saved icon positions')
+                stop.assert_not_called(); start.assert_not_called()
 
     def test_unknown_package_reports_failure(self):
         with tempfile.TemporaryDirectory() as tmp:

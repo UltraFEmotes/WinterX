@@ -13,12 +13,54 @@ import springys_registry
 ID = re.compile(r'^[a-z0-9]+(?:[.-][a-z0-9]+)+$')
 
 
+def _same_stage(source, expected):
+    """Staged registry tree still matches its recorded sha256 before it runs."""
+    try:
+        digest = (source / 'sha256').read_text(encoding='utf-8').strip()
+        code = (source / 'code/main.js').read_bytes()
+        return digest == expected and springys_registry._same_tree(source, expected)
+    except (OSError, ValueError):
+        return False
+
+
+def _sync_tree(source, target):
+    """Replace only runtime-owned files; retain the user's tweak state/data."""
+    target = Path(target)
+    target = target.parent.resolve() / target.name
+    if target.is_symlink() or target.resolve() != target.absolute():
+        raise ValueError('Tweak storage must not contain symlinks')
+    changes = []
+    for relative in ('code/main.js', 'manifest.json', 'sha256', 'manifest.sha256'):
+        path = source / relative
+        destination = target / relative
+        if destination.is_symlink() or destination.resolve() != destination.absolute():
+            raise ValueError('Tweak storage must not contain symlinks')
+        payload = path.read_bytes()
+        if destination.is_file() and destination.read_bytes() == payload:
+            continue
+        changes.append((destination, payload))
+    # Reconciliation also visits unchanged packages. Leave their enabled marker
+    # intact or a live context may mistake an unrelated install for removal.
+    if changes:
+        (target / 'enabled').unlink(missing_ok=True)
+        for destination, payload in changes:
+            _atomic(destination, payload)
+    if not (target / 'enabled').is_file():
+        _atomic(target / 'enabled', b'enabled\n')
+        try:
+            (target / 'enabled').chmod(0o644)
+        except OSError:
+            pass
+
+
 def _atomic(path, contents):
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix='.ruby-art-', dir=path.parent)
     try:
         with os.fdopen(fd, 'wb') as out:
             out.write(contents)
+            out.flush()
+            os.fsync(out.fileno())
         os.replace(temporary, path)
     finally:
         if os.path.exists(temporary):
@@ -42,25 +84,51 @@ def icon_thumbnail(root, payload, directory='package-art'):
 
 
 class Packages:
-    def __init__(self, app_files, marker, apply, extra_hooks=None):
+    def __init__(self, app_files, marker, apply, extra_hooks=None, tweak_root=None, supported_tweaks=False):
         self.files = Path(app_files)
         self.imports = self.files / 'imports'
         self.marker = Path(marker)
         self.apply = apply
+        # Engine-visible location (Spring's own files dir) for tweak code.
+        self.tweaks_root = Path(tweak_root or (self.files / 'winterx-tweaks'))
         self.hooks = {'test.settings': (self.marker, lambda enabled: self.apply(enabled))}
         if extra_hooks:
             self.hooks.update(extra_hooks)
         self.registry = springys_registry.Registry(self.files / 'package-registry', self._reconcile,
-                                                    supported_hooks=tuple(self.hooks))
+                                                     supported_hooks=tuple(self.hooks), supported_tweaks=supported_tweaks)
 
-    def _reconcile(self, hooks):
-        # Change only hooks owned by this transaction. Other manually installed
-        # tweaks must survive installs, updates, removals, and journal recovery.
+    def _reconcile(self, hooks, tweaks=None):
+        # Change only hooks and tweaks owned by this transaction. Other manually
+        # installed tweaks must survive installs, updates, removals, and journal
+        # recovery.
         managed = set(hooks)
+        desired_tweaks = tweaks or {}
+        managed_tweaks = set(desired_tweaks)
         if self.registry.journal.exists():
             record = json.loads(self.registry.journal.read_text(encoding='utf-8'))
             for state in ('before', 'after'):
-                managed.update(item['hook'] for item in record[state].values())
+                managed.update(item['hook'] for item in record[state].values() if item.get('hook'))
+                managed_tweaks.update(key for key, item in record[state].items()
+                                      if item.get('type') == 'tweak')
+        for tweak_id in sorted(managed_tweaks):
+            if not ID.fullmatch(tweak_id):
+                continue
+            target = self.tweaks_root.resolve() / tweak_id
+            if target.is_symlink():
+                raise ValueError('Tweak storage must not contain symlinks')
+            if tweak_id not in desired_tweaks:
+                # Disabling is sufficient; preserve state/data and old code for
+                # recovery. No recursively deleted user files on uninstall.
+                (target / 'enabled').unlink(missing_ok=True)
+                continue
+            entry = desired_tweaks[tweak_id]
+            stage = entry.get('tweak_stage', '')
+            if not re.fullmatch(r'tweaks/[0-9a-f]{64}', stage):
+                raise RuntimeError('Invalid tweak revision path')
+            source = self.registry.root / stage
+            if not _same_stage(source, entry['code_sha256']):
+                raise RuntimeError('Installed tweak code failed integrity check for ' + tweak_id)
+            _sync_tree(source, target)
         for hook in sorted(managed):
             if hook not in self.hooks:
                 raise ValueError('Unsupported hook: ' + hook)
@@ -128,9 +196,9 @@ class Packages:
         if re.fullmatch(r'repo-[0-9a-f]{64}\.springys', filename):
             expected = filename[5:-9]
         metadata, _ = springys.inspect(path, expected)
-        hook = metadata['hook']
-        if hook in self.hooks and self.hooks[hook][0].is_file() and not any(
-                entry['hook'] == hook for entry in previous.values()):
+        hook = metadata.get('hook')
+        if hook and hook in self.hooks and self.hooks[hook][0].is_file() and not any(
+                 entry.get('hook') == hook for entry in previous.values()):
             raise ValueError('Remove the existing %s tweak in Ruby before importing this package.' % ('Settings' if hook == 'test.settings' else hook))
         return self.registry.install(path, expected_sha256=expected)
 

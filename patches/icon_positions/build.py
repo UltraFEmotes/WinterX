@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Build an isolated Spring 0.8.1 free-icon test APK, without installing it."""
 import argparse
+import errno
 import hashlib
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -41,6 +43,25 @@ def signature(name):
     return '/' not in tail and (tail == 'MANIFEST.MF' or tail.endswith(('.SF', '.RSA', '.DSA', '.EC')))
 
 
+def decode_input(source, output):
+    """Decode only bytecode/metadata; assembly below copies real resources from stock."""
+    required = ('AndroidManifest.xml', 'resources.arsc', 'classes.dex', 'classes2.dex')
+    with zipfile.ZipFile(source) as stock, zipfile.ZipFile(output, 'x') as out:
+        for name in required:
+            info = stock.getinfo(name)
+            with stock.open(info) as src, out.open(info, 'w') as dst:
+                shutil.copyfileobj(src, dst, 1024 * 1024)
+
+
+def publish_output(source, output):
+    """Exclusive creation, without another full APK copy on the same filesystem."""
+    try:
+        os.link(source, output)
+    except OSError as failure:
+        if failure.errno not in (errno.EXDEV, errno.ENOTSUP, errno.EPERM): raise
+        with source.open('rb') as src, output.open('xb') as dst: shutil.copyfileobj(src, dst)
+
+
 def build(source, output):
     source = Path(source).resolve(strict=True)
     output = Path(output).resolve()
@@ -61,7 +82,9 @@ def build(source, output):
             '--classpath', original_jar, '--lib', FRAMEWORK, '--output', dex_dir, helpers)
         helper_dex = (dex_dir / 'classes.dex').read_bytes()
         decoded = temp / 'decoded'
-        run('apktool', 'd', '--no-res', '-f', '-o', decoded, source)
+        decode_source = temp / 'decode-input.apk'
+        decode_input(source, decode_source)
+        run('apktool', 'd', '--no-res', '-f', '-o', decoded, decode_source)
         run('python3', ROOT / 'patches/settings_test.py', decoded)
         run('python3', HERE / 'patch_smali.py', decoded)
         rebuilt = temp / 'rebuilt.apk'
@@ -86,7 +109,7 @@ def build(source, output):
             for name in BOOT_RESOURCES:
                 if result.read(name) != BOOT_LOGO.read_bytes(): raise ValueError('Boot logo was not installed')
         output.parent.mkdir(parents=True, exist_ok=True)
-        with assembled.open('rb') as src, output.open('xb') as dst: shutil.copyfileobj(src, dst)
+        publish_output(assembled, output)
     print('Built isolated test APK:', output)
     print('SHA-256:', digest(output))
 

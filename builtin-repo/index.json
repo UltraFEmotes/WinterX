@@ -5,6 +5,10 @@
     {
       "url": "packages/animaper.springys",
       "sha256": "bf623620e96512f03a00b12f248ce64ea02603cc89e83baa937afce79852d856"
+    },
+    {
+      "url": "packages/coloredbar.springys",
+      "sha256": "2b320bb843b71f49be5d1648a3798e88f57e7704151d1d8634b12727ba0f040c"
     }
   ]
 }

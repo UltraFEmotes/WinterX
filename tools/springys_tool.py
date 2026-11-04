@@ -30,9 +30,20 @@ def build(source, destination):
     try:
         with os.fdopen(fd, 'w+b') as stream, zipfile.ZipFile(stream, 'w', zipfile.ZIP_DEFLATED) as archive:
             archive.writestr('manifest.json', manifest_path.read_bytes())
-            for name in sorted(artwork):
-                springys._art_path(name)
+            entries = sorted(artwork)
+            if manifest.get('format') == springys.FORMAT2:
+                entries.append(springys.CODE_ENTRY)
+            for name in entries:
                 path = source / name
+                if name == springys.CODE_ENTRY:
+                    resolved = path.resolve(strict=True)
+                    if path.is_symlink() or not resolved.is_relative_to(source) or resolved != path.absolute():
+                        raise ValueError('Tweak code must not contain symlinks or leave the package directory')
+                    if not resolved.is_file() or resolved.stat().st_size > springys.MAX_CODE:
+                        raise ValueError('tweak/main.js is missing or exceeds 256 KB')
+                    archive.writestr(name, resolved.read_bytes())
+                    continue
+                springys._art_path(name)
                 resolved = path.resolve(strict=True)
                 if not resolved.is_relative_to(source) or not resolved.is_file() or path.is_symlink():
                     raise ValueError('Artwork must be a regular file inside the package directory')

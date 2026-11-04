@@ -2,7 +2,7 @@
 
 A Ruby repository is an HTTPS-hosted JSON index pointing to `.springys` archives. Ruby's Mac.APK bridge reads the index, downloads packages, checks their SHA-256 hashes and validates their contents before showing them in Ruby. Users can browse, search, install, update and remove supported packages. This is beta functionality and has not been fully verified end-to-end in Spring.
 
-`.springys` version 1 packages are declarative: they select existing WinterX hooks and cannot distribute executable tweak code. Start with [Making `.springys` packages](springys-format.md). Rooted Android and a LAN bridge are not supported yet.
+V1 `.springys` packages select existing WinterX hooks. V2 distributes independently authored JavaScript using WinterX's documented API, requiring a compatible running engine. Start with [Making `.springys` packages](springys-format.md). Rooted Android and a LAN bridge are not supported yet.
 
 ## 1. Build and inspect a package
 
@@ -59,7 +59,7 @@ Before sharing the source, open the HTTPS index and package URL in a browser or 
 4. Open the package to see its description, author, version and available previews, then tap **Install**. Supported hook and engine requirements still apply.
 5. To remove a source, tap its entry under **Sources**, then choose **Remove**. Removing a source does not automatically uninstall its installed packages; remove those from their package details.
 
-A package already enabled outside the registry may need to be removed manually before the package version can be installed. Spring may need a restart for some changes; the bridge reports what it is doing.
+A package enabled outside the registry may need manual removal before its package equivalent can be installed. V2 installs/updates stage code and need a deliberate full launcher reopen; the installer never automatically restarts Spring. Disabled, updated or uninstalled contexts are closed by their owning worker. State/data remain for recovery.
 
 ## 5. Publish an update
 
@@ -88,7 +88,7 @@ The index is limited to 512 KiB. Each downloaded archive is limited to 12 MiB an
 - **Unsupported repository format:** check the `format` string, JSON syntax and that the URL returns JSON rather than an HTML page.
 - **Package checksum mismatch:** rebuild or re-download the exact archive being served and recompute its SHA-256. Update the index after uploading the archive; caches may briefly serve an older copy.
 - **Package missing from the catalogue:** check the source's error in Ruby, the resolved package URL, its hash, and `python3 tools/springys_tool.py inspect package.springys`. A broken entry can coexist with valid ones.
-- **Package won't install:** the target WinterX version must implement its hook; a correct hash doesn't add new functionality. Check the bridge terminal for the error.
+- **Package won't install:** v1 requires its compiled hook; v2 requires the runtime in the checksum-verified running engine. A newer APK sitting on disk is not sufficient. Check the bridge terminal for the error.
 - **Changes not showing:** refresh sources, then return to the package list. Confirm the index and archive served over HTTPS are the new files.
 
-A hash detects mismatched content; it does not authenticate the publisher or guarantee that a source is safe. Only add sources you trust. The included [`builtin-repo/`](../builtin-repo/) contains a local copy of Animaper; the [hosted built-in repository](https://github.com/UltraFEmotes/Ruby-Repo) also contains Animaper.
+A hash detects mismatched content; it does not authenticate the publisher or guarantee safety. Only add sources/authors you trust, especially for executable tweaks. The local [`builtin-repo/`](../builtin-repo/) and [hosted copy](https://github.com/UltraFEmotes/Ruby-Repo) contain **Animaper and ColoredBar**, not developer/test examples.

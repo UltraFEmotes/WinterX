@@ -10,6 +10,7 @@ public final class TrustedFiles {
     private static final String RUBY = "com.ruby.manager";
     private static final String EXPLORER_SHA = "e1bbc1b62a20c539898c0bd7faf0fde269fdf13f749d9e1387ff26ec4977c441";
     private static final String EXPLORER_4_SHA = "f0da6ab1c751d5417c9c181e0dca7a9f73c03916b1f09c149816afdc83a6521d";
+    private static final String RUBY_18_SHA = "5018499ec544c04a14b787eb99bdf8480481dc786812cf0827bc8855d806adac";
     private static final String RUBY_17_SHA = "c7f2312c26f8b3c0e4faedbbff11652515f7e9822d0af7dc699e96fb59efed32";
     private static final String RUBY_16_SHA = "dcdf9f9d5d94b680783caf8e0d72cfe97b7608de704c0f8f87e0715226703ea5";
     private static final String RUBY_15_SHA = "6ecbac9191f2aecc59f6baa9a97c829a3aad9a551db210c5e5a5dd0fdb6c7995";
@@ -59,7 +60,8 @@ public final class TrustedFiles {
                               RUBY.equals(id) && latest == 14 ? RUBY_SHA :
                               RUBY.equals(id) && latest == 15 ? RUBY_15_SHA :
                               RUBY.equals(id) && latest == 16 ? RUBY_16_SHA :
-                              RUBY.equals(id) && latest == 17 ? RUBY_17_SHA : null;
+                              RUBY.equals(id) && latest == 17 ? RUBY_17_SHA :
+                              RUBY.equals(id) && latest == 18 ? RUBY_18_SHA : null;
             if (expected == null) return null;
             File script = new File(installed, latest + "/main.js");
             if (!script.isFile() || !expected.equals(digest(script))) return null;

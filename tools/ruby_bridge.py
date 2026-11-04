@@ -114,9 +114,21 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                 'test.icons': (ruby_data / 'free-icons.enabled', lambda enabled: apply_extra('free-icons.enabled', 'Icon placement test', enabled)),
             }
             import animaper
-            if animaper.supported_by(macapk_jailbreak.PATCHED):
-                extra_hooks['tweak.animaper'] = (ruby_data / 'animaper.enabled', lambda enabled: apply_extra('animaper.enabled', 'Animaper', enabled))
-            packages = ruby_packages.Packages(data, ruby_data / 'settings-test.enabled', apply_settings, extra_hooks=extra_hooks)
+            import tweak_runtime
+            import macapk_controls
+            running_engine = tweak_runtime.active_engine(macapk_jailbreak.STATE, macapk_controls.is_overlay_process)
+            if running_engine is not None and animaper.supported_by(running_engine):
+                extra_hooks['tweak.animaper'] = (ruby_data / 'animaper.enabled', lambda enabled:
+                    safe_mode.set_live_animaper(macapk_jailbreak.DATA, macapk_jailbreak.STATE, running_engine,
+                        macapk_jailbreak.digest(running_engine), enabled))
+            if running_engine is not None and tweak_runtime.coloredbar_supported_by(running_engine):
+                extra_hooks['tweak.coloredbar'] = (ruby_data / 'coloredbar.enabled', lambda enabled:
+                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, running_engine,
+                        macapk_jailbreak.digest(running_engine), enabled, 'coloredbar.enabled', 'ColoredBar'))
+            packages = ruby_packages.Packages(data, ruby_data / 'settings-test.enabled', apply_settings,
+                                              extra_hooks=extra_hooks,
+                                              tweak_root=macapk_jailbreak.DATA / 'files' / 'winterx-tweaks',
+                                              supported_tweaks=running_engine is not None and tweak_runtime.supported_by(running_engine))
             if action in ('add_repository', 'remove_repository', 'refresh_repositories'):
                 import ruby_repositories
                 repos = ruby_repositories.Repositories(data, packages, builtin_root=ROOT / 'builtin-repo')
@@ -127,7 +139,7 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                 else:
                     repos.refresh()
             elif action == 'install_package':
-                packages.install(record.get('filename'))
+                installed_package = packages.install(record.get('filename'))
             elif action == 'remove_package':
                 packages.uninstall(record.get('packageId'))
             scan = packages.scan()
@@ -141,7 +153,10 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                     item['installedVersion'] = record_installed.get('version')
                     item['installedSha256'] = record_installed.get('sha256')
                 atomic_json(catalogue_path, catalogue)
-            atomic_json(result, {'ok': True, 'action': action, 'message': 'Package operation completed'})
+            installed_code = action == 'install_package' and installed_package.get('type') == 'tweak'
+            atomic_json(result, {'ok': True, 'action': action,
+                'restartRequired': installed_code,
+                'message': 'Tweak staged. Fully reopen Spring Launcher to load its code.' if installed_code else 'Package operation completed'})
             return
         if record.get('action') == 'set_animaper_mode':
             if str(ROOT / 'patches') not in sys.path: sys.path.insert(0, str(ROOT / 'patches'))
@@ -161,8 +176,8 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                             'disable_icons': 'test.icons'}.get(action)
             if package_hook:
                 import springys_registry
-                registry = springys_registry.Registry(data / 'package-registry', lambda hooks: None)
-                if any(item['hook'] == package_hook for item in registry.list().values()):
+                registry = springys_registry.Registry(data / 'package-registry', lambda hooks, tweaks: None)
+                if any(item.get('hook') == package_hook for item in registry.list().values()):
                     raise ValueError('Remove the installed .springys package using Local Packages first.')
             if action == 'set_safe_mode':
                 if not isinstance(record.get('enabled'), bool):

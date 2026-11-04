@@ -16,7 +16,9 @@ with tempfile.TemporaryDirectory(prefix='winterx-trust-test-') as tmp:
         ruby16=root/'ruby16.js'; ruby16.write_bytes(app.read('main.js'))
     with zipfile.ZipFile(ROOT/'builds/Ruby-1.7-sources.sapp') as app:
         ruby17=root/'ruby17.js'; ruby17.write_bytes(app.read('main.js'))
+    with zipfile.ZipFile(ROOT/'builds/Ruby-1.8-community.sapp') as app:
+        ruby18=root/'ruby18.js'; ruby18.write_bytes(app.read('main.js'))
     subprocess.run(['/opt/homebrew/opt/openjdk/bin/javac','-d',str(classes),
                     str(ROOT/'patches/icon_positions/src/winterx/runtime/TrustedFiles.java'),
                     str(ROOT/'patches/tests/trusted/TrustedFilesCheck.java')],check=True)
-    subprocess.run(['/opt/homebrew/opt/openjdk/bin/java','-cp',str(classes),'TrustedFilesCheck',str(root),str(script),str(ruby),str(next_script),str(ruby15),str(ruby16),str(ruby17)],check=True)
+    subprocess.run(['/opt/homebrew/opt/openjdk/bin/java','-cp',str(classes),'TrustedFilesCheck',str(root),str(script),str(ruby),str(next_script),str(ruby15),str(ruby16),str(ruby17),str(ruby18)],check=True)

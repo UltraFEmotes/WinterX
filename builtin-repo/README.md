@@ -1,3 +1,9 @@
 # Ruby's built-in repository
 
-This local index currently contains only Animaper. Its source and hosted copy are in [Ruby-Repo](https://github.com/UltraFEmotes/Ruby-Repo). The built-in source works through the Mac.APK bridge. More tweaks will be added later.
+This local index contains **Animaper and ColoredBar**, with matching source and hosted packages in [Ruby-Repo](https://github.com/UltraFEmotes/Ruby-Repo). Both select compiled hooks in compatible WinterX engines and use Spring's actual Settings app for preferences. The built-in source works through the Mac.APK bridge.
+
+ColoredBar provides presets, exact RGB hex colours and app exclusions. Updated engines permanently exclude Ruby, whose red navigation and bottom tabs are its own built-in appearance. Basic ColoredBar behaviour was live-confirmed on Mac.APK; newer coverage fixes and recovery remain experimental.
+
+Settings Button Test, UI Color Test, Free Icon Placement Test and the executable developer example stay outside this index. Preserve existing users' test data; do not silently uninstall it. SnowyHome, SSH, FreeMe and DockIn remain unfinished.
+
+See the [package guide](../docs/springys-format.md), [ColoredBar notes](../docs/coloredbar.md) and [repository guide](../docs/repository-design.md).

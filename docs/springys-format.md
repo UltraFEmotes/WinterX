@@ -1,8 +1,8 @@
 # Making `.springys` packages
 
-`.springys` is Ruby's experimental package format for WinterX. It is a ZIP archive containing a manifest and optional artwork. It is different from Spring's `.sapp` app format and from a Debian `.deb`.
+`.springys` is Ruby's experimental package format for WinterX. It is a ZIP archive containing a manifest, optional artwork and (in v2) JavaScript. It is different from Spring's `.sapp` app format and from a Debian `.deb`.
 
-**Current limitation:** a package cannot contain executable tweak code. A manifest selects a **hook already implemented by the installed WinterX engine**. Making a package with a new hook name does not create a new tweak; the validator may accept the archive, but Ruby will reject the install if the engine/bridge does not support the hook. Scripts, JavaScript, native libraries, and other files cannot be included. The package format and workflow can change during beta.
+**Two experimental formats:** v1 selects a **hook already implemented by the installed WinterX engine**; inventing a hook does not create behaviour. V2 contains independently authored JavaScript using the [documented WinterX runtime API](tweak-runtime-design.md). Basic v2 execution is live-confirmed on Mac.APK, but limits and recovery still need live checks. Older engines cannot install v2. Native libraries and shell scripts are unsupported in both formats.
 
 ## What you need
 
@@ -80,23 +80,70 @@ Import the new archive and open it under **Imported**; Ruby can show an **Update
 
 To share packages through an HTTPS source, follow [Creating a Ruby repository](repository-design.md).
 
+## Write your own code (v2)
+
+Unlike the v1 example above, this package implements its own Settings action. Create `my-code-tweak/manifest.json`:
+
+```json
+{
+  "format": "winterx.springys/2",
+  "type": "tweak",
+  "id": "me.example.my-code-tweak",
+  "name": "My Code Tweak",
+  "version": "1.0.0",
+  "author": "Example",
+  "description": "A native Settings action implemented by this package.",
+  "entry": "tweak/main.js",
+  "settings": {
+    "main": {
+      "title": "My Code Tweak",
+      "sections": [{
+        "rows": [{"id": "hello", "type": "button", "title": "Say Hello"}]
+      }]
+    }
+  }
+}
+```
+
+Create `my-code-tweak/tweak/main.js`:
+
+```js
+WinterX.on("settingsTap", function (page, row) {
+  if (page === "main" && row === "hello") {
+    WinterX.alert({title: "Hello", message: "This is my own code.", buttons: ["OK"]});
+  }
+});
+```
+
+Build and inspect with the same commands as v1, using your new folder and a new output filename. Install through Ruby on a checksum-verified **running runtime-capable engine**, then deliberately fully quit and reopen Spring. The installer stages the code; it never automatically restarts the launcher. Open **Settings → My Code Tweak → Say Hello**. A newly installed or updated script runs on the next full engine launch, not merely when Ruby is reopened.
+
+See [`examples/code-tweak`](../examples/code-tweak/) for nested pages, toggles, state/data and an alert Promise callback, and the [runtime API](tweak-runtime-design.md) for supported calls and limits. Developer examples are source-only, not entries in the built-in repository. There is no arbitrary home-icon manipulation API yet.
+
 ## Manifest reference
 
-`manifest.json` must be a UTF-8 JSON object. Duplicate keys are rejected. The exact format string is `winterx.springys/1`.
+`manifest.json` must be a UTF-8 JSON object. Duplicate keys are rejected. The formats are `winterx.springys/1` and `winterx.springys/2`. Both use the common metadata below.
 
 | Field | Required | Rules and purpose |
 | --- | --- | --- |
-| `format` | Yes | Must be `winterx.springys/1`. |
+| `format` | Yes | `winterx.springys/1` (compiled hook) or `winterx.springys/2` (code). |
 | `id` | Yes | Up to 120 characters. Lowercase letters and digits in groups separated by `.` or `-`, with at least one separator; e.g. `me.example.clock`. Keep it stable across updates. |
 | `name` | Yes | Nonempty display name, at most 80 characters. |
 | `version` | Yes | Up to 64 characters; two to four dot-separated numeric components, optionally followed by one `-` or `+` suffix using letters, digits, dots or hyphens. Examples: `1.0`, `1.2.3-beta.1`. |
 | `author` | Yes | Nonempty display name, at most 120 characters. |
 | `description` | Yes | Nonempty plain text, at most 4,000 characters. |
-| `hook` | Yes | Up to 120 characters. Lowercase hook identifier such as `test.settings`; it must be implemented by the receiving WinterX version. |
+| `hook` | V1 only | Required for v1; forbidden in v2. Lowercase compiled hook identifier, up to 120 characters. |
 | `icon` | No | A referenced PNG or JPEG path under `assets/`, or `null`. Ruby makes a 64 × 64 thumbnail for lists. |
 | `previews` | No | An array of zero to five PNG/JPEG paths under `assets/`, displayed on the package detail page. Defaults to `[]`. |
 
 Text fields cannot contain NUL characters or consist only of whitespace. Unknown manifest keys are currently ignored; do not depend on them to change behavior.
+
+### V2 fields and Settings schema
+
+- `type` must be `"tweak"`; `entry` must be `"tweak/main.js"`. That file must contain nonempty UTF-8 JavaScript, no NUL, at most 256 KiB. There are no arbitrary extra scripts or native libraries.
+- `settings` is optional. If present, it must have `main`, and may have a `pages` object of additional named pages. At most 20 pages total; `pages` cannot redefine `main`.
+- Each page may have `title` (at most 60 characters) and must have 1–40 `sections`. A section may have `id` and `title`, and needs 1–40 `rows`. Keep pages short enough to remain usable.
+- Each row requires a page-unique `id`, nonempty `title` (at most 60 characters), and `type`: `button`, `toggle` or `page`. A `page` row also needs `page`, pointing to an existing page ID.
+- Page/section/row IDs use lowercase letters, digits and hyphens, 1–40 characters. The native Settings UI handles navigation. Buttons/toggles dispatch `settingsTap`; toggle values persist as `"on"`/`"off"` in `WinterX.state.get().settings[page + "/" + row]`.
 
 ### Hooks in this experimental code
 
@@ -105,15 +152,16 @@ Text fields cannot contain NUL characters or consist only of whitespace. Unknown
 | `test.settings` | Ruby Test entry in Spring Settings | Requires a compatible patched engine; may restart Spring. |
 | `test.colors` | Navigation-bar color test | Requires the local theme assets generated from the user's own Spring APK and a compatible engine. |
 | `test.icons` | Free icon placement test | Requires a compatible engine; affects home-screen placement. |
-| `tweak.animaper` | Home-screen page animation | Only offered by the bridge if it detects Animaper hooks in the configured engine. |
+| `tweak.animaper` | Home-screen page animation | Requires compatible hooks in the checksum-verified running engine. |
+| `tweak.coloredbar` | Presets, exact RGB and app exclusions | Preferences are in Spring Settings; updated engines always exclude Ruby. |
 
-These are development hooks, not a stable public API. Ruby also has special app handling for IExplored; its `app.iexplored` entry should not be treated as a general-purpose `.springys` app installer. The bridge and engine must both support a hook. See `tools/ruby_bridge.py`, `tools/ruby_packages.py`, and `patches/icon_positions/` for the implementation. To create genuinely new behavior today, a developer must change and rebuild WinterX itself; the rebuilt engine and bridge would need to be installed by each user. A custom manifest alone cannot ship that code.
+These are development hooks, not a stable public API. Ruby's special `app.iexplored` handling is not a general-purpose `.springys` app installer. A v1 manifest cannot ship new code; use v2 for independent Settings behaviour. Generic home-screen/animation extensions still require engine development. Developer examples and the three test hooks are not published in the built-in repository.
 
 ## Artwork and archive limits
 
 - Artwork paths start with `assets/`, end in `.png`, `.jpg`, or `.jpeg`, and cannot contain empty, `.` or `..` path components. Path and filename case matter.
 - Use real PNG or JPEG files. PNG dimensions must each be between 1 and 4,096 pixels. Each artwork file must be nonempty and at most 2 MiB.
-- The package can contain only `manifest.json` and its referenced images. At most 16 entries, 12 MiB compressed, 24 MiB expanded, and a 128 KiB manifest. There can be at most five previews.
+- V1 contains only `manifest.json` and referenced images; v2 also requires `tweak/main.js`. At most 20 entries, 12 MiB compressed, 24 MiB expanded, and a 128 KiB manifest. There can be at most five previews.
 - Directory entries, symlinks, encrypted entries, duplicate archive names, and ZIP compression other than stored or deflate are rejected. Use the included builder to create a compatible archive.
 - If creating a ZIP manually, put `manifest.json` at the archive root, include no directory entries, and run `inspect` on the result. Renaming an arbitrary ZIP to `.springys` does not make it valid.
 
@@ -121,11 +169,11 @@ These are development hooks, not a stable public API. Ruby also has special app 
 
 - **`Output already exists`:** build to a new filename.
 - **`Invalid package ID, version or hook`:** check the identifier and version syntax above and remove uppercase characters from ID/hook.
-- **`Package must contain only the manifest and its referenced artwork`:** remove extra ZIP files or fix artwork paths. The builder includes only referenced files.
+- **Undeclared files:** remove extra ZIP files or fix artwork paths. The builder packs referenced artwork and the declared v2 entry only.
 - **Invalid image or missing artwork:** check the file exists, its extension matches its actual format, its size is within limits, and the manifest's case matches.
 - **Unsupported hook:** the archive is valid but this WinterX installation does not implement the requested behavior. Use a supported hook and engine; inventing a hook name does not install code.
 - **Existing tweak already enabled:** remove the independently enabled test in Ruby before installing its package equivalent.
 - **Bridge unavailable or operation pending:** restart the Ruby bridge, confirm Spring is jailbroken, and review the bridge terminal. Don't assume an interrupted operation succeeded.
-- **Nothing changes after installing:** confirm the package is listed as installed, the hook matches the engine, and Safe Mode is off. Some changes require restarting Spring; check the bridge output.
+- **Nothing changes after installing:** confirm installation and engine support, and that Safe Mode is off. V2 requires a deliberate full launcher reopen; inspect `last-error.txt` and runtime logs for failures. The built-in ColoredBar archive cannot upgrade engine hooks on its own.
 
 The project is a beta. Back up Spring data before experimenting, and add repositories only from authors you trust.

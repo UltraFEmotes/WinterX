@@ -338,14 +338,22 @@ function showAbout() {
   page.add(new UILabel({ frame: [25, 95, 270, 190], text: "WinterX and Ruby are fun fan-made projects for Spring, created by WeirdMM. Thanks for trying them and sharing your ideas!", size: 16, lines: 8, align: "center", color: "#333333" }));
   homeNav.push(page);
 }
+function joinDiscord() {
+  try {
+    UIApplication.openURL("https://discord.gg/4JTe27ZRNd");
+  } catch (e) {
+    UIAlertView.show({ title: "Could not open Discord", message: "Open https://discord.gg/4JTe27ZRNd in your browser. " + String(e), buttons: ["OK"] });
+  }
+}
 
 function refresh() {
   var live = liveStatus();
   home.sections = [
-    { header: "WELCOME TO RUBY", footer: "Three test tweaks for Spring.", rows: [
+    { header: "WELCOME TO RUBY", footer: "Packages and tweaks for Spring.", rows: [
       { title: "Ruby", subtitle: "The package manager for Spring", selectable: false },
       { title: "Browse Packages", accessory: "disclosure", onSelect: function () { tabs.selectedIndex = 1; } },
-      { title: "About Ruby", accessory: "disclosure", onSelect: showAbout }
+      { title: "About Ruby", accessory: "disclosure", onSelect: showAbout },
+      { title: "Join our Discord", accessory: "disclosure", onSelect: joinDiscord }
     ] },
     { header: "WINTERX", footer: "Temporarily disable tweaks.", rows: [
       { title: "Safe Mode", detail: live && live.safeModeSupported ? (live.safeMode ? "On" : "Off") : "Unavailable", accessory: "disclosure", onSelect: changeSafeMode }

@@ -7,13 +7,15 @@ const data = {
   'packages.json': { available: [{ id: 'me.test.settings', name: 'Test', description: 'Example', author: 'A', version: '1.0', filename: 'test.springys', sha256: 'abc', installedSha256: null, previews: [] }], installed: [] }
 };
 const views = [];
+const openedURLs = [];
+const alerts = [];
 function Table(options) { Object.assign(this, options); views.push(this); }
 function Nav(root) { this.root = root; this.push = x => { this.last = x; }; }
 function View(options) { Object.assign(this, options); this.children = []; this.add = x => { this.children.push(x); return x; }; views.push(this); }
 const context = {
   UITableViewController: Table, UINavigationController: Nav, UIViewController: View,
-  UIImageView: View, UILabel: View, UITextField: View, UIButton: View, UITabBarController: function (controllers) { this.controllers = controllers; this.selectedIndex = 0; }, UIApplication: { run() {} },
-  UIAlertView: { show(options, callback) { if (callback) callback(1); } },
+  UIImageView: View, UILabel: View, UITextField: View, UIButton: View, UITabBarController: function (controllers) { this.controllers = controllers; this.selectedIndex = 0; }, UIApplication: { run() {}, openURL(url) { openedURLs.push(url); } },
+  UIAlertView: { show(options, callback) { alerts.push(options); if (callback) callback(1); } },
   storage: { get(k) { return records[k]; }, set(k,v) { records[k] = v; }, remove(k) { delete records[k]; } },
   files: { exists(p) { return p === "winterx/" || p in data; }, readJSON(p) { if (!(p in data)) throw Error('missing'); return data[p]; },
     writeJSON(p,v) { data[p] = v; }, write(p,v) { data[p]=v; }, read(p) { return data[p]; }, remove(p) { delete data[p]; }, import(options, callback) { callback(['imports/test.springys'], null); } },
@@ -22,6 +24,14 @@ const context = {
 const unpatched = Object.assign({}, context, {files:Object.assign({}, context.files, {exists(){return false;}})});
 assert.throws(() => vm.runInNewContext(fs.readFileSync('Ruby/main.js','utf8'), unpatched), /WinterX is not active/);
 vm.runInNewContext(fs.readFileSync('Ruby/main.js', 'utf8'), context);
+assert.strictEqual(openedURLs.length, 0, 'Discord opened without a user tap');
+const rubyHome = views.find(x => x.title === 'Ruby');
+rubyHome.sections[0].rows.find(x => x.title === 'Join our Discord').onSelect();
+assert.deepStrictEqual(openedURLs, ['https://discord.gg/4JTe27ZRNd']);
+context.UIApplication.openURL = () => { throw Error('Safari unavailable'); };
+context.joinDiscord();
+assert.strictEqual(alerts.pop().title, 'Could not open Discord');
+console.log('Ruby Discord button opens only the supplied invite on tap and handles errors');
 const catalogue = views.find(x => x.title === 'Packages');
 const local = views.find(x => x.title === 'Local Packages');
 catalogue.sections[0].rows[0].onSelect();

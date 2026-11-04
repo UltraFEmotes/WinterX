@@ -115,9 +115,52 @@ TAP_PATCH = '''    :cond_32
     const-string v10, "winterx-animaper-mode-"
     invoke-virtual {v0, v10}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
     move-result v0
-    if-eqz v0, :ruby_test_continue
+    if-eqz v0, :winterx_tw_page
     iget-object v0, v9, LE1/V6;->a:Ljava/lang/String;
     invoke-static {v0}, Lwinterx/animaper/AnimaperSettings;->select(Ljava/lang/String;)V
+    const/4 v0, 0x1
+    return v0
+    :winterx_tw_page
+    iget-object v0, v9, LE1/V6;->a:Ljava/lang/String;
+    const-string v10, "winterx-tw-p/"
+    invoke-virtual {v0, v10}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v10
+    if-eqz v10, :winterx_tw_action
+    invoke-virtual {v1, v0, v5}, Lx1/i1;->t3(Ljava/lang/String;LE1/L6;)V
+    const/4 v0, 0x1
+    return v0
+    :winterx_tw_action
+    iget-object v0, v9, LE1/V6;->a:Ljava/lang/String;
+    const-string v10, "winterx-tw-r/"
+    invoke-virtual {v0, v10}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v10
+    if-eqz v10, :winterx_cb_picker
+    invoke-static {v0}, Lwinterx/tweaks/TweakSettings;->action(Ljava/lang/String;)V
+    const/4 v0, 0x1
+    return v0
+    :winterx_cb_picker
+    iget-object v0, v9, LE1/V6;->a:Ljava/lang/String;
+    const-string v10, "winterx-cb-picker"
+    invoke-virtual {v10, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v10
+    if-eqz v10, :winterx_cb_color
+    const-string v10, "winterx-cb-page"
+    invoke-virtual {v1, v10, v5}, Lx1/i1;->t3(Ljava/lang/String;LE1/L6;)V
+    const/4 v0, 0x1
+    return v0
+    :winterx_cb_color
+    iget-object v0, v9, LE1/V6;->a:Ljava/lang/String;
+    const-string v10, "winterx-cb-"
+    invoke-virtual {v0, v10}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v10
+    if-eqz v10, :ruby_test_continue
+    iget-object v10, v9, LE1/V6;->e:Ljava/lang/String;
+    if-eqz v10, :winterx_cb_action
+    invoke-virtual {v1, v10, v5}, Lx1/i1;->t3(Ljava/lang/String;LE1/L6;)V
+    const/4 v0, 0x1
+    return v0
+    :winterx_cb_action
+    invoke-static {v0}, Lwinterx/coloredbar/ColoredBar;->action(Ljava/lang/String;)Z
     const/4 v0, 0x1
     return v0
     :ruby_test_continue
@@ -161,7 +204,8 @@ UNLOCK_START = '.method public final r0()V'
 UNLOCK_CALL = '    invoke-virtual {p0}, Lx1/i1;->O1()V'
 UNLOCK_PATCH = UNLOCK_CALL + '''
     iget-object v0, p0, Lx1/i1;->a:Lcom/guille/spring/LauncherActivity;
-    invoke-static {v0}, Lruby/RubyHooks;->showWelcome(Lcom/guille/spring/LauncherActivity;)V'''
+    invoke-static {v0}, Lruby/RubyHooks;->showWelcome(Lcom/guille/spring/LauncherActivity;)V
+    invoke-static {v0}, Lwinterx/tweaks/TweakHost;->start(Lcom/guille/spring/LauncherActivity;)V'''
 
 HOOKS = '''.class public final Lruby/RubyHooks;
 .super Ljava/lang/Object;
@@ -279,6 +323,16 @@ HOOKS = '''.class public final Lruby/RubyHooks;
     invoke-direct {v0, v1, v3, v2}, LE1/T6;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
     return-object v0
     :missing
+    invoke-static {p0}, Lwinterx/tweaks/TweakSettings;->page(Ljava/lang/String;)LE1/T6;
+    move-result-object v0
+    if-eqz v0, :winterx_cb_page
+    return-object v0
+    :winterx_cb_page
+    invoke-static {p0}, Lwinterx/coloredbar/ColoredBar;->page(Ljava/lang/String;)LE1/T6;
+    move-result-object v0
+    if-eqz v0, :winterx_animaper_page
+    return-object v0
+    :winterx_animaper_page
     invoke-static {p0}, Lwinterx/animaper/AnimaperSettings;->page(Ljava/lang/String;)LE1/T6;
     move-result-object v0
     return-object v0
@@ -368,7 +422,7 @@ HOOKS = '''.class public final Lruby/RubyHooks;
     invoke-direct {v1, v0, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
     invoke-virtual {v1}, Ljava/io/File;->isFile()Z
     move-result v2
-    if-eqz v2, :original
+    if-eqz v2, :winterx_cb_try
     new-instance v1, Ljava/io/File;
     const-string v2, "ruby/theme"
     invoke-direct {v1, v0, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
@@ -376,7 +430,7 @@ HOOKS = '''.class public final Lruby/RubyHooks;
     invoke-direct {v0, v1, p1}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
     invoke-virtual {v0}, Ljava/io/File;->isFile()Z
     move-result v1
-    if-eqz v1, :original
+    if-eqz v1, :winterx_cb_try
     new-instance v1, Ljava/io/FileInputStream;
     invoke-direct {v1, v0}, Ljava/io/FileInputStream;-><init>(Ljava/io/File;)V
     :try_end
@@ -384,6 +438,7 @@ HOOKS = '''.class public final Lruby/RubyHooks;
     .catch Ljava/lang/Throwable; {:try_start .. :try_end} :failure
     :failure
     move-exception v0
+    :winterx_cb_try
     :original
     invoke-virtual {p0, p1}, Landroid/content/res/AssetManager;->open(Ljava/lang/String;)Ljava/io/InputStream;
     move-result-object v0
@@ -482,6 +537,35 @@ BOOT_DISMISS = '''.class public final Lruby/BootDismiss;
 .end method
 '''
 
+TWEAK_QUICKJS = '''
+# WinterX contexts have smaller limits than ordinary .sapp apps (32 MB / 512 KB).
+.method private constructor <init>(JJLcom/guille/spring/sapp/QuickJs$Host;[Ljava/lang/String;)V
+    .locals 2
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+    sget-object v0, Lcom/guille/spring/sapp/QuickJs;->w:LM1/e;
+    invoke-virtual {v0}, LM1/e;->a()Ljava/lang/Object;
+    invoke-direct/range {p0 .. p6}, Lcom/guille/spring/sapp/QuickJs;->nNew(JJLcom/guille/spring/sapp/QuickJs$Host;[Ljava/lang/String;)J
+    move-result-wide v0
+    iput-wide v0, p0, Lcom/guille/spring/sapp/QuickJs;->h:J
+    return-void
+.end method
+
+.method public static winterxCreate(Ljava/util/ArrayList;LC0/a;)Lcom/guille/spring/sapp/QuickJs;
+    .locals 7
+    const/4 v0, 0x0
+    new-array v0, v0, [Ljava/lang/String;
+    invoke-virtual {p0, v0}, Ljava/util/ArrayList;->toArray([Ljava/lang/Object;)[Ljava/lang/Object;
+    move-result-object v6
+    check-cast v6, [Ljava/lang/String;
+    new-instance v0, Lcom/guille/spring/sapp/QuickJs;
+    const-wide/32 v1, 0x2000000
+    const-wide/32 v3, 0x80000
+    move-object v5, p1
+    invoke-direct/range {v0 .. v6}, Lcom/guille/spring/sapp/QuickJs;-><init>(JJLcom/guille/spring/sapp/QuickJs$Host;[Ljava/lang/String;)V
+    return-object v0
+.end method
+'''
+
 
 def patched(path, old, new):
     text = path.read_text()
@@ -500,6 +584,11 @@ def main():
     hook = a.decoded / 'smali/ruby/RubyHooks.smali'
     noop = a.decoded / 'smali/ruby/Noop.smali'
     dismiss = a.decoded / 'smali/ruby/BootDismiss.smali'
+    quickjs = a.decoded / 'smali/com/guille/spring/sapp/QuickJs.smali'
+    new_quickjs = quickjs.read_text()
+    if 'winterxCreate' in new_quickjs:
+        raise ValueError('WinterX QuickJS factory already exists')
+    new_quickjs += TWEAK_QUICKJS
     # Validate all patch locations before modifying files.
     page_files = [(a.decoded / 'smali/E1/B0.smali', '.method public a(Ljava/lang/String;)LE1/T6;\n    .locals 1'), (a.decoded / 'smali/E1/b4.1.smali', '.method public final a(Ljava/lang/String;)LE1/T6;\n    .locals 56')]
     page_changes = []
@@ -510,7 +599,9 @@ def main():
         method_text = content[begin:end]
         def decorate(match):
             register = match.group(1)
-            return ('    invoke-static/range {' + register + ' .. ' + register + '}, Lwinterx/animaper/AnimaperSettings;->decorate(LE1/T6;)LE1/T6;\n'
+            return ('    invoke-static/range {' + register + ' .. ' + register + '}, Lwinterx/tweaks/TweakSettings;->decorate(LE1/T6;)LE1/T6;\n'
+                    '    move-result-object ' + register + '\n'
+                    '    invoke-static/range {' + register + ' .. ' + register + '}, Lwinterx/animaper/AnimaperSettings;->decorate(LE1/T6;)LE1/T6;\n'
                     '    move-result-object ' + register + '\n    return-object ' + register)
         method_text, count = re.subn(r'^    return-object ([vp]\d+)$', decorate, method_text, flags=re.M)
         if count < 2: raise ValueError('Settings page return hooks were not found')
@@ -548,6 +639,9 @@ def main():
     hook.write_text(HOOKS)
     noop.write_text(NOOP)
     dismiss.write_text(BOOT_DISMISS)
+    quickjs.write_text(new_quickjs)
+    import coloredbar
+    coloredbar.apply(a.decoded)
     pattern = re.compile(r'invoke-virtual(/range)? (\{[^}]+\}), Landroid/content/res/AssetManager;->open\(Ljava/lang/String;\)Ljava/io/InputStream;')
     count = 0
     for path in (a.decoded / 'smali').rglob('*.smali'):
