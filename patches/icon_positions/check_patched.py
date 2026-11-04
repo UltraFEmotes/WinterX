@@ -22,6 +22,7 @@ with tempfile.TemporaryDirectory(prefix='winterx-patched-icons-') as temp:
     if args.source_layout:
         print('DEVELOPMENT SOURCE OVERLAY: results do not verify the packaged layout implementation', flush=True)
         sources += list((HERE / 'src/winterx/layout').glob('*.java'))
+        sources += list((HERE / 'src/winterx/snowy').glob('*.java'))
     subprocess.run([str(JAVAC), '--release', '21', '-cp', str(jar) + ':' + str(FRAMEWORK), '-d', str(classes), *(str(s) for s in sources)], check=True)
     cp = ':'.join((str(classes), str(jar), str(FRAMEWORK)))
     disabled = root / 'disabled'; disabled.mkdir()

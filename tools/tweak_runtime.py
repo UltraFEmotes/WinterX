@@ -62,3 +62,15 @@ def dockin_supported_by(apk):
                     and b'winterx/layout/SpringHooks' in primary)
     except (OSError, KeyError, zipfile.BadZipFile):
         return False
+
+
+def snowyhome_supported_by(apk):
+    """Helpers alone are insufficient: the opt-in renderer hooks must also be packaged."""
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            primary, helpers = archive.read('classes.dex'), archive.read('classes3.dex')
+            return (b'snowyhome-render-v1' in helpers and b'winterx/snowy/SnowySettings' in helpers
+                    and b'winterx/snowy/SnowyHome' in primary and b'winterxStockIcon' in primary
+                    and b'hiddenLabels' in primary and b'artwork' in primary)
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False

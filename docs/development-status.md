@@ -17,11 +17,17 @@ FreeMe/DockIn gained native cache-preserving motion/launch hooks, exception-safe
 
 Portable work includes bounded ADB/directory/SSH-client transports, host locks, conflict-preserving recovery journals and a bounded Ruby inventory/repository processor. Android tweak install/remove requests are refused until running-engine and runtime reconciliation/deployment can be validated. No on-device SSH daemon, network connection, APK signing bypass or service installation was performed.
 
+## SnowyHome source and separate experiment
+
+[SnowyHome](snowyhome.md) now implements verified local icon-pack authoring/loading, same-size private icon copies, badge tinting, hidden labels and corner masks, with actual native Settings. It has an unlisted capability-gated package draft; simulated install/removal preserves preferences/packs/layouts and never restarts Spring. The separate `builds/WinterXSpring-0.8.1-snowyhome-experimental2.apk` (SHA-256 `49bf7482544ab22bc528c482c25e5133c1ddef94cff4e5192bc8383abd52bc9f`, 5,195 converted classes) passed all twelve isolated runners (packaged software-bitmap/native-controller/icon-resolver/JVM checks plus standalone fixtures). Retained badge-artwork views restore stock in Safe Mode. **Not selected, installed or launched. Alpha8 remains unchanged and incompatible with this tweak.** Live-status/Safe Mode routing recognizes the verified experiment without changing the default. Pack-import UI and complete live rendering/cache/folder/Safe Mode trials remain outstanding.
+
+Current source passed **125 full-workspace / 117 public source-only Python tests**, plus all four JavaScript smoke runners in each checkout. The alpha8 evidence above remains a separate earlier check; it does not cover SnowyHome.
+
 ## Remaining work
 
 - One user-controlled alpha8 Spring session: visual drag/drop/folder/dock/launch/Settings trials, fresh process/receipt verification and protected-data checks.
 - Real Android target plus Windows/Linux hosts: permissions, SELinux, native QuickJS/architecture, signing-compatible data-preserving deployment and runtime recovery. Never uninstall/reinstall stock Spring to bypass a signature mismatch.
-- SnowyHome icon packs, badge colours, hidden labels and corner controls; an on-device SSH service with authentication/native Settings; generic third-party home APIs.
+- SnowyHome pack-import UI and live validation; an on-device SSH service with authentication/native Settings; generic third-party home APIs.
 - Full native runtime deadline/heap/stack, concurrent-alert, multi-tweak, update/uninstall and Safe Mode recovery trials.
 - User confirmation of Ruby's always-red bars/Discord link, companion 0.6 and expanded Settings/App Store/Phone coverage.
 

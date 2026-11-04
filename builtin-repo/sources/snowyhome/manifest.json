@@ -1,0 +1,9 @@
+{
+  "format": "winterx.springys/1",
+  "id": "com.winterx.snowyhome",
+  "name": "SnowyHome",
+  "version": "0.1.0-alpha",
+  "author": "WeirdMM",
+  "description": "Unlisted development icon packs, badge colours, hidden labels and icon corner controls in Spring Settings. Requires opt-in snowyhome-render-v1 hooks; prepared alpha8 is not compatible. No layout or shared-artwork mutation. Source checks only; live rendering and cache/folder integration still need validation. Not a working catalogue entry.",
+  "hook": "tweak.snowyhome"
+}

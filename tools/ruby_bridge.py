@@ -80,7 +80,7 @@ def operation_engine():
     import macapk_jailbreak
     if apk is not None:
         sha = macapk_jailbreak.digest(apk)
-        if sha in (macapk_jailbreak.PATCH_SHA, macapk_jailbreak.LOCAL_ALPHA8_SHA,
+        if sha in (macapk_jailbreak.PATCH_SHA, macapk_jailbreak.LOCAL_ALPHA8_SHA, macapk_jailbreak.LOCAL_SNOWY_SHA,
                    macapk_jailbreak.BRIDGELESS_ALPHA4_SHA, macapk_jailbreak.BRIDGELESS_ALPHA2_SHA):
             return apk, sha
     # Existing verification in safe_mode refuses this fallback unless it really is running.
@@ -171,6 +171,10 @@ def process(request, data, inbox, base=DEFAULT_BASE):
                 extra_hooks['tweak.dockin'] = (ruby_data / 'dockin.enabled', lambda enabled:
                     safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, engine,
                         macapk_jailbreak.digest(engine), enabled, 'dockin.enabled', 'DockIn'))
+            if engine is not None and tweak_runtime.snowyhome_supported_by(engine):
+                extra_hooks['tweak.snowyhome'] = (ruby_data / 'snowyhome.enabled', lambda enabled:
+                    safe_mode.set_live_tweak(macapk_jailbreak.DATA, macapk_jailbreak.STATE, engine,
+                        macapk_jailbreak.digest(engine), enabled, 'snowyhome.enabled', 'SnowyHome'))
             packages = ruby_packages.Packages(data, ruby_data / 'settings-test.enabled', apply_settings,
                                               extra_hooks=extra_hooks,
                                               tweak_root=macapk_jailbreak.DATA / 'files' / 'winterx-tweaks',
@@ -356,7 +360,7 @@ def update_live_status(data):
         if apk is not None:
             import macapk_jailbreak
             active = True
-            supported = macapk_jailbreak.digest(apk) in (macapk_jailbreak.PATCH_SHA, macapk_jailbreak.LOCAL_ALPHA8_SHA,
+            supported = macapk_jailbreak.digest(apk) in (macapk_jailbreak.PATCH_SHA, macapk_jailbreak.LOCAL_ALPHA8_SHA, macapk_jailbreak.LOCAL_SNOWY_SHA,
                 macapk_jailbreak.BRIDGELESS_ALPHA4_SHA, macapk_jailbreak.BRIDGELESS_ALPHA2_SHA)
             ruby_data = macapk_jailbreak.DATA / 'files/ruby'
             safe = supported and (ruby_data / 'safe-mode.enabled').is_file()

@@ -16,6 +16,12 @@ import safe_mode
 
 class LiveStatusTests(unittest.TestCase):
     def test_alpha8_status_and_requested_safe_mode_follow_running_engine_not_default(self):
+        self.verify_status_and_requested_safe_mode('LOCAL_ALPHA8_SHA')
+
+    def test_snowy_experiment_status_and_requested_safe_mode_follow_running_engine_not_default(self):
+        self.verify_status_and_requested_safe_mode('LOCAL_SNOWY_SHA')
+
+    def verify_status_and_requested_safe_mode(self, pin):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name); state = root / 'state'; state.mkdir()
             data = root / 'spring'; (data / 'files/ruby').mkdir(parents=True)
@@ -27,7 +33,7 @@ class LiveStatusTests(unittest.TestCase):
             (state / 'active.json').write_text(json.dumps(record))
             app = root / 'app'; (app / 'requests').mkdir(parents=True)
             with patch.object(macapk_jailbreak, 'STATE', state), patch.object(macapk_jailbreak, 'DATA', data), \
-                 patch.object(macapk_jailbreak, 'LOCAL_ALPHA8_SHA', sha), \
+                 patch.object(macapk_jailbreak, pin, sha), \
                  patch.object(macapk_jailbreak, 'PATCHED', root / 'default.apk'), \
                  patch.object(macapk_controls, 'spring_pids', return_value=[42]), \
                  patch.object(macapk_controls, 'is_overlay_process', return_value=True), \

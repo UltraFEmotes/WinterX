@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 import patch_dockin
+import patch_snowy
 
 RENDER = 'smali/I1/h0.1.smali'
 CONTROLLER = 'smali/E1/O1.smali'
@@ -173,6 +174,8 @@ def apply(root):
                 '    return-object v0\n    :winterx_grid_fallback')
         contents[CONTROLLER] = method(contents[CONTROLLER], start, insert_entry(start, locals_decl, body))
     patch_dockin.apply(contents, method, replace_once)
+    if os.environ.get('WINTERX_BUILD_SNOWYHOME') == '1':
+        patch_snowy.apply(contents, method, replace_once)
     for name, text in contents.items():
         paths[name].write_text(text)
 

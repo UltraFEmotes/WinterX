@@ -13,16 +13,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Native Spring Settings models for the real FreeMe and DockIn tweaks. */
+/** Native Spring Settings models for layout drafts and opt-in SnowyHome appearance. */
 public final class LayoutSettings {
     public static final String PAGE = "winterx-layout-p/", ACTION = "winterx-layout-a/";
     private LayoutSettings() {}
     private static V6 row(String id, String title) { return Z3.g(Z3.a, id, title, null, null, null, 0x18); }
     public static void rows(List<V6> rows) {
+        winterx.snowy.SnowySettings.rows(rows);
         if (FreeMe.installed()) rows.add(row(PAGE + "freeme", "FreeMe"));
         if (DockIn.installed()) rows.add(row(PAGE + "dockin", "DockIn"));
     }
     public static T6 page(String id) {
+        T6 snowy = winterx.snowy.SnowySettings.page(id);
+        if (snowy != null) return snowy;
         List<V6> rows = new ArrayList<>();
         if ((PAGE + "freeme").equals(id) && FreeMe.installed()) {
             rows.add(row(ACTION + "freeme-toggle", (FreeMe.enabled() ? "✓ " : "") + "Enable FreeMe"));
@@ -49,6 +52,9 @@ public final class LayoutSettings {
         finally { if (temp != null) temp.delete(); }
     }
     public static void action(String id, x1.i1 spring) {
+        if (id != null && id.startsWith("winterx-layout-a/snowy/")) {
+            winterx.snowy.SnowySettings.action(id); return;
+        }
         if ((ACTION + "freeme-toggle").equals(id) && FreeMe.installed()) {
             File disabled = new File(FreeMe.folder(), "freeme.disabled");
             if (FreeMe.enabled()) write("freeme.disabled", "disabled\n");

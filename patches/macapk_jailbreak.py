@@ -29,6 +29,7 @@ APPEARANCE_BETA2_SHA = 'd70255d55fd5eefa8adf0aa15d44d854b66ddc4d2ca434f54f38ffb1
 BRIDGELESS_ALPHA2_SHA = 'a52f16a8ec0537a30cbafd4bbc97e5a2f812b91568d27c2c25f08b42882bf4a4'
 BRIDGELESS_ALPHA4_SHA = 'f03c4ae6c534337b2e046a8ee004c36caf5ee8f0e409b3d9727fc8031a410cfd'
 LOCAL_ALPHA8_SHA = 'e1fc328e5cb794f8d8ebbac713e9cfaba6d7db08af14c5c13345c80137b6c6db'
+LOCAL_SNOWY_SHA = '49bf7482544ab22bc528c482c25e5133c1ddef94cff4e5192bc8383abd52bc9f'
 PATCHED = WORKSPACE / 'builds/WinterXSpring-0.8.1-native-controls-alpha.apk'
 STATE = WORKSPACE / '.ruby-state'
 ORIGINAL_SHA = 'f07f980fe681a6de9c4ce8735ae1c0bb0f852f447fbdb925d2dec37cf9778e5c'
@@ -184,7 +185,7 @@ def enable_settings_test():
     root = STATE / 'overlay/android'
     active_apk = Path(active.get('apk', str(LEGACY_PATCHED)))
     active_sha = active.get('apk_sha256')
-    if (active_sha not in (PATCH_SHA, LOCAL_ALPHA8_SHA, BRIDGELESS_ALPHA4_SHA, BRIDGELESS_ALPHA2_SHA, APPEARANCE_BETA2_SHA, SETTINGS_PAGE_PATCH_SHA, BETA4_PATCH_SHA, BETA3_PATCH_SHA, BETA2_PATCH_SHA, BETA1_PATCH_SHA, PREVIOUS_PATCH_SHA, EARLIER_PATCH_SHA, ALPHA1_PATCH_SHA, SETTINGS_PATCH_SHA, LEGACY_PATCH_SHA) or digest(active_apk) != active_sha or
+    if (active_sha not in (PATCH_SHA, LOCAL_ALPHA8_SHA, LOCAL_SNOWY_SHA, BRIDGELESS_ALPHA4_SHA, BRIDGELESS_ALPHA2_SHA, APPEARANCE_BETA2_SHA, SETTINGS_PAGE_PATCH_SHA, BETA4_PATCH_SHA, BETA3_PATCH_SHA, BETA2_PATCH_SHA, BETA1_PATCH_SHA, PREVIOUS_PATCH_SHA, EARLIER_PATCH_SHA, ALPHA1_PATCH_SHA, SETTINGS_PATCH_SHA, LEGACY_PATCH_SHA) or digest(active_apk) != active_sha or
             control.spring_pids() != [pid] or not control.is_overlay_process(pid, active_apk, root)):
         raise ValueError('The verified Ruby-patched Spring must be running first')
     setting = DATA / 'files/ruby/settings-test.enabled'

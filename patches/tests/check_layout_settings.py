@@ -25,7 +25,7 @@ def main():
         # Failed preference changes log warnings; use the isolated logging stub, not Mac.APK JNI.
         sources.append(ROOT / 'patches/icon_positions/test/android/util/Log.java')
         if not args.packaged:
-            for package in ('layout', 'tweaks', 'coloredbar', 'appearance'):
+            for package in ('layout', 'tweaks', 'coloredbar', 'appearance', 'snowy'):
                 sources += sorted((ROOT / 'patches/icon_positions/src/winterx' / package).glob('*.java'))
         cp = str(args.jar.resolve(strict=True)) + ':' + str(FRAMEWORK)
         subprocess.run([str(JAVAC), '--release', '21', '-cp', cp, '-d', str(classes), *map(str, sources)], check=True)
