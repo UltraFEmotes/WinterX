@@ -1,0 +1,15 @@
+{
+  "id": "com.ruby.jailbreak",
+  "name": "WinterX",
+  "version": "0.5",
+  "build": 5,
+  "minSpring": 5,
+  "genre": "Utilities",
+  "description": "WinterX is a fan-made jailbreak for Spring on Mac.APK.",
+  "statusBarStyle": "blackOpaque",
+  "tallScreen": true,
+  "permissions": {
+    "network": []
+  },
+  "prerenderedIcon": false
+}

@@ -1,0 +1,12 @@
+{
+  "id": "com.winterx.iexplored",
+  "name": "IExplored",
+  "version": "0.4",
+  "build": 4,
+  "minSpring": 6,
+  "genre": "Utilities",
+  "description": "Browse and edit Spring's files.",
+  "statusBarStyle": "blackOpaque",
+  "tallScreen": true,
+  "permissions": { "network": [] }
+}

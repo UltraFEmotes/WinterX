@@ -1,0 +1,12 @@
+{
+  "id": "me.weirdmm.liveinstalltest",
+  "name": "Live Install Test",
+  "version": "1.0",
+  "build": 1,
+  "minSpring": 10,
+  "genre": "Utilities",
+  "statusBarStyle": "default",
+  "permissions": {
+    "network": []
+  }
+}

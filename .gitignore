@@ -1,0 +1,10 @@
+.DS_Store
+.ruby-state/
+__pycache__/
+*.py[cod]
+*.apk
+*.sapp
+builds/
+/SpringSDK-r10
+themes/red/
+.venv/
