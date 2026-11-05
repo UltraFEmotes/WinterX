@@ -15,6 +15,8 @@ ENGINE_SHA = '71fc52605f2d32294597dd9496956e72b3a02d485b4b233703087d6a75ae980d'
 ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-tweaks-batch2-reviewed.apk'
 UI_FIX_SHA = '3ca1213cf316081d958e2871caa367578595bfe5cb3de4cfd625972921c60169'
 UI_FIX_ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-tweaks-batch2-ui-fix2.apk'
+FETCH_SHA = 'a1de2419994ccfa009e181af2d1ad7471332613de0af1e30c5d6464ca67e0987'
+FETCH_ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-tweaks-batch2-neofetch-dev.apk'
 LABEL = 'SnowyHome + DockIn + FreeMe + Message+ + SSH'
 PACKAGE_FILES = {'MessagePlus': 'MessagePlus-0.1.0-batch2-dev.springys',
                  'SSH': 'SSH-0.1.0-batch2-dev.springys'}

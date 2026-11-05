@@ -28,12 +28,18 @@ public final class SshEngineCheck {
         check(!server.getPublickeyAuthenticator().authenticate("root", allowed.getPublic(), null), "root login accepted");
         check(!server.getPublickeyAuthenticator().authenticate("winterx", wrong.getPublic(), null), "wrong key accepted");
         check(server.getForwardingFilter() == RejectAllForwardingFilter.INSTANCE && server.getShellFactory() == null, "forwarding or PTY enabled");
+        check(SshServerEngine.INFO_ABI.equals("winterx-ssh-info-v1"), "built-in info capability missing");
+        check(FetchCheck.run(server.getCommandFactory().createCommand(null, "neofetch --no-color"), 0).contains("WinterX"),
+            "real command factory did not route the built-in before Android shell fallback");
+        check(FetchCheck.run(server.getCommandFactory().createCommand(null, "winterx-info --help"), 0).contains("Usage:"), "factory alias/help missing");
+        FetchCheck.run(server.getCommandFactory().createCommand(null, "neofetch --unknown"), 2);
+        check(!engine.running() && server.getBoundAddresses().isEmpty(), "built-in report started a listener");
         byte[] saved = Files.readAllBytes(host);
         SshServerEngine second = SshServerEngine.configure(files, keys, host, 2222, true);
         check(second.fingerprint.equals(engine.fingerprint) && java.util.Arrays.equals(saved, Files.readAllBytes(host)), "host key rotated");
         Files.write(keys, Collections.singletonList("command=evil " + PublicKeyEntry.toString(allowed.getPublic())));
         try { SshServerEngine.authorized(keys); throw new AssertionError("key options ignored"); } catch (java.io.IOException expected) {}
         server.close(true); second.configuration().close(true);
-        System.out.println("SSH no-listener check: explicit start gate, pinned private host identity, public-key-only auth, wrong-key/root rejection and loopback/no-forwarding policy passed");
+        System.out.println("SSH no-listener check: explicit start gate, pinned host identity, public-key-only auth, wrong-key/root rejection, loopback/no-forwarding and real built-in info dispatch passed");
     }
 }

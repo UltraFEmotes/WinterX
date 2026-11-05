@@ -13,6 +13,7 @@ class LocalTestLauncherTests(unittest.TestCase):
     def test_combined_engine_is_pinned_and_old_alpha8_plan_is_rejected(self):
         self.assertEqual(launcher.TEST_SHA, '71fc52605f2d32294597dd9496956e72b3a02d485b4b233703087d6a75ae980d')
         self.assertEqual(launcher.bundle.UI_FIX_SHA, '3ca1213cf316081d958e2871caa367578595bfe5cb3de4cfd625972921c60169')
+        self.assertEqual(launcher.bundle.FETCH_SHA, 'a1de2419994ccfa009e181af2d1ad7471332613de0af1e30c5d6464ca67e0987')
         with patch.object(launcher.control, 'spring_pids', return_value=[]), \
              patch.object(launcher.control, 'start_overlay') as start:
             with self.assertRaises(ValueError):
@@ -26,10 +27,10 @@ class LocalTestLauncherTests(unittest.TestCase):
             with self.assertRaises(RuntimeError): launcher.launch({})
             stop.assert_not_called(); start.assert_not_called()
 
-    def test_both_explicit_pins_verify_without_changing_current_selection(self):
+    def test_all_explicit_pins_verify_without_changing_current_selection(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); apk = root / 'engine.apk'; apk.write_bytes(b'isolated fixture')
-            for sha in (launcher.TEST_SHA, launcher.bundle.UI_FIX_SHA):
+            root = Path(tmp).resolve(); apk = root / 'engine.apk'; apk.write_bytes(b'isolated fixture')
+            for sha in (launcher.TEST_SHA, launcher.bundle.UI_FIX_SHA, launcher.bundle.FETCH_SHA):
                 plan = {'status': 'prepared', 'apk': str(apk), 'apk_sha256': sha, 'backup': str(root), 'bundled_packages': []}
                 with self.subTest(sha=sha), patch.object(launcher.control, 'spring_pids', return_value=[]), \
                      patch.object(launcher.jailbreak, 'digest', return_value=sha), \
@@ -52,7 +53,7 @@ class LocalTestLauncherTests(unittest.TestCase):
                 start.assert_not_called()
 
     def test_receipt_records_the_actual_engine_without_restarting(self):
-        for sha in (launcher.TEST_SHA, launcher.bundle.UI_FIX_SHA):
+        for sha in (launcher.TEST_SHA, launcher.bundle.UI_FIX_SHA, launcher.bundle.FETCH_SHA):
             with self.subTest(sha=sha), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp); state = root / 'state'; data = root / 'data'
                 (state / 'overlay/android').mkdir(parents=True)

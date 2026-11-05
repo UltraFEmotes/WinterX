@@ -61,7 +61,7 @@ def preserved(before, after):
 def prepare(apk, expected_sha=None):
     stopped()
     expected_sha = launcher.TEST_SHA if expected_sha is None else expected_sha
-    if expected_sha not in (launcher.TEST_SHA, bundle.UI_FIX_SHA):
+    if expected_sha not in (launcher.TEST_SHA, bundle.UI_FIX_SHA, bundle.FETCH_SHA):
         raise ValueError('The local-test engine is not an explicitly pinned candidate.')
     apk = Path(apk)
     if apk.is_symlink():
@@ -119,9 +119,18 @@ def prepare(apk, expected_sha=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--ui-fix', action='store_true', help='Explicitly select the pinned shared-path/grid correction, only with Spring fully closed')
+    engine = parser.add_mutually_exclusive_group()
+    engine.add_argument('--ui-fix', action='store_true', help='Explicitly select the pinned shared-path/grid correction, only with Spring fully closed')
+    engine.add_argument('--neofetch', action='store_true', help='Explicitly select the pinned built-in SSH info engine, only with Spring fully closed')
     args = parser.parse_args()
-    plan = prepare(bundle.UI_FIX_ENGINE, bundle.UI_FIX_SHA) if args.ui_fix else prepare(bundle.ENGINE)
+    if args.neofetch:
+        plan = prepare(bundle.FETCH_ENGINE, bundle.FETCH_SHA)
+    elif args.ui_fix:
+        plan = prepare(bundle.UI_FIX_ENGINE, bundle.UI_FIX_SHA)
+    else:
+        plan = prepare(bundle.ENGINE)
     print(bundle.LABEL + ' prepared. Spring was not launched; SSH starts only from Settings.')
+    if args.neofetch:
+        print('Built-in neofetch / winterx-info included. No client keys or listener were created.')
     print('Backup: ' + plan['backup'])
     print('Start it yourself with Start WinterX Local Test.command, not the stock launcher.')

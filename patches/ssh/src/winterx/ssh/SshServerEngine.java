@@ -18,6 +18,7 @@ import org.apache.sshd.common.io.nio2.Nio2ServiceFactoryFactory;
 import org.apache.sshd.core.CoreModuleProperties;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.pubkey.UserAuthPublicKeyFactory;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.forward.RejectAllForwardingFilter;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.shell.ProcessShellFactory;
@@ -26,6 +27,7 @@ import org.apache.sshd.sftp.server.SftpSubsystemFactory;
 /** Actual optional SSH/SFTP engine. Disabled by default; no bind in configure(). Runs as Spring's UID, never su/root. */
 public final class SshServerEngine {
     public static final String ABI = "winterx-sshd-auth-v1";
+    public static final String INFO_ABI = "winterx-ssh-info-v1";
     private final SshServer server;
     public final String fingerprint;
     private SshServerEngine(SshServer server, String fingerprint) { this.server = server; this.fingerprint = fingerprint; }
@@ -73,7 +75,9 @@ public final class SshServerEngine {
         ssh.setForwardingFilter(RejectAllForwardingFilter.INSTANCE);
         ssh.setShellFactory(null); // no interactive PTY in this first implementation
         ssh.setCommandFactory((channel, command) -> {
-            if (command.length() > 8192) throw new IOException("SSH command too long");
+            if (command == null || command.length() > 8192) throw new IOException("SSH command too long");
+            Command info = FetchCommand.create(command);
+            if (info != null) return info; // Works on Mac.APK too, without /system/bin/sh.
             if (!Files.isExecutable(java.nio.file.Paths.get("/system/bin/sh"))) throw new IOException("Android shell unavailable");
             return new ProcessShellFactory("/system/bin/sh", "/system/bin/sh", "-c", command).createShell(channel);
         });

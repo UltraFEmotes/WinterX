@@ -20,7 +20,7 @@ def verify(plan):
     if control.spring_pids():
         raise RuntimeError('Fully quit Spring Launcher first. This command never stops or resprings it.')
     expected_sha = plan.get('apk_sha256')
-    if plan.get('status') != 'prepared' or expected_sha not in (TEST_SHA, bundle.UI_FIX_SHA):
+    if plan.get('status') != 'prepared' or expected_sha not in (TEST_SHA, bundle.UI_FIX_SHA, bundle.FETCH_SHA):
         raise ValueError('The local test has not been prepared and verified.')
     apk = Path(plan['apk']).resolve(strict=True)
     if jailbreak.digest(apk) != expected_sha:
@@ -84,6 +84,8 @@ def main():
     print(bundle.LABEL + ' experimental engine started.')
     print('Unlock Spring and open Settings for the five installed tweaks.')
     print('SnowyHome import/home APIs are included. SSH remains stopped until explicit Settings Start.')
+    if record['apk_sha256'] == bundle.FETCH_SHA:
+        print('Built-in neofetch / winterx-info is included; configure your public key and Start SSH before using it.')
     print('Message+ photo settings are included; video sending/reactions remain unavailable.')
     print('Try ColoredBar, Animaper, then Code Tweak Example → Run My Code.')
     print('Saved-layout backup: ' + record['backup'])

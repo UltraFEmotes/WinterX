@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run SSH configuration checks without binding any port or starting a command."""
+"""Run SSH configuration and in-memory info checks without binding a port or starting a shell."""
 import argparse
 from pathlib import Path
 import subprocess
@@ -15,7 +15,9 @@ def main():
         root = Path(tmp).resolve(); classes = root / 'classes'; classes.mkdir(); files = root / 'private'; files.mkdir()
         subprocess.run([args.javac, '--release', '8', '-cp', str(args.jar.resolve()), '-d', str(classes),
                         *map(str, (HERE / 'test').rglob('*.java'))], check=True)
-        subprocess.run([args.java, '-cp', str(classes) + ':' + str(args.jar.resolve()), 'winterx.ssh.SshEngineCheck', str(files)], check=True)
+        for check in ('SshEngineCheck', 'FetchCheck'):
+            subprocess.run([args.java, '-Xverify:all', '-cp', str(classes) + ':' + str(args.jar.resolve()),
+                            'winterx.ssh.' + check, str(files)], check=True)
 
 
 if __name__ == '__main__': main()
