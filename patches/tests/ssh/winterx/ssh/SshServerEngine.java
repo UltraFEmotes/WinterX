@@ -6,6 +6,8 @@ import java.util.concurrent.TimeUnit;
 
 /** Resource/lifecycle spy. Never creates a socket, process, host key or SSH server. */
 public final class SshServerEngine {
+    public static final String APP_ABI = "winterx-ssh-app-v1";
+    public static final String SHELL_ABI = "winterx-ssh-prompt-v1";
     public static volatile int configured, started, stopped;
     public static volatile boolean blockConfigure, blockStart, failStart;
     public static CountDownLatch entered, proceed;
@@ -31,4 +33,5 @@ public final class SshServerEngine {
         if (failStart) throw new java.io.IOException("fixture start failure");
     }
     public void stop() { stopped++; }
+    public boolean running() { return started > stopped && !failStart; }
 }

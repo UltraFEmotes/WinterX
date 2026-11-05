@@ -9,6 +9,7 @@ from pathlib import Path
 import springys
 import springys_registry
 import tweak_runtime
+import animaper
 
 ROOT = Path(__file__).resolve().parents[1]
 ENGINE_SHA = '71fc52605f2d32294597dd9496956e72b3a02d485b4b233703087d6a75ae980d'
@@ -17,6 +18,10 @@ UI_FIX_SHA = '3ca1213cf316081d958e2871caa367578595bfe5cb3de4cfd625972921c60169'
 UI_FIX_ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-tweaks-batch2-ui-fix2.apk'
 FETCH_SHA = 'a1de2419994ccfa009e181af2d1ad7471332613de0af1e30c5d6464ca67e0987'
 FETCH_ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-tweaks-batch2-neofetch-dev.apk'
+RENDER_ACTIONS_SHA = 'db1b7d4fd692cc426cab7b9ce9044af8088de6c35b95260fe187981c889c918e'
+RENDER_ACTIONS_ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-render-barrel-actions-dev.apk'
+SSH_TERMINAL_SHA = 'adbc9df090bed714afb4121df8b9927cd3478ae810e783fe1964d75115f1f664'
+SSH_TERMINAL_ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-ssh-terminal-snowflake-dev.apk'
 LABEL = 'SnowyHome + DockIn + FreeMe + Message+ + SSH'
 PACKAGE_FILES = {'MessagePlus': 'MessagePlus-0.1.0-batch2-dev.springys',
                  'SSH': 'SSH-0.1.0-batch2-dev.springys'}
@@ -41,8 +46,16 @@ def regular(path):
     return path
 
 
+def data_root(data):
+    """Trust the configured platform data-root alias, never links within files/shared_prefs."""
+    root = Path(data).resolve()
+    if root.exists() and not root.is_dir():
+        raise ValueError('The configured Spring data root is not a directory.')
+    return root
+
+
 def registry_root(data):
-    root = Path(data) / 'files/sapps-data/com.ruby.manager/files/package-registry'
+    root = data_root(data) / 'files/sapps-data/com.ruby.manager/files/package-registry'
     for name in ('installed.json', 'operation.json', '.lock'):
         regular(root / name)
     if (root / 'operation.json').exists():
@@ -53,6 +66,11 @@ def registry_root(data):
 def inputs(apk, digest, expected_sha=ENGINE_SHA):
     if digest(apk) != expected_sha or not all(check(apk) for check in CHECKS):
         raise ValueError('The combined local-test engine failed checksum/capability verification.')
+    if expected_sha in (RENDER_ACTIONS_SHA, SSH_TERMINAL_SHA) and not all(check(apk) for check in
+            (animaper.barrel_supported_by, tweak_runtime.ssh_actions_supported_by, tweak_runtime.renderer_transitions_supported_by)):
+        raise ValueError('The renderer/Barrel/SSH-action candidate is missing required native capabilities.')
+    if expected_sha == SSH_TERMINAL_SHA and not tweak_runtime.ssh_prompt_supported_by(apk):
+        raise ValueError('The interactive SSH candidate is missing its in-process prompt capability.')
     records = []
     for name, sha in BUNDLE:
         path = regular(ROOT / 'builds' / PACKAGE_FILES.get(name, name + '-0.1.0-local-bundle.springys'))
@@ -69,6 +87,7 @@ def inputs(apk, digest, expected_sha=ENGINE_SHA):
 def activate(data, records, stopped):
     """Called only after a fresh backup and explicit combined-test preparation."""
     stopped()
+    data = data_root(data)
     root = registry_root(data)
     before = json.loads((root / 'installed.json').read_text()) if (root / 'installed.json').exists() else {}
     if not isinstance(before, dict):
@@ -105,6 +124,7 @@ def activate(data, records, stopped):
 
 
 def verify(data, records):
+    data = data_root(data)
     expected = {('com.winterx.' + name.lower(), 'tweak.' + name.lower(), sha) for name, sha in BUNDLE}
     if not isinstance(records, list) or len(records) != len(BUNDLE):
         raise ValueError('The combined-test package receipt is missing.')

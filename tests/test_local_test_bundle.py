@@ -88,6 +88,31 @@ class LocalTestBundleTests(unittest.TestCase):
             self.assertEqual(outside.read_bytes(), b'untouched')
             self.assertFalse((registry / 'installed.json').exists())
 
+    def test_combined_pin_needs_renderer_barrel_and_action_hooks_before_package_reads(self):
+        for missing in ('barrel', 'actions', 'renderer'):
+            with self.subTest(missing=missing), patch.object(bundle, 'CHECKS', (lambda apk: True,)), \
+                 patch.object(bundle.animaper, 'barrel_supported_by', return_value=missing != 'barrel'), \
+                 patch.object(bundle.tweak_runtime, 'ssh_actions_supported_by', return_value=missing != 'actions'), \
+                 patch.object(bundle.tweak_runtime, 'renderer_transitions_supported_by', return_value=missing != 'renderer'), \
+                 patch.object(bundle.springys, 'inspect') as inspect:
+                with self.assertRaisesRegex(ValueError, 'missing required native capabilities'):
+                    bundle.inputs('fixture.apk', lambda apk: bundle.RENDER_ACTIONS_SHA, bundle.RENDER_ACTIONS_SHA)
+                inspect.assert_not_called()
+
+    def test_platform_data_alias_is_accepted_but_child_links_are_still_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve(); data = root / 'native_data'; data.mkdir(); alias = root / 'platform.data'; alias.symlink_to(data, target_is_directory=True)
+            records, pins = self.fixture(root)
+            registry = bundle.registry_root(alias); registry.mkdir(parents=True)
+            (registry / 'installed.json').write_text('{}'); (data / 'files/ruby').mkdir()
+            with patch.object(bundle, 'BUNDLE', pins):
+                bundle.activate(alias, records, Mock()); bundle.verify(alias, records)
+                self.assertEqual(bundle.registry_root(alias), bundle.registry_root(data))
+                marker = data / 'files/ruby/snowyhome.enabled'; marker.unlink(); marker.symlink_to(data / 'untouched')
+                with self.assertRaisesRegex(ValueError, 'symlinks'):
+                    bundle.verify(alias, records)
+            self.assertTrue(alias.is_symlink())
+
     def test_stopped_guard_is_checked_before_any_write_and_preservation_refuses_other_edits(self):
         with self.assertRaises(RuntimeError):
             bundle.activate(Path('not-read'), [], Mock(side_effect=RuntimeError('running')))

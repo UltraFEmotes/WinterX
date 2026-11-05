@@ -20,7 +20,10 @@ public final class SshSettings {
         rows.add(row(ACTION + "start", "Start SSH for This Session")); rows.add(row(ACTION + "stop", "Stop SSH"));
         String footer = SshService.status() + "\nPublic-key authentication only. Copy plain public keys into ruby/ssh/authorized_keys. "
             + "SFTP and Android shell exec run as Spring's UID, not root; an authorized key can change Spring data. "
-            + "Loopback only; remote access needs an explicitly configured external tunnel. No passwords, forwarding or interactive PTY. Safe Mode/removal/key changes stop this service.";
+            + "Loopback only; remote access needs an explicitly configured external tunnel. No passwords or forwarding. Safe Mode/removal/key changes stop this service.";
+        if (SshActions.available()) footer += "\nBuilt-ins: neofetch and winterx-app --help. App actions target .sapp apps only; uploads go in ruby/ssh/inbox and require their SHA-256 plus --confirm.";
+        if (SshService.promptAvailable()) footer += "\nInteractive terminal: connect with SSH without a command, then type help at winterx>. Ctrl-C cancels pending work; exit disconnects.";
+        else footer += "\nThis engine supports one-shot commands only; no interactive prompt.";
         return new T6(id, "SSH", Collections.singletonList(new W6("EXPERIMENTAL PRIVATE ACCESS", null, footer, null, rows)));
     }
     public static void action(String id) {

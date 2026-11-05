@@ -15,7 +15,7 @@ def main():
         root = Path(tmp).resolve(); classes = root / 'classes'; classes.mkdir(); files = root / 'private'; files.mkdir()
         subprocess.run([args.javac, '--release', '8', '-cp', str(args.jar.resolve()), '-d', str(classes),
                         *map(str, (HERE / 'test').rglob('*.java'))], check=True)
-        for check in ('SshEngineCheck', 'FetchCheck'):
+        for check in ('SshEngineCheck', 'FetchCheck', 'AppCommandCheck', 'BuiltinShellCheck'):
             subprocess.run([args.java, '-Xverify:all', '-cp', str(classes) + ':' + str(args.jar.resolve()),
                             'winterx.ssh.' + check, str(files)], check=True)
 

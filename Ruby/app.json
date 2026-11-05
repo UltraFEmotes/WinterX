@@ -1,8 +1,8 @@
 {
   "id": "com.ruby.manager",
   "name": "Ruby",
-  "version": "1.8",
-  "build": 18,
+  "version": "1.9",
+  "build": 19,
   "minSpring": 8,
   "genre": "Utilities",
   "description": "An experimental package manager for Spring 0.8.1 on Mac.APK.",

@@ -105,3 +105,34 @@ def ssh_supported_by(apk):
                     and b'winterx/tweaks/TweakSettings' in helpers)
     except (OSError, KeyError, zipfile.BadZipFile):
         return False
+
+
+def ssh_actions_supported_by(apk):
+    """The built-in dispatcher/library and real single-archive native accessors must coexist."""
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            native, helpers = archive.read('classes.dex'), archive.read('classes3.dex')
+            return (all(value in helpers for value in (b'winterx-ssh-app-v1', b'winterx-spring-app-actions-v1',
+                        b'winterx-ssh-info-v1', b'winterx/ssh/AppCommand', b'winterx/ssh/SshActions')) and
+                    all(value in native for value in (b'winterxSappManager', b'winterxInstallArchive')) and ssh_supported_by(apk))
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False
+
+
+def renderer_transitions_supported_by(apk):
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            native, helpers = archive.read('classes.dex'), archive.read('classes3.dex')
+            return (b'winterx/layout/RenderPolicy' in helpers and
+                    all(value in native for value in (b'winterx/layout/RenderPolicy', b'folderEntries', b'tilesAllowed', b'folderLayersAllowed')))
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False
+
+
+def ssh_prompt_supported_by(apk):
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            helpers = archive.read('classes3.dex')
+            return b'winterx-ssh-prompt-v1' in helpers and b'winterx/ssh/BuiltinShell' in helpers and ssh_actions_supported_by(apk)
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False

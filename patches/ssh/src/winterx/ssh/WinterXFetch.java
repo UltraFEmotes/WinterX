@@ -10,12 +10,19 @@ import java.util.Map;
 public final class WinterXFetch {
     private static final Class<?>[] NO_TYPES = new Class<?>[0];
     private static final String[] LOGO = {
-        " __      __ __  __",
-        " \\ \\ /\\ / / \\ \\/ /",
-        "  \\ V  V /   >  <",
-        "   \\_/\\_/   /_/\\_\\"
+        "        |",
+        "    \\   |   /",
+        "     \\  |  /",
+        "  \\   \\ | /   /",
+        "   \\   \\|/   /",
+        "----\\---*---/----",
+        "   /   /|\\   \\",
+        "  /   / | \\   \\",
+        "     /  |  \\",
+        "    /   |   \\",
+        "        |"
     };
-    private static final String RED = "\u001b[1;31m", BOLD = "\u001b[1m", RESET = "\u001b[0m";
+    private static final String BLUE = "\u001b[1;94m", BOLD = "\u001b[1m", RESET = "\u001b[0m";
     private WinterXFetch() {}
 
     private static Class<?> platform(String name) {
@@ -109,7 +116,7 @@ public final class WinterXFetch {
     }
     static String render(Map<String, String> values, boolean color) {
         List<String> lines = new ArrayList<>();
-        lines.add(color ? RED + "WinterX" + RESET : "WinterX"); lines.add("-------");
+        lines.add(color ? BLUE + "WinterX" + RESET : "WinterX"); lines.add("-------");
         int count = 0;
         for (Map.Entry<String, String> value : values.entrySet()) {
             if (++count > 16) break;
@@ -118,9 +125,9 @@ public final class WinterXFetch {
         }
         int width = 0; for (String line : LOGO) width = Math.max(width, line.length());
         StringBuilder report = new StringBuilder();
-        for (int i = 0; i < lines.size(); i++) {
+        for (int i = 0; i < Math.max(lines.size(), LOGO.length); i++) {
             String logo = pad(i < LOGO.length ? LOGO[i] : "", width);
-            report.append(color ? RED + logo + RESET : logo).append("   ").append(lines.get(i)).append('\n');
+            report.append(color ? BLUE + logo + RESET : logo).append("   ").append(i < lines.size() ? lines.get(i) : "").append('\n');
         }
         return report.toString();
     }

@@ -242,6 +242,7 @@ HOOKS = '''.class public final Lruby/RubyHooks;
     const-string v2, "ruby"
     invoke-direct {v1, v0, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
     invoke-virtual {v1}, Ljava/io/File;->mkdirs()Z
+    invoke-static {v0}, Lwinterx/runtime/Capabilities;->publish(Ljava/io/File;)V
     new-instance v0, Ljava/io/File;
     const-string v2, "boot-ok-v1"
     invoke-direct {v0, v1, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V

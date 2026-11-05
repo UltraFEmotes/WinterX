@@ -69,6 +69,11 @@ public final class FreeMe {
             return original;
         }
     }
+    /** Folder backgrounds/notches use the same sparse page, preserving U1.a's native list index. */
+    public static List<c> folderEntries(E1.q6 state) {
+        int page = state.f0 == null ? 0 : state.f0.g;
+        return entries(state.d(page), state.a, page);
+    }
     public static M1.b animation(x1.i1 spring, E1.A0 target) {
         if (!enabled() || target == null || target.a == E1.z0.w) return null;
         try {

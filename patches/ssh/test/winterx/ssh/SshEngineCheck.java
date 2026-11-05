@@ -27,12 +27,17 @@ public final class SshEngineCheck {
         check(server.getPublickeyAuthenticator().authenticate("winterx", allowed.getPublic(), null), "authorized key rejected");
         check(!server.getPublickeyAuthenticator().authenticate("root", allowed.getPublic(), null), "root login accepted");
         check(!server.getPublickeyAuthenticator().authenticate("winterx", wrong.getPublic(), null), "wrong key accepted");
-        check(server.getForwardingFilter() == RejectAllForwardingFilter.INSTANCE && server.getShellFactory() == null, "forwarding or PTY enabled");
+        check(server.getForwardingFilter() == RejectAllForwardingFilter.INSTANCE, "forwarding enabled");
+        check(SshServerEngine.SHELL_ABI.equals("winterx-ssh-prompt-v1") && server.getShellFactory().createShell(null) instanceof BuiltinShell,
+            "interactive shell is not the in-process WinterX prompt");
         check(SshServerEngine.INFO_ABI.equals("winterx-ssh-info-v1"), "built-in info capability missing");
         check(FetchCheck.run(server.getCommandFactory().createCommand(null, "neofetch --no-color"), 0).contains("WinterX"),
             "real command factory did not route the built-in before Android shell fallback");
         check(FetchCheck.run(server.getCommandFactory().createCommand(null, "winterx-info --help"), 0).contains("Usage:"), "factory alias/help missing");
         FetchCheck.run(server.getCommandFactory().createCommand(null, "neofetch --unknown"), 2);
+        check(SshServerEngine.APP_ABI.equals("winterx-ssh-app-v1"), "guarded app-command capability missing");
+        check(FetchCheck.run(server.getCommandFactory().createCommand(null, "winterx-app --help"), 0).contains("Spring-app"), "real command factory did not route app help before shell fallback");
+        FetchCheck.run(server.getCommandFactory().createCommand(null, "winterx-app; unwanted-shell"), 2);
         check(!engine.running() && server.getBoundAddresses().isEmpty(), "built-in report started a listener");
         byte[] saved = Files.readAllBytes(host);
         SshServerEngine second = SshServerEngine.configure(files, keys, host, 2222, true);
@@ -40,6 +45,6 @@ public final class SshEngineCheck {
         Files.write(keys, Collections.singletonList("command=evil " + PublicKeyEntry.toString(allowed.getPublic())));
         try { SshServerEngine.authorized(keys); throw new AssertionError("key options ignored"); } catch (java.io.IOException expected) {}
         server.close(true); second.configuration().close(true);
-        System.out.println("SSH no-listener check: explicit start gate, pinned host identity, public-key-only auth, wrong-key/root rejection, loopback/no-forwarding and real built-in info dispatch passed");
+        System.out.println("SSH no-listener check: explicit start gate, pinned host identity, key-only auth, wrong-key/root rejection, loopback/no-forwarding, interactive built-in factory and one-shot dispatch passed");
     }
 }

@@ -50,6 +50,31 @@ class CapabilityTests(unittest.TestCase):
                     archive.writestr('classes3.dex', helper)
                 self.assertEqual(tweak_runtime.messageplus_supported_by(apk), supported)
 
+    def test_app_commands_require_native_accessors_and_keep_neofetch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            apk = Path(tmp) / 'engine.apk'
+            native = b'winterxSappManager winterxInstallArchive'
+            helper = (b'winterx-ssh-app-v1 winterx-spring-app-actions-v1 winterx-ssh-info-v1 winterx/ssh/AppCommand winterx/ssh/SshActions '
+                      b'winterx-sshd-auth-v1 winterx/ssh/SshServerEngine org/apache/sshd/server/SshServer winterx/ssh/SshSettings winterx/tweaks/TweakSettings')
+            for primary, runtime, expected in ((native, helper, True), (b'old', helper, False),
+                    (native, helper.replace(b'winterx-ssh-info-v1', b'old-info'), False),
+                    (native, helper.replace(b'winterx/ssh/AppCommand', b'old-command'), False)):
+                with zipfile.ZipFile(apk, 'w') as archive:
+                    archive.writestr('classes.dex', primary); archive.writestr('classes3.dex', runtime)
+                self.assertEqual(tweak_runtime.ssh_actions_supported_by(apk), expected)
+
+    def test_prompt_requires_the_real_prompt_abi_and_guarded_app_commands(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            apk = Path(tmp) / 'engine.apk'
+            from unittest.mock import patch
+            for helper, actions, expected in ((b'winterx-ssh-prompt-v1 winterx/ssh/BuiltinShell', True, True),
+                    (b'winterx/ssh/BuiltinShell', True, False), (b'winterx-ssh-prompt-v1', True, False),
+                    (b'winterx-ssh-prompt-v1 winterx/ssh/BuiltinShell', False, False)):
+                with zipfile.ZipFile(apk, 'w') as archive:
+                    archive.writestr('classes3.dex', helper)
+                with patch.object(tweak_runtime, 'ssh_actions_supported_by', return_value=actions):
+                    self.assertEqual(tweak_runtime.ssh_prompt_supported_by(apk), expected)
+
 
 if __name__ == '__main__':
     unittest.main()

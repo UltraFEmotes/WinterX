@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,24 +20,40 @@ public final class AnimaperSettings {
     public static final String PAGE = "winterx-animaper-page";
     public static final String ROW = "winterx-animaper";
     public static final String PREFIX = "winterx-animaper-mode-";
-    private static final String[] MODES = {"wave", "cascade", "bounce", "orbit", "ripple", "columns", "fan", "zigzag"};
+    private static final String[] MODES = {"wave", "cascade", "bounce", "orbit", "ripple", "columns", "fan", "zigzag", "barrel"};
     private AnimaperSettings() {}
-    private static File folder() {
-        Application app = ActivityThread.currentApplication();
-        return app == null ? null : new File(app.getFilesDir(), "ruby");
+    static File folder() {
+        try {
+            Application app = ActivityThread.currentApplication();
+            if (app == null) return null;
+            File dir = new File(app.getFilesDir().getCanonicalFile(), "ruby");
+            return safe(dir) && dir.isDirectory() ? dir : null;
+        } catch (Exception ignored) { return null; }
+    }
+    private static boolean safe(File file) {
+        try { return !Files.isSymbolicLink(file.toPath()) && file.getCanonicalFile().equals(file.getAbsoluteFile()); }
+        catch (Exception ignored) { return false; }
+    }
+    private static boolean valid(String mode) {
+        for (String value : MODES) if (value.equals(mode)) return true;
+        return false;
     }
     public static boolean enabled() {
-        try { File dir = folder(); return dir != null && !new File(dir,"safe-mode.enabled").isFile() && new File(dir,"animaper.enabled").isFile(); }
+        try {
+            File dir = folder(), marker = dir == null ? null : new File(dir, "animaper.enabled");
+            return dir != null && !Files.exists(new File(dir,"safe-mode.enabled").toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS) && safe(marker) && marker.isFile();
+        }
         catch (RuntimeException ignored) { return false; }
     }
     private static V6 row(String id, String title) { return Z3.g(Z3.a,id,title,null,null,null,0x18); }
-    private static String current() {
+    static String current() {
         try {
             File dir=folder(); File file=dir == null ? null : new File(dir,"animaper.mode");
-            if (file == null || !file.isFile() || file.length() > 64) return "wave";
+            if (file == null || !safe(file) || !file.isFile() || file.length() > 64) return "wave";
             byte[] bytes=new byte[64];
             try (FileInputStream in=new FileInputStream(file)) {
-                int n=in.read(bytes); return n < 1 ? "wave" : new String(bytes,0,n,StandardCharsets.UTF_8).trim();
+                int n=in.read(bytes); String mode = n < 1 ? "wave" : new String(bytes,0,n,StandardCharsets.UTF_8).trim();
+                return valid(mode) ? mode : "wave";
             }
         } catch (Exception ignored) { return "wave"; }
     }
@@ -59,6 +76,7 @@ public final class AnimaperSettings {
         String selected=current();
         List<V6> rows=new ArrayList<>();
         for (String mode : MODES) {
+            if ("barrel".equals(mode) && !Animaper.barrelSupported()) continue;
             String title=Character.toUpperCase(mode.charAt(0))+mode.substring(1);
             rows.add(row(PREFIX+mode, title+(mode.equals(selected) ? "  ✓" : "")));
         }
@@ -67,15 +85,18 @@ public final class AnimaperSettings {
     public static void select(String id) {
         if (!enabled() || id == null || !id.startsWith(PREFIX)) return;
         String mode=id.substring(PREFIX.length());
-        boolean found=false; for (String value : MODES) if (value.equals(mode)) found=true;
-        if (!found) return;
+        if (!valid(mode)) return;
+        if ("barrel".equals(mode) && !Animaper.barrelSupported()) return;
         File dir=folder(), temp=null;
         try {
+            File destination = new File(dir, "animaper.mode");
+            if (!safe(destination) || (destination.exists() && !destination.isFile())) return;
             temp=File.createTempFile(".animaper-", ".tmp", dir);
             try (FileOutputStream out=new FileOutputStream(temp)) {
                 out.write((mode+"\n").getBytes(StandardCharsets.UTF_8)); out.getFD().sync();
             }
-            if (!temp.renameTo(new File(dir,"animaper.mode"))) throw new java.io.IOException("Could not save animation");
+            if (!enabled() || !safe(destination) || !temp.renameTo(destination)) throw new java.io.IOException("Could not save animation");
+            Animaper.invalidate();
         } catch (Exception ignored) { }
         finally { if (temp != null && temp.exists()) temp.delete(); }
     }

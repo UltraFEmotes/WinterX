@@ -28,6 +28,8 @@ import org.apache.sshd.sftp.server.SftpSubsystemFactory;
 public final class SshServerEngine {
     public static final String ABI = "winterx-sshd-auth-v1";
     public static final String INFO_ABI = "winterx-ssh-info-v1";
+    public static final String APP_ABI = "winterx-ssh-app-v1";
+    public static final String SHELL_ABI = "winterx-ssh-prompt-v1";
     private final SshServer server;
     public final String fingerprint;
     private SshServerEngine(SshServer server, String fingerprint) { this.server = server; this.fingerprint = fingerprint; }
@@ -73,11 +75,13 @@ public final class SshServerEngine {
         ssh.setKeyboardInteractiveAuthenticator(null);
         ssh.setPublickeyAuthenticator((username, key, session) -> "winterx".equals(username) && allowed.stream().anyMatch(value -> KeyUtils.compareKeys(value, key)));
         ssh.setForwardingFilter(RejectAllForwardingFilter.INSTANCE);
-        ssh.setShellFactory(null); // no interactive PTY in this first implementation
+        ssh.setShellFactory(channel -> new BuiltinShell());
         ssh.setCommandFactory((channel, command) -> {
             if (command == null || command.length() > 8192) throw new IOException("SSH command too long");
             Command info = FetchCommand.create(command);
             if (info != null) return info; // Works on Mac.APK too, without /system/bin/sh.
+            Command action = AppCommand.create(command);
+            if (action != null) return action; // Malformed reserved commands never fall through to a shell.
             if (!Files.isExecutable(java.nio.file.Paths.get("/system/bin/sh"))) throw new IOException("Android shell unavailable");
             return new ProcessShellFactory("/system/bin/sh", "/system/bin/sh", "-c", command).createShell(channel);
         });

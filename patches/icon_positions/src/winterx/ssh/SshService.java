@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** Optional library adapter. Starts only from native Settings, never on boot/install; loopback only. */
 public final class SshService {
@@ -16,14 +17,20 @@ public final class SshService {
     });
     private static final AtomicBoolean busy = new AtomicBoolean();
     private static final AtomicBoolean startAllowed = new AtomicBoolean();
-    private static Object engine;
-    private static String keyRevision;
+    private static volatile Object engine;
+    private static volatile File engineRoot;
+    private static volatile String keyRevision;
+    private static final AtomicLong sessions = new AtomicLong();
     private static boolean watchStarted;
     private static volatile String status = "Stopped. No automatic start.";
     private SshService() {}
     public static boolean available() {
         try { Class.forName("winterx.ssh.SshServerEngine", false, SshService.class.getClassLoader()); return true; }
         catch (Throwable unavailable) { return false; }
+    }
+    public static boolean promptAvailable() {
+        try { return "winterx-ssh-prompt-v1".equals(Class.forName("winterx.ssh.SshServerEngine", false, SshService.class.getClassLoader()).getField("SHELL_ABI").get(null)); }
+        catch (Exception | LinkageError unavailable) { return false; }
     }
     private static File files() {
         try {
@@ -39,9 +46,19 @@ public final class SshService {
     public static boolean installed() {
         File root = files(); if (root == null || !available()) return false;
         File marker = new File(root, "ruby/ssh.enabled");
-        return safe(marker) && marker.isFile() && !new File(root, "ruby/safe-mode.enabled").exists();
+        return safe(marker) && marker.isFile() && !Files.exists(new File(root, "ruby/safe-mode.enabled").toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS);
     }
     public static String status() { return status; }
+    /** Recheck actual session ownership/keys at each queued action's commit boundary. */
+    public static String actionRevision() {
+        try {
+            Object current = engine; long session = sessions.get(); String keys = keyRevision; File root = files();
+            if (current == null || keys == null || root == null || !root.equals(engineRoot) || !startAllowed.get() || !installed() ||
+                !Boolean.TRUE.equals(current.getClass().getMethod("running").invoke(current)) ||
+                !keys.equals(digest(new File(root, "ruby/ssh/authorized_keys")))) return null;
+            return current == engine && root.equals(engineRoot) && root.equals(files()) && session == sessions.get() && startAllowed.get() && installed() ? session + ":" + keys : null;
+        } catch (Exception unavailable) { return null; }
+    }
     private static String digest(File file) throws Exception {
         if (!safe(file) || !file.isFile() || file.length() > 16384) throw new java.io.IOException("Invalid bounded SSH keys");
         byte[] bytes = Files.readAllBytes(file.toPath());
@@ -52,9 +69,9 @@ public final class SshService {
     }
     public static synchronized boolean request(final boolean start) {
         if (start && !installed()) return false;
-        if (!start) startAllowed.set(false); // cancel an in-flight Start even while its worker is busy
+        if (!start) { startAllowed.set(false); sessions.incrementAndGet(); } // also revoke queued actions immediately
         if (!busy.compareAndSet(false, true)) return !start;
-        if (start) startAllowed.set(true);
+        if (start) { startAllowed.set(true); sessions.incrementAndGet(); }
         worker.execute(() -> {
             try {
                 if (!start) { stop("Stopped by Settings."); return; }
@@ -63,6 +80,7 @@ public final class SshService {
                 if (!safe(dir) || !safe(keys) || !installed() || !startAllowed.get()) throw new java.io.IOException("Private SSH key configuration unavailable or start cancelled");
                 if (!keys.isFile() || keys.length() > 16384) throw new java.io.IOException("Copy authorized_keys into ruby/ssh first");
                 keyRevision = digest(keys);
+                engineRoot = root;
                 Class<?> type = Class.forName("winterx.ssh.SshServerEngine");
                 engine = type.getMethod("configure", java.nio.file.Path.class, java.nio.file.Path.class,
                     java.nio.file.Path.class, int.class, boolean.class).invoke(null, root.toPath(), keys.toPath(), new File(dir, "host-key.ser").toPath(), 2222, true);
@@ -81,17 +99,19 @@ public final class SshService {
         if (engine == null) return;
         try {
             File keys = new File(files(), "ruby/ssh/authorized_keys");
-            if (!installed() || !startAllowed.get() || !safe(keys) || !keyRevision.equals(digest(keys)))
+            if (!installed() || !startAllowed.get() || !files().equals(engineRoot) || !safe(keys) || !keyRevision.equals(digest(keys)))
                 stop("Stopped: Safe Mode, removal or authorized keys changed. Start explicitly again.");
         } catch (Throwable failure) { stop("Stopped: SSH configuration unavailable."); }
     }
     private static void stop(String message) {
         startAllowed.set(false);
+        sessions.incrementAndGet();
         if (engine != null) {
             try { engine.getClass().getMethod("stop").invoke(engine); }
             catch (Throwable failure) { status = "SSH stop failed; close this Spring session. " + String.valueOf(failure.getMessage()); return; }
             engine = null;
         }
+        engineRoot = null;
         status = message;
     }
 }

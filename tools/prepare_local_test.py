@@ -61,7 +61,7 @@ def preserved(before, after):
 def prepare(apk, expected_sha=None):
     stopped()
     expected_sha = launcher.TEST_SHA if expected_sha is None else expected_sha
-    if expected_sha not in (launcher.TEST_SHA, bundle.UI_FIX_SHA, bundle.FETCH_SHA):
+    if expected_sha not in (launcher.TEST_SHA, bundle.UI_FIX_SHA, bundle.FETCH_SHA, bundle.RENDER_ACTIONS_SHA, bundle.SSH_TERMINAL_SHA):
         raise ValueError('The local-test engine is not an explicitly pinned candidate.')
     apk = Path(apk)
     if apk.is_symlink():
@@ -70,7 +70,12 @@ def prepare(apk, expected_sha=None):
     if launcher.jailbreak.digest(apk) != expected_sha:
         raise ValueError('The local test APK failed its pinned checksum check.')
     records = bundle.inputs(apk, launcher.jailbreak.digest, expected_sha)
-    state, data = launcher.jailbreak.STATE, launcher.jailbreak.DATA
+    state, configured_data = launcher.jailbreak.STATE, launcher.jailbreak.DATA
+    data = bundle.data_root(configured_data)
+    def unchanged_root_and_stopped():
+        stopped()
+        if bundle.data_root(configured_data) != data:
+            raise RuntimeError('The platform data-root alias changed during preparation; the new test was not selected.')
     if state.is_symlink() or not (state / 'overlay/android').is_dir():
         raise ValueError('The prepared Mac.APK overlay is missing or unsafe.')
     plan_path = state / 'local-test.json'
@@ -83,7 +88,7 @@ def prepare(apk, expected_sha=None):
     before = hashes(data / 'files')
     persisted_before = inventory(data)
     backup = state / 'backups' / (datetime.now().strftime('%Y%m%d-%H%M%S-%f') + '-before-local-combined')
-    stopped()
+    unchanged_root_and_stopped()
     launcher.control.snapshot_app_data(data, backup)
     for path in (plan_path, active_path):
         if path.exists():
@@ -92,14 +97,14 @@ def prepare(apk, expected_sha=None):
         raise RuntimeError('Protected data changed while preparing; the new test was not selected.')
     if inventory(backup) != persisted_before or inventory(data) != persisted_before:
         raise RuntimeError('Persisted data changed during backup; the new test was not selected.')
-    stopped()
-    bundle.activate(data, records, stopped)
+    unchanged_root_and_stopped()
+    bundle.activate(data, records, unchanged_root_and_stopped)
     bundle.verify(data, records)
     persisted_after = inventory(data)
     preserved(persisted_before, persisted_after)
     if hashes(data / 'files') != before:
         raise RuntimeError('Protected data changed; the new test was not selected. No backup was restored.')
-    stopped()
+    unchanged_root_and_stopped()
     plan = {'status': 'prepared', 'label': bundle.LABEL, 'apk': str(apk), 'apk_sha256': expected_sha,
             'backup': str(backup), 'layout_sha256': before, 'previous_test': previous,
             'packages': previous.get('packages', []) if previous else [],
@@ -122,8 +127,14 @@ if __name__ == '__main__':
     engine = parser.add_mutually_exclusive_group()
     engine.add_argument('--ui-fix', action='store_true', help='Explicitly select the pinned shared-path/grid correction, only with Spring fully closed')
     engine.add_argument('--neofetch', action='store_true', help='Explicitly select the pinned built-in SSH info engine, only with Spring fully closed')
+    engine.add_argument('--render-actions', action='store_true', help='Explicitly select the verified scrolling/folder, Barrel and guarded SSH-app engine, only with Spring fully closed')
+    engine.add_argument('--ssh-terminal', action='store_true', help='Explicitly select the interactive WinterX prompt and blue-snowflake report, retaining the renderer/Barrel/app-action fixes')
     args = parser.parse_args()
-    if args.neofetch:
+    if args.ssh_terminal:
+        plan = prepare(bundle.SSH_TERMINAL_ENGINE, bundle.SSH_TERMINAL_SHA)
+    elif args.render_actions:
+        plan = prepare(bundle.RENDER_ACTIONS_ENGINE, bundle.RENDER_ACTIONS_SHA)
+    elif args.neofetch:
         plan = prepare(bundle.FETCH_ENGINE, bundle.FETCH_SHA)
     elif args.ui_fix:
         plan = prepare(bundle.UI_FIX_ENGINE, bundle.UI_FIX_SHA)
@@ -132,5 +143,9 @@ if __name__ == '__main__':
     print(bundle.LABEL + ' prepared. Spring was not launched; SSH starts only from Settings.')
     if args.neofetch:
         print('Built-in neofetch / winterx-info included. No client keys or listener were created.')
+    if args.render_actions:
+        print('Scrolling/folder fixes, Barrel, neofetch and winterx-app included. Existing effect selection, app data and SSH keys are preserved.')
+    if args.ssh_terminal:
+        print('Interactive winterx> prompt and blue-snowflake Neofetch included, with the verified renderer/Barrel/app actions.')
     print('Backup: ' + plan['backup'])
     print('Start it yourself with Start WinterX Local Test.command, not the stock launcher.')

@@ -221,6 +221,10 @@ def process(request, data, inbox, base=DEFAULT_BASE):
             if str(ROOT / 'patches') not in sys.path: sys.path.insert(0, str(ROOT / 'patches'))
             import macapk_jailbreak
             import animaper
+            if record.get('mode') == 'barrel':
+                engine = running_engine()
+                if engine is None or not animaper.barrel_supported_by(engine):
+                    raise ValueError('Barrel requires the updated native rendering engine')
             reply = animaper.set_mode(macapk_jailbreak.DATA, record.get('mode'))
             reply['action'] = 'set_animaper_mode'
             atomic_json(result, reply)
@@ -364,11 +368,14 @@ def update_live_status(data):
     icons = False
     animaper_enabled = False
     animaper_mode = 'wave'
+    barrel_supported = False
     try:
         apk = running_engine()
         if apk is not None:
             import macapk_jailbreak
             active = True
+            import animaper
+            barrel_supported = animaper.barrel_supported_by(apk)
             supported = macapk_jailbreak.digest(apk) in (macapk_jailbreak.PATCH_SHA, macapk_jailbreak.LOCAL_ALPHA8_SHA, macapk_jailbreak.LOCAL_SNOWY_SHA,
                 macapk_jailbreak.BRIDGELESS_ALPHA4_SHA, macapk_jailbreak.BRIDGELESS_ALPHA2_SHA)
             ruby_data = macapk_jailbreak.DATA / 'files/ruby'
@@ -383,7 +390,8 @@ def update_live_status(data):
         active = False
     atomic_json(data / 'live.json', {'active': active, 'safeModeSupported': supported, 'safeMode': safe,
                                      'settingsInstalled': settings, 'colorsInstalled': colors,
-                                     'iconsInstalled': icons, 'animaperInstalled': animaper_enabled, 'animaperMode': animaper_mode, 'observedAt': int(time.time() * 1000)})
+                                     'iconsInstalled': icons, 'animaperInstalled': animaper_enabled, 'animaperMode': animaper_mode,
+                                     'animaperBarrelSupported': barrel_supported, 'observedAt': int(time.time() * 1000)})
 
 
 def process_explorer(request, data, spring_files, trash):

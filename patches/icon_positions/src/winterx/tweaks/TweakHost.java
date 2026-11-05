@@ -43,6 +43,9 @@ public final class TweakHost {
 
     private TweakHost() {}
 
+    /** Native adapters only; no corresponding JavaScript global or device-action capability. */
+    public static LauncherActivity launcher() { return launcher.get(); }
+
     /** Called after unlock, once Spring's UI/controller have been initialized. */
     public static synchronized void start(LauncherActivity activity) {
         launcher = new WeakReference<>(activity);

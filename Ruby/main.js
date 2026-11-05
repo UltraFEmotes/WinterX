@@ -30,12 +30,14 @@ function liveStatus() {
     if (files.exists("winterx/ruby/boot-ok-v1")) {
       var mode = "wave";
       if (files.exists("winterx/ruby/animaper.mode")) mode = files.read("winterx/ruby/animaper.mode").trim();
+      var capabilities = files.exists("winterx/ruby/capabilities-v1.json") ? files.readJSON("winterx/ruby/capabilities-v1.json") : {};
       return { active:true, native:true, safeModeSupported:true,
         safeMode:files.exists("winterx/ruby/safe-mode.enabled"),
         settingsInstalled:files.exists("winterx/ruby/settings-test.enabled"),
         colorsInstalled:files.exists("winterx/ruby/ui-colors.enabled"),
         iconsInstalled:files.exists("winterx/ruby/free-icons.enabled"),
-        animaperInstalled:files.exists("winterx/ruby/animaper.enabled"), animaperMode:mode };
+        animaperInstalled:files.exists("winterx/ruby/animaper.enabled"), animaperMode:mode,
+        animaperBarrelSupported:capabilities.abi === "winterx-capabilities-v1" && capabilities.animaperBarrel === true };
     }
   } catch (e) {}
   return bridgeStatus();
@@ -129,8 +131,9 @@ function packageRequest(action, values) {
   var live = liveStatus();
   if (action === "set_animaper_mode" && live && live.native) {
     try {
-      var modes = ["wave", "cascade", "bounce", "orbit", "ripple", "columns", "fan", "zigzag"];
+      var modes = ["wave", "cascade", "bounce", "orbit", "ripple", "columns", "fan", "zigzag", "barrel"];
       if (!values || modes.indexOf(values.mode) < 0) throw new Error("Unknown animation");
+      if (values.mode === "barrel" && !live.animaperBarrelSupported) throw new Error("Barrel requires the updated native rendering engine.");
       files.write("winterx/ruby/animaper.mode", values.mode);
       UIAlertView.show({title:"Animaper",message:"Animation changed to " + values.mode + ".",buttons:["OK"]});
     } catch (e) { UIAlertView.show({title:"Could not apply",message:String(e),buttons:["OK"]}); }
@@ -233,7 +236,9 @@ function packageDetail(item, installedOnly) {
   ];
   if (item.hook === "tweak.animaper" && installed) {
     var live = liveStatus(), selected = live && live.animaperMode || "wave";
-    sections.push({ header: "PAGE ANIMATION", rows: ["wave", "cascade", "bounce", "orbit", "ripple", "columns", "fan", "zigzag"].map(function (mode) {
+    sections.push({ header: "PAGE ANIMATION", rows: ["wave", "cascade", "bounce", "orbit", "ripple", "columns", "fan", "zigzag", "barrel"].filter(function (mode) {
+      return mode !== "barrel" || live && live.animaperBarrelSupported;
+    }).map(function (mode) {
       return { title: mode.charAt(0).toUpperCase() + mode.slice(1), accessory: mode === selected ? "checkmark" : "none", onSelect: function () {
         packageRequest("set_animaper_mode", { mode: mode });
       } };
@@ -362,8 +367,8 @@ function refresh() {
   catalogue.sections = [{ rows: [{ title: "Local Packages", accessory: "disclosure", onSelect: function () { refreshLocal(); catalogueNav.push(localPackages); packageRequest("scan_packages"); } }] }, { header: "TEST TWEAKS", footer: "Changes require a respring.", rows: tweaks.map(function (item) {
     return { title: item.name, subtitle: status(item), accessory: "disclosure", onSelect: function () { detail(item); } };
   }) }, { header: "WINTERX TWEAKS", rows: [
-    { title:"Animaper", subtitle: live && live.animaperInstalled ? (live.safeMode ? "Installed — Safe Mode" : "Installed") : "Eight page swipe animations", accessory:"disclosure", onSelect:function () {
-      packageDetail({id:"me.weirdmm.animaper",hook:"tweak.animaper",name:"Animaper",version:"0.1.0",author:"WeirdMM",description:"Animate Home screen page swipes with eight effects.",previews:[]},false);
+    { title:"Animaper", subtitle: live && live.animaperInstalled ? (live.safeMode ? "Installed — Safe Mode" : "Installed") : "Nine page swipe animations", accessory:"disclosure", onSelect:function () {
+      packageDetail({id:"me.weirdmm.animaper",hook:"tweak.animaper",name:"Animaper",version:"0.1.0",author:"WeirdMM",description:"Animate Home screen page swipes with nine effects, including Barrel.",previews:[]},false);
     }}
   ] }, { header: "REPOSITORIES", rows: [
     { title: "Sources", accessory: "disclosure", onSelect: function () { tabs.selectedIndex = 2; } },

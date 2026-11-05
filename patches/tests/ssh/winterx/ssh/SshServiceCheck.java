@@ -85,6 +85,7 @@ public final class SshServiceCheck {
         marker.createNewFile();
         check(SshService.installed(), "regular SSH marker under platform files root was refused");
         check(SshServerEngine.configured == 0, "install started a resource automatically");
+        check(SshService.actionRevision() == null, "install admitted app actions without explicit Start");
         check(SshSettings.page("winterx-layout-p/ssh") != null, "SSH native Settings page missing");
         java.util.List<E1.T6> roots = new java.util.ArrayList<>(); roots.add(E1.Z3.c);
         for (Object value : E1.Z3.s) if ("root".equals(((E1.T6)value).a)) roots.add((E1.T6)value);
@@ -112,13 +113,14 @@ public final class SshServiceCheck {
         SshService.request(true); drained(); check(SshServerEngine.stopped == 1, "failed Start leaked resource");
         SshServerEngine.reset(false, false, false);
         SshService.request(true); drained(); check(SshService.status().startsWith("Listening"), "spy start did not complete");
-        safe.mkdir(); watch(); check(SshServerEngine.stopped == 1 && !SshService.request(true), "Safe Mode did not stop/refuse service");
+        String revision = SshService.actionRevision(); check(revision != null && revision.equals(SshService.actionRevision()), "started spy session did not admit a stable guarded action revision");
+        safe.mkdir(); check(SshService.actionRevision() == null, "Safe Mode admitted actions before watcher shutdown"); watch(); check(SshServerEngine.stopped == 1 && !SshService.request(true), "Safe Mode did not stop/refuse service");
         safe.delete(); drained(); check(SshServerEngine.started == 1, "Safe Mode exit automatically restarted");
         SshServerEngine.reset(false, false, false);
-        SshService.request(true); drained(); marker.delete(); watch();
+        SshService.request(true); drained(); marker.delete(); check(SshService.actionRevision() == null, "removed marker admitted queued actions"); watch();
         check(SshServerEngine.stopped == 1 && !SshService.request(true), "removal did not stop/refuse service");
         marker.createNewFile(); SshServerEngine.reset(false, false, false);
-        SshService.request(true); drained(); Files.writeString(keys.toPath(), "fixture keys C"); watch();
+        SshService.request(true); drained(); Files.writeString(keys.toPath(), "fixture keys C"); check(SshService.actionRevision() == null, "changed keys admitted actions before watcher shutdown"); watch();
         check(SshServerEngine.stopped == 1, "changed active keys did not stop service");
         check(Files.readString(keys.toPath()).equals("fixture keys C") && !new File(ssh, "host-key.ser").exists(), "service spy rewrote keys");
         SshService.request(false); drained(); SshServerEngine.reset(false, false, false);

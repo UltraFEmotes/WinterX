@@ -13,7 +13,7 @@ Message+ targets **Spring 0.8.1 Messages**, not WhatsApp. It replaces only the m
 
 ## Separate build and checks
 
-The selected reviewed batch2 includes these hooks, and Message+ was enabled by explicitly authorized stopped-session preparation. A live report found the UI missing despite the correct engine and marker: its path guard rejected Mac.APK's legitimate shared-data alias. The correction canonicalizes only the platform-supplied files root and still refuses redirects beneath it. It is in a separate, unselected UI-fix candidate; the running reviewed engine is not hot-patched. See [development status](development-status.md).
+Message+ remains enabled with its original package pin in the prepared local engine. UI-fix2 corrected the path guard that had rejected Mac.APK's legitimate platform-files alias; the renderer/Barrel/actions engine retains that correction and child-link refusal. This update does not add video/reaction transport. See [development status](development-status.md) for the selected pin and live-test boundaries.
 
 Source build opt-in: `WINTERX_BUILD_MESSAGEPLUS=1` alongside the normal build flags. Build to a new filename and do not replace/select an engine in use.
 

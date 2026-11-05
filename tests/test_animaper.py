@@ -25,4 +25,15 @@ class AnimaperTests(unittest.TestCase):
                 z.writestr('classes.dex',b'winterx/animaper/Animaper')
                 z.writestr('classes3.dex',b'winterx/animaper/Animaper')
             self.assertTrue(animaper.supported_by(apk))
+            self.assertFalse(animaper.barrel_supported_by(apk))
+
+    def test_barrel_requires_both_actual_native_wrappers_and_the_new_helper_abi(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            apk=Path(tmp)/'barrel.apk'
+            primary=b'winterx/animaper/Animaper winterxStockK winterxStockArtwork context beginFrame endIcon'
+            helpers=b'winterx/animaper/Animaper animaper-barrel-v1'
+            for native, runtime, expected in ((primary,helpers,True),(primary.replace(b'winterxStockArtwork',b'oldArtwork'),helpers,False),(primary,b'winterx/animaper/Animaper',False),(b'old',helpers,False)):
+                with zipfile.ZipFile(apk,'w') as z:
+                    z.writestr('classes.dex',native);z.writestr('classes3.dex',runtime)
+                self.assertEqual(animaper.barrel_supported_by(apk),expected)
 if __name__=='__main__': unittest.main()

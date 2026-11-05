@@ -38,7 +38,11 @@ public final class FetchCheck {
         String plain = run(FetchCommand.create("neofetch --no-color"), 0);
         check(plain.contains("WinterX") && plain.contains("Spring Phone") && !plain.contains("\u001b"), "plain report/branding incorrect");
         check(!plain.contains("private-serial") && !plain.contains("private-host"), "unique/private identifiers printed");
-        check(run(FetchCommand.create("winterx-info"), 0).contains("\u001b[1;31m"), "alias/red logo missing");
+        String colored = run(FetchCommand.create("winterx-info"), 0);
+        check(colored.contains("\u001b[1;94m") && !colored.contains("\u001b[1;31m"), "alias/blue snowflake color missing");
+        check(plain.contains("----\\---*---/----") && plain.contains("/   /|\\"), "snowflake artwork missing from plain output");
+        check(WinterXFetch.render(facts, true).replaceAll("\\x1b\\[[0-9;]*m", "").equals(WinterXFetch.render(facts, false)), "plain and colored snowflake layouts differ");
+        check(WinterXFetch.render(new LinkedHashMap<>(), false).contains("----\\---*---/----"), "missing metadata truncated the snowflake");
         for (String line : plain.split("\n")) check(line.length() <= 80, "report does not fit an 80-column terminal");
         AtomicInteger probes = new AtomicInteger();
         FetchCommand.Reporter spy = color -> { probes.incrementAndGet(); return "fixture output\n"; };

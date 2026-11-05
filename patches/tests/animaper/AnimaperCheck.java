@@ -6,6 +6,7 @@ public class AnimaperCheck {
   static void set(Object target,String name,Object value) throws Exception { Field f=target.getClass().getDeclaredField(name);f.setAccessible(true);f.set(target,value); }
   static void eq(M1.b a,M1.b b,String message) { if (!a.h.equals(b.h) || !a.w.equals(b.w)) throw new AssertionError(message); }
   public static void main(String[] args) throws Exception {
+    E1.t.j=args.length>0 && Boolean.parseBoolean(args[0]);
     Field f=Unsafe.class.getDeclaredField("theUnsafe");f.setAccessible(true);Unsafe u=(Unsafe)f.get(null);
     E1.i6 profile=(E1.i6)u.allocateInstance(E1.i6.class);
     set(profile,"b",640);set(profile,"c",960);set(profile,"d",40);set(profile,"e",114);

@@ -21,4 +21,4 @@ with tempfile.TemporaryDirectory(prefix='winterx-trust-test-') as tmp:
     subprocess.run(['/opt/homebrew/opt/openjdk/bin/javac','-d',str(classes),
                     str(ROOT/'patches/icon_positions/src/winterx/runtime/TrustedFiles.java'),
                     str(ROOT/'patches/tests/trusted/TrustedFilesCheck.java')],check=True)
-    subprocess.run(['/opt/homebrew/opt/openjdk/bin/java','-cp',str(classes),'TrustedFilesCheck',str(root),str(script),str(ruby),str(next_script),str(ruby15),str(ruby16),str(ruby17),str(ruby18)],check=True)
+    subprocess.run(['/opt/homebrew/opt/openjdk/bin/java','-cp',str(classes),'TrustedFilesCheck',str(root),str(script),str(ruby),str(next_script),str(ruby15),str(ruby16),str(ruby17),str(ruby18),str(ROOT/'Ruby/main.js')],check=True)

@@ -5,7 +5,7 @@ SnowyHome implements **icon packs, badge colours, hidden icon labels and corner 
 ## Engine and readiness
 
 - Ordinary Ruby operations require a verified **running** engine with `snowyhome-render-v1` and actual renderer hooks. Helpers alone are not enough. The narrowly scoped combined-test preparer can activate the five checksum-pinned drafts only while Spring is stopped and after a fresh backup.
-- The selected reviewed batch2 has 6,979 converted classes and includes private-inbox import/home APIs/optional SSH/Message+. Read-only checks verified its sole actual process, checksum and receipt. A live missing-Settings investigation reproduced a platform-files alias bug in SSH/Message+, and the same bug in SnowyHome pack import/loading. The source correction canonicalizes the trusted files root without allowing links beneath it; a separate UI-fix candidate is not automatically selected. Earlier isolated checks did not exercise this alias. Packaged/source bitmap tests are not proof of visible pointer/folder/dock/launch behaviour or Android compatibility. See [development status](development-status.md).
+- UI-fix2 supplied the already-prepared trusted-root/capacity correction. It canonicalizes only the platform files root and continues refusing child links. The renderer update adds normal-scroll/cache/folder fixes on top of that correction. A selected file or historical receipt is not proof of a running engine; packaged/source tests are not live UI or Android-compatibility verification. See [development status](development-status.md).
 - `builtin-repo/sources/snowyhome/manifest.json` is an unlisted v1 compiled-hook draft, not an executable third-party example. Compatible Mac.APK installs/removals change only the live marker; they do not restart Spring or erase preferences, packs, saved pages or FreeMe cells. Incompatible engines refuse the request.
 
 Build a **new, separate** engine from the exact original APK and documented local dependencies:
@@ -67,11 +67,14 @@ Limits: 1–128 app mappings, 16 MiB archive, 32 MiB expanded bytes, 64 KiB mani
 
 The icon resolver returns a private same-size bitmap copy. Native folder composites and shared source artwork remain stock; missing/invalid mapped images fall back to the original. Corner masks apply only to app-icon copies. Badge artwork uses a read-only map view and copied pixels. Own copies are cached with a 16 MiB/128-entry bound and are not recycled while Spring may still display them. Native precomposed label/badge artwork is bypassed, never cleared, while SnowyHome is active. No page JSON, hit geometry or app model is rewritten.
 
+The normal-mode scrolling fix gates native tile/dock composite **production and reuse**, because their native keys omit pack/appearance identity. This keeps pack artwork, labels, corners and badge colours consistent while moving instead of reverting to warmed stock composites. Open-folder icon content uses the same icon resolver. Incompatible retained folder layers are bypassed while SnowyHome/FreeMe is active; queued warm-up cannot contaminate stock caches for later Safe Mode/removal. Existing retained contents remain intact.
+
 ```sh
 python3 tools/check_source_tests.py
 python3 patches/tests/check_snowyhome.py /path/to/converted-experimental.jar --packaged
 python3 patches/tests/check_engine_hooks.py /path/to/converted-experimental.jar
 python3 patches/tests/check_iconpacks.py /path/to/converted-engine.jar /path/to/real-pack.zip
+python3 patches/tests/check_renderer_transitions.py /path/to/converted-engine.jar
 ```
 
 Without `--packaged`, the SnowyHome runner overlays current sources; that is **not** evidence that the chosen APK includes them. It now runs direct and aliased platform-root cases and refuses child links. The real-pack checker defaults to packaged native import, picker, per-image checksum/PNG decoding, renderer/pixel and layout-preservation checks in disposable storage. Its explicit `--source-snowy` mode is development-only. Neither runner installs packs into the user's Spring. Live tests must still check home/dock/edit/folder transitions, native caches and dynamic icons, Settings refresh, Safe Mode, removal and interaction with FreeMe/DockIn/Animaper.

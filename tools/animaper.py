@@ -4,7 +4,7 @@ import os
 import tempfile
 import zipfile
 
-MODES = ('wave', 'cascade', 'bounce', 'orbit', 'ripple', 'columns', 'fan', 'zigzag')
+MODES = ('wave', 'cascade', 'bounce', 'orbit', 'ripple', 'columns', 'fan', 'zigzag', 'barrel')
 
 
 def set_mode(spring_data, mode):
@@ -31,5 +31,15 @@ def supported_by(apk):
         with zipfile.ZipFile(apk) as archive:
             return (b'winterx/animaper/Animaper' in archive.read('classes.dex') and
                     b'winterx/animaper/Animaper' in archive.read('classes3.dex'))
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False
+
+
+def barrel_supported_by(apk):
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            primary, helpers = archive.read('classes.dex'), archive.read('classes3.dex')
+            return (all(token in primary for token in (b'winterx/animaper/Animaper', b'winterxStockK', b'winterxStockArtwork', b'context', b'beginFrame', b'endIcon'))
+                    and b'animaper-barrel-v1' in helpers)
     except (OSError, KeyError, zipfile.BadZipFile):
         return False

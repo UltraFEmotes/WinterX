@@ -30,7 +30,7 @@ class LocalTestLauncherTests(unittest.TestCase):
     def test_all_explicit_pins_verify_without_changing_current_selection(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp).resolve(); apk = root / 'engine.apk'; apk.write_bytes(b'isolated fixture')
-            for sha in (launcher.TEST_SHA, launcher.bundle.UI_FIX_SHA, launcher.bundle.FETCH_SHA):
+            for sha in (launcher.TEST_SHA, launcher.bundle.UI_FIX_SHA, launcher.bundle.FETCH_SHA, launcher.bundle.RENDER_ACTIONS_SHA, launcher.bundle.SSH_TERMINAL_SHA):
                 plan = {'status': 'prepared', 'apk': str(apk), 'apk_sha256': sha, 'backup': str(root), 'bundled_packages': []}
                 with self.subTest(sha=sha), patch.object(launcher.control, 'spring_pids', return_value=[]), \
                      patch.object(launcher.jailbreak, 'digest', return_value=sha), \
@@ -53,7 +53,7 @@ class LocalTestLauncherTests(unittest.TestCase):
                 start.assert_not_called()
 
     def test_receipt_records_the_actual_engine_without_restarting(self):
-        for sha in (launcher.TEST_SHA, launcher.bundle.UI_FIX_SHA, launcher.bundle.FETCH_SHA):
+        for sha in (launcher.TEST_SHA, launcher.bundle.UI_FIX_SHA, launcher.bundle.FETCH_SHA, launcher.bundle.RENDER_ACTIONS_SHA, launcher.bundle.SSH_TERMINAL_SHA):
             with self.subTest(sha=sha), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp); state = root / 'state'; data = root / 'data'
                 (state / 'overlay/android').mkdir(parents=True)
