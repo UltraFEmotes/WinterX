@@ -1,0 +1,11 @@
+{
+  "format": "winterx.springys/1",
+  "id": "me.weirdmm.animaper",
+  "name": "Animaper",
+  "version": "0.1.0",
+  "author": "WeirdMM",
+  "description": "Animate Home screen page swipes with nine effects, including Barrel.",
+  "hook": "tweak.animaper",
+  "icon": "assets/icon.png",
+  "previews": []
+}

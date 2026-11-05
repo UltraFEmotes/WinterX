@@ -144,6 +144,12 @@ def inspect(path, expected_sha256=None, *, include_code=False):
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             infos = archive.infolist()
+            # Native-code packages have a separate, bounded source/payload schema.
+            if len(infos) <= 128 and 'manifest.json' in archive.namelist() and archive.getinfo('manifest.json').file_size <= 128 * 1024:
+                header = json.loads(archive.read('manifest.json').decode('utf-8'), object_pairs_hook=_object)
+                if isinstance(header, dict) and header.get('format') == 'winterx.springys/3':
+                    import native_package
+                    return native_package.inspect_archive(archive, digest, include_code)
             if not 1 <= len(infos) <= MAX_FILES:
                 raise PackageError('Invalid number of files')
             names = [i.filename for i in infos]

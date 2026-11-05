@@ -1,0 +1,11 @@
+{
+  "format": "winterx.springys/1",
+  "id": "me.weirdmm.free-icon-test",
+  "name": "Free Icon Placement Test",
+  "version": "1.0.0",
+  "author": "WeirdMM",
+  "description": "Move icons freely on the same Home screen page.",
+  "hook": "test.icons",
+  "icon": "assets/icon.png",
+  "previews": []
+}

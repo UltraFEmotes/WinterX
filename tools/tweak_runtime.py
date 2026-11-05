@@ -5,6 +5,17 @@ from pathlib import Path
 import zipfile
 
 
+def native_packages_supported_by(apk):
+    """Independent native providers require the shared core ABI and actual generic native hooks."""
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            helpers, primary = archive.read('classes3.dex'), archive.read('classes.dex')
+            return (all(value in helpers for value in (b'winterx-native-hooks-v1', b'winterx/extension/NativeRuntime', b'winterx/extension/NativeTweak'))
+                    and b'winterx/extension/NativeHooks' in primary)
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return False
+
+
 def supported_by(apk):
     try:
         with zipfile.ZipFile(apk) as archive:

@@ -21,6 +21,9 @@ def build(source, destination):
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'), object_pairs_hook=springys._object)
     if not isinstance(manifest, dict):
         raise ValueError('Manifest must be an object')
+    if manifest.get('format') == 'winterx.springys/3':
+        import native_package
+        return native_package.build(source, destination)
     previews = manifest.get('previews', [])
     if not isinstance(previews, list):
         raise ValueError('previews must be a list')

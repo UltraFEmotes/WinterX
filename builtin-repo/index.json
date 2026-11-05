@@ -3,12 +3,32 @@
   "name": "Ruby's Built-in Repository",
   "packages": [
     {
-      "url": "packages/animaper.springys",
-      "sha256": "bf623620e96512f03a00b12f248ce64ea02603cc89e83baa937afce79852d856"
+      "url": "packages/animaper-0.2.0.springys",
+      "sha256": "186c00fa21ff97a59fa674e7503edf57ec15f33a579afec718a70e9ed543399d"
     },
     {
-      "url": "packages/coloredbar.springys",
-      "sha256": "2b320bb843b71f49be5d1648a3798e88f57e7704151d1d8634b12727ba0f040c"
+      "url": "packages/coloredbar-0.2.0.springys",
+      "sha256": "fda147500e943f33c82296c89e949e78f3993ce8c6a5f7a48f26b9a63cc71400"
+    },
+    {
+      "url": "packages/dockin-0.2.0.springys",
+      "sha256": "473ca41b94adcd2b10b45215d907589b8c0c6d81d3a0ca5280bfe27f66a32016"
+    },
+    {
+      "url": "packages/freeme-0.2.0.springys",
+      "sha256": "e44c7981f7610de765473fef203594a4f8242317bd933b872cbc3e99924822ef"
+    },
+    {
+      "url": "packages/messageplus-0.2.0.springys",
+      "sha256": "19b76a4a1c221310be67e57130a60455ac982689cab9f50c23624733f0047b3b"
+    },
+    {
+      "url": "packages/snowyhome-0.2.1.springys",
+      "sha256": "31a13899e35549ff1808c6b2ebca8c79dc1ee29499587b70e6e74205a6fff6f7"
+    },
+    {
+      "url": "packages/ssh-0.2.0.springys",
+      "sha256": "a88c4352f8dbbe02dc75ddb9bbcb22d09fdb2bc72e8b4df42431026bc6f120c8"
     }
   ]
 }

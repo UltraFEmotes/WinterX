@@ -47,22 +47,36 @@ def _same_tree(base, code_digest):
         if base.is_symlink() or any((base / name).is_symlink() for name in
                                   ('code', 'code/main.js', 'manifest.json', 'sha256', 'manifest.sha256')):
             return False
-        code = (base / 'code/main.js').read_bytes()
-        if hashlib.sha256(code).hexdigest() != code_digest:
-            return False
         record = (base / 'sha256').read_text(encoding='utf-8').strip()
         manifest_sha = (base / 'manifest.sha256').read_text(encoding='utf-8').strip()
-        return record == code_digest and hashlib.sha256((base / 'manifest.json').read_bytes()).hexdigest() == manifest_sha
-    except (OSError, ValueError):
+        raw_manifest = (base / 'manifest.json').read_bytes()
+        if record != code_digest or hashlib.sha256(raw_manifest).hexdigest() != manifest_sha:
+            return False
+        manifest = json.loads(raw_manifest)
+        if manifest.get('format') == 'winterx.springys/3':
+            import native_package
+            files = manifest.get('files', {})
+            if files.get(native_package.DEX) != code_digest or native_package.JAR not in files or len(files) > native_package.MAX_FILES:
+                return False
+            for name, expected in files.items():
+                path = base / name
+                if not native_package.safe_path(name) or path.is_symlink() or path.resolve() != path.absolute() or not path.is_file() or path.stat().st_size > native_package.MAX_PAYLOAD:
+                    return False
+                if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                    return False
+            return True
+        return hashlib.sha256((base / 'code/main.js').read_bytes()).hexdigest() == code_digest
+    except (OSError, ValueError, TypeError):
         return False
 
 
 class Registry:
-    def __init__(self, root, reconcile, supported_hooks=('test.settings',), supported_tweaks=False, supported_capabilities=()):
+    def __init__(self, root, reconcile, supported_hooks=('test.settings',), supported_tweaks=False, supported_capabilities=(), supported_native=False):
         self.root = Path(root)
         self.reconcile = reconcile
         self.supported = frozenset(supported_hooks)
         self.supported_tweaks = supported_tweaks
+        self.supported_native = supported_native
         self.supported_capabilities = frozenset(supported_capabilities)
         self.root.mkdir(parents=True, exist_ok=True)
         self.index = self.root / 'installed.json'
@@ -86,7 +100,21 @@ class Registry:
     @staticmethod
     def _tweaks(entries):
         return {key: dict(value) for key, value in entries.items()
-                if value.get('type') == 'tweak'}
+                 if value.get('type') == 'tweak'}
+
+    @staticmethod
+    def _dependencies(entries):
+        visiting, visited = set(), set()
+        def visit(package_id):
+            if package_id in visited: return
+            if package_id in visiting: raise RegistryError('Native package dependency cycle')
+            entry = entries.get(package_id, {})
+            if entry.get('runtime') != 'java': raise RegistryError('Install the native package dependencies first; remove dependents before a dependency')
+            visiting.add(package_id)
+            for dependency in entry.get('requires', []): visit(dependency)
+            visiting.remove(package_id); visited.add(package_id)
+        for package_id, entry in entries.items():
+            if entry.get('runtime') == 'java': visit(package_id)
 
     def _recover_locked(self):
         if not self.journal.exists():
@@ -113,6 +141,7 @@ class Registry:
             return self._read()
 
     def _change(self, before, after):
+        self._dependencies(after)
         _json(self.journal, {'before': before, 'after': after})
         try:
             self.reconcile(self._hooks(after), self._tweaks(after))
@@ -130,7 +159,10 @@ class Registry:
     def install(self, package, expected_sha256=None):
         metadata, images = springys.inspect(package, expected_sha256, include_code=True)
         tweak = metadata.get('type') == 'tweak'
-        if tweak and not self.supported_tweaks:
+        native = metadata.get('runtime') == 'java'
+        if native and not self.supported_native:
+            raise RegistryError('This running engine does not support independent native-code packages')
+        if tweak and not native and not self.supported_tweaks:
             raise RegistryError('This WinterX engine does not support executable tweaks yet')
         if tweak and not set(metadata.get('capabilities', [])).issubset(self.supported_capabilities):
             raise RegistryError('The running engine does not support the requested home API capabilities')
@@ -140,10 +172,16 @@ class Registry:
             self._recover_locked()
             before = self._read()
             previous = before.get(metadata['id'])
-            if tweak and (not previous or previous.get('type') != 'tweak') and len(self._tweaks(before)) >= springys.MAX_TWEAKS:
-                raise RegistryError('At most 8 executable tweaks can be installed in this development engine')
+            peers = [item for item in self._tweaks(before).values() if (item.get('runtime') == 'java') == native]
+            limit = 16 if native else springys.MAX_TWEAKS
+            if tweak and (not previous or previous.get('type') != 'tweak' or (previous.get('runtime') == 'java') != native) and len(peers) >= limit:
+                raise RegistryError('At most %d %s tweaks can be installed in this engine' % (limit, 'native' if native else 'JavaScript'))
+            if native and any(dependency not in before or before[dependency].get('runtime') != 'java' for dependency in metadata.get('requires', [])):
+                raise RegistryError('Install the native package dependencies first')
             if previous and previous.get('sha256') == metadata['sha256']:
                 return previous
+            planned = dict(before); planned[metadata['id']] = metadata
+            self._dependencies(planned)
             if tweak:
                 # Keep every revision immutable so interrupted updates can restore
                 # the old code, not just the old installed.json metadata.
@@ -155,8 +193,12 @@ class Registry:
                     staging.parent.mkdir(parents=True, exist_ok=True)
                     with tempfile.TemporaryDirectory(prefix='.tweak-stage-', dir=staging.parent) as tmp:
                         staged = Path(tmp) / 'revision'
-                        _atomic(staged / 'code/main.js', metadata['code'])
-                        manifest_bytes = json.dumps({k: v for k, v in metadata.items() if k not in ('code', 'sha256')},
+                        if native:
+                            for name, payload in metadata['native_payloads'].items():
+                                _atomic(staged / name, payload)
+                        else:
+                            _atomic(staged / 'code/main.js', metadata['code'])
+                        manifest_bytes = json.dumps({k: v for k, v in metadata.items() if k not in ('code', 'native_payloads', 'sha256')},
                                                     ensure_ascii=False, sort_keys=True).encode('utf-8')
                         _atomic(staged / 'manifest.json', manifest_bytes)
                         _atomic(staged / 'manifest.sha256', (hashlib.sha256(manifest_bytes).hexdigest() + '\n').encode('ascii'))
@@ -174,6 +216,7 @@ class Registry:
                 art_paths[source] = 'art/' + name
             record = dict(metadata)
             record.pop('code', None)
+            record.pop('native_payloads', None)
             if tweak:
                 record['tweak_stage'] = relative_stage
             record['icon'] = art_paths.get(metadata['icon'])

@@ -475,11 +475,12 @@ HOOKS = '''.class public final Lruby/RubyHooks;
 .end method
 
 .method public static showBoot(Landroid/app/Activity;)V
-    .locals 6
-    const/4 v1, 0x0
+    .locals 7
+    const/4 v6, 0x0
     :try_start
     new-instance v1, Landroid/widget/TextView;
     invoke-direct {v1, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
+    move-object v6, v1
     const-string v0, "WinterX\\nby WeirdMM"
     invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
     const/4 v0, -0x1
@@ -507,10 +508,10 @@ HOOKS = '''.class public final Lruby/RubyHooks;
     .catch Ljava/lang/Exception; {:try_start .. :try_end} :failure
     :failure
     move-exception v0
-    if-eqz v1, :failure_done
+    if-eqz v6, :failure_done
     :try_cleanup
     new-instance v2, Lruby/BootDismiss;
-    invoke-direct {v2, v1}, Lruby/BootDismiss;-><init>(Landroid/view/View;)V
+    invoke-direct {v2, v6}, Lruby/BootDismiss;-><init>(Landroid/view/View;)V
     invoke-virtual {v2}, Lruby/BootDismiss;->run()V
     :try_cleanup_end
     :failure_done

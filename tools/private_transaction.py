@@ -50,8 +50,9 @@ def identity(store):
 
 
 class Transactions:
-    def __init__(self, store, state):
+    def __init__(self, store, state, *, owned=bridge_owned, policy='bridge-owned-v1', before_write=None):
         self.store, self.target = store, identity(store)
+        self.owned, self.policy, self.before_write = owned, policy, before_write
         self.state = Path(state)
         if self.state.is_symlink() or (self.state.exists() and not self.state.is_dir()):
             raise AccessError('Transaction state must be a real host directory')
@@ -87,7 +88,8 @@ class Transactions:
 
     def _validated(self, record):
         if (not isinstance(record, dict) or record.get('format') != 'winterx.private-transaction/1'
-                or record.get('target') != self.target or record.get('status') not in ('pending', 'committed', 'rolled-back')):
+                or record.get('target') != self.target or record.get('policy', 'bridge-owned-v1') != self.policy
+                or record.get('status') not in ('pending', 'committed', 'rolled-back')):
             raise AccessError('Transaction journal does not match the verified target')
         values = record.get('changes')
         if not isinstance(values, list) or not 1 <= len(values) <= MAX_CHANGES:
@@ -95,7 +97,7 @@ class Transactions:
         seen, total, changes = set(), 0, []
         for item in values:
             path = item.get('path') if isinstance(item, dict) else None
-            try: owned = isinstance(path, str) and bridge_owned(path)
+            try: owned = isinstance(path, str) and self.owned(path)
             except ValueError as exc: raise AccessError('Invalid transaction path') from exc
             if not owned or path in seen:
                 raise AccessError('Transaction contains a non-owned or duplicate path')
@@ -116,6 +118,7 @@ class Transactions:
                 if current == before: continue
                 if current != after:
                     conflicts.append(path); continue
+                if self.before_write is not None: self.before_write()
                 if before is None: self.store.remove(path, expected=after)
                 else: self.store.write(path, before, expected=after)
             except (AccessError, OSError):
@@ -151,7 +154,7 @@ class Transactions:
             items.append({'path': path, 'before': self._encoded(before), 'after': self._encoded(after)})
             if len(items) > MAX_CHANGES: raise ValueError('Too many transaction files')
         record = {'format': 'winterx.private-transaction/1', 'id': uuid.uuid4().hex,
-                  'target': self.target, 'status': 'pending', 'changes': items}
+                  'target': self.target, 'policy': self.policy, 'status': 'pending', 'changes': items}
         decoded = self._validated(record)
         with exclusive_lock(self.lock):
             self._recover()
@@ -164,6 +167,7 @@ class Transactions:
             try:
                 for path, before, after in decoded:
                     if before == after: continue
+                    if self.before_write is not None: self.before_write()
                     if after is None: self.store.remove(path, expected=before)
                     else: self.store.write(path, after, expected=before)
                 record['status'] = 'committed'; self._save(record)

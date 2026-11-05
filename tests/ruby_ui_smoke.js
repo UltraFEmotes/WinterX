@@ -9,16 +9,20 @@ const data = {
 const views = [];
 const openedURLs = [];
 const alerts = [];
+const roots = [];
+let fileReads = 0;
 function Table(options) { Object.assign(this, options); views.push(this); }
-function Nav(root) { this.root = root; this.push = x => { this.last = x; }; }
+function Nav(root, options) { Object.assign(this, options); this.root = root; this.push = x => { this.last = x; }; }
 function View(options) { Object.assign(this, options); this.children = []; this.add = x => { this.children.push(x); return x; }; views.push(this); }
 const context = {
   UITableViewController: Table, UINavigationController: Nav, UIViewController: View,
-  UIImageView: View, UILabel: View, UITextField: View, UIButton: View, UITabBarController: function (controllers) { this.controllers = controllers; this.selectedIndex = 0; }, UIApplication: { run() {}, openURL(url) { openedURLs.push(url); } },
+  UIImageView: View, UILabel: View, UITextField: View, UIButton: View, UITabBarController: function (controllers) { this.controllers = controllers; this.selectedIndex = 0; }, UIApplication: { run(root) { roots.push(root); }, openURL(url) { openedURLs.push(url); } },
   UIAlertView: { show(options, callback) { alerts.push(options); if (callback) callback(1); } },
   storage: { get(k) { return records[k]; }, set(k,v) { records[k] = v; }, remove(k) { delete records[k]; } },
-  files: { exists(p) { return p === "winterx/" || p in data; }, readJSON(p) { if (!(p in data)) throw Error('missing'); return data[p]; },
-    writeJSON(p,v) { data[p] = v; }, write(p,v) { data[p]=v; }, read(p) { return data[p]; }, remove(p) { delete data[p]; }, import(options, callback) { callback(['imports/test.springys'], null); } },
+  files: { exists(p) { fileReads++; return p === "winterx/" || p in data; }, readJSON(p) { fileReads++; if (!(p in data)) throw Error('missing'); return data[p]; },
+    writeJSON(p,v) { data[p] = v; }, write(p,v) { data[p]=v; }, read(p) { fileReads++; return data[p]; }, remove(p) { delete data[p]; }, import(options, callback) { callback(['imports/test.springys'], null); } },
+  UITextView: View, UIActivityIndicatorView: function (options) { Object.assign(this, options); this.stopAnimating = () => { this.animating = false; }; },
+  UIScreen: { width: 320, height: 480 },
   setInterval() {}, clearInterval() {}, Date, Math, Number, String, isFinite
 };
 const unpatched = Object.assign({}, context, {files:Object.assign({}, context.files, {exists(){return false;}})});
@@ -140,3 +144,95 @@ assert.strictEqual(data['winterx/ruby/animaper.mode'],'barrel');
 context.packageRequest('set_animaper_mode',{mode:'orbit'});
 assert.strictEqual(data['winterx/ruby/animaper.mode'],'orbit');
 console.log('Barrel requires the native capability, preserves the eight existing choices/selection, and changes only on an explicit tap');
+
+// A modular core discovers actual code packages and never offers legacy markers.
+const nativePackage={id:'me.weirdmm.animaper',name:'Animaper',version:'0.2.0',author:'WeirdMM',description:'External native code',
+  type:'tweak',format:'winterx.springys/3',runtime:'java',filename:'native.springys',sha256:'native-code',previews:[],
+  source:'winterx:built-in',sourceCode:'https://example.org/animaper/source'};
+data['winterx/ruby/capabilities-v1.json']={abi:'winterx-capabilities-v1',nativePackages:true,nativeApi:'winterx-native-hooks-v1'};
+data['live.json']={active:true,observedAt:Date.now(),nativePackagesSupported:true};
+data['packages.json']={available:[nativePackage],installed:[]};
+data['repository-catalogue.json']={sources:[],packages:[nativePackage]};
+context.pending=null;
+context.refresh();
+assert(!catalogue.sections.some(section=>section.header==='TEST TWEAKS'));
+const nativeSection=catalogue.sections.find(section=>section.header==='WINTERX TWEAKS');
+assert.strictEqual(nativeSection.rows.length,1,'same package was duplicated across import/source lists');
+nativeSection.rows[0].onSelect();
+const nativePage=views.filter(view=>view.title==='Animaper').pop();
+assert.strictEqual(nativePage.sections.length,3,'native package exposed the legacy marker/mode installer');
+const selectedMode=data['winterx/ruby/animaper.mode'];
+nativePage.sections[1].rows[0].onSelect();
+let nativeRequest=data['requests/'+context.pending.id+'.json'];
+assert.strictEqual(nativeRequest.action,'install_package');
+assert.strictEqual(nativeRequest.filename,'native.springys');
+assert.strictEqual(data['winterx/ruby/animaper.mode'],selectedMode);
+data['packages.json'].installed=[nativePackage];
+let consoleScreen=roots[roots.length-1].root;
+assert.strictEqual(consoleScreen.title,'Installing','install did not open the Cydia-style console');
+assert.strictEqual(consoleScreen.background,'#000000');
+assert.strictEqual(roots[roots.length-1].barStyle,'black');
+let returnButton=consoleScreen.children.find(view=>view.title==='Return to Ruby');
+assert(returnButton.hidden,'console can be left before the operation finishes');
+assert(!consoleScreen.leftButton,'console has an escape button');
+const alertsBeforeInstall=alerts.length;
+data['results/'+nativeRequest.id+'.json']={ok:true,action:'install_package',restartRequired:true,message:'Reopen Spring through WinterX to load the package.',log:['Checked the running WinterX core','Verified Animaper 0.2.0 (me.weirdmm.animaper)']};
+context.finishOperation();
+assert.strictEqual(alerts.length,alertsBeforeInstall,'install result used a pop-up instead of the console');
+let consoleText=consoleScreen.children.find(view=>typeof view.editable==='boolean');
+assert(consoleText.text.includes('Verified Animaper 0.2.0'),'bridge steps missing from console');
+assert(consoleText.text.includes('Reopen Spring through WinterX'),'result message missing from console');
+assert(!returnButton.hidden,'Return button missing after completion');
+returnButton.onTap();
+assert.strictEqual(roots[roots.length-1].controllers.length,4,'Return did not go back to Ruby');
+assert.strictEqual(nativePage.sections[1].rows[0].title,'Remove','detail did not reflect completed install');
+const alertCount=alerts.length;
+context.finishOperation();assert.strictEqual(alerts.length,alertCount,'completion alert repeated');
+context.UIApplication.openURL=url=>openedURLs.push(url);
+nativePage.sections[0].rows.find(row=>row.title==='Source Code').onSelect();
+assert.strictEqual(openedURLs[openedURLs.length-1],nativePackage.sourceCode);
+nativePage.sections[1].rows[0].onSelect();
+nativeRequest=data['requests/'+context.pending.id+'.json'];
+assert.strictEqual(nativeRequest.action,'remove_package');
+assert.strictEqual(nativeRequest.packageId,nativePackage.id);
+consoleScreen=roots[roots.length-1].root;
+assert.strictEqual(consoleScreen.title,'Removing');
+data['results/'+nativeRequest.id+'.json']={ok:false,action:'remove_package',message:'Target changed; removal refused.'};
+context.finishOperation();
+consoleText=consoleScreen.children.find(view=>typeof view.editable==='boolean');
+assert(consoleText.text.includes('Failed after')&&consoleText.text.includes('removal refused'),'failure not shown in console');
+consoleScreen.children.find(view=>view.title==='Return to Ruby').onTap();
+assert.strictEqual(data['winterx/ruby/animaper.mode'],selectedMode);
+context.request('set_safe_mode',false);
+assert(alerts[alerts.length-1].message.includes('reopen Spring through WinterX'));
+console.log('Native catalogue, real code requests, completion/failure UI, source links and saved selections passed');
+const manyPackages=Array.from({length:16},(_,i)=>({...nativePackage,id:'me.example.native-'+i,name:'Code '+i}));
+data['packages.json']={available:manyPackages,installed:manyPackages};
+data['repository-catalogue.json']={sources:[],packages:manyPackages};
+fileReads=0;
+context.refresh();context.refreshLocal();context.refreshSources();
+assert(fileReads<=12,'modular refresh rereads status/packages per row and can exceed the Android turn budget: '+fileReads);
+console.log('Modular catalogue refresh has bounded file reads even with sixteen packages');
+// A core with its own package manager installs without the bridge; an old download never shadows a newer source build.
+data['winterx/ruby/capabilities-v1.json']={abi:'winterx-capabilities-v1',nativePackages:true,nativeApi:'winterx-native-hooks-v1',packageManager:'winterx-pm-v1'};
+delete data['live.json'];
+const oldBuild={...nativePackage,id:'me.example.stale',name:'Stale',version:'1.0.0',sha256:'a'.repeat(64),filename:'repo-'+'a'.repeat(64)+'.springys',installedSha256:null};
+const newBuild={...oldBuild,sha256:'b'.repeat(64),filename:'repo-'+'b'.repeat(64)+'.springys'};
+data['packages.json']={available:[oldBuild],installed:[]};
+data['repository-catalogue.json']={sources:[],packages:[newBuild]};
+context.pending=null;
+const chosen=context.codePackages().find(item=>item.id==='me.example.stale');
+assert.strictEqual(chosen.sha256,'b'.repeat(64),'stale imported download shadowed the newer source build');
+const newerImport={...oldBuild,version:'1.1.0',sha256:'c'.repeat(64),filename:'mine.springys'};
+data['packages.json']={available:[newerImport],installed:[]};
+assert.strictEqual(context.codePackages().find(item=>item.id==='me.example.stale').version,'1.1.0','a newer manual import must still win');
+const alertsBefore=alerts.length;
+context.packageRequest('install_package',{filename:newBuild.filename},'Stale');
+assert.strictEqual(alerts.length,alertsBefore,'bridgeless install still demanded the bridge');
+const directRequest=data['requests/'+context.pending.id+'.json'];
+assert.strictEqual(directRequest.action,'install_package');
+assert(roots[roots.length-1].root.children.find(view=>typeof view.editable==='boolean').text.includes('Sent the request to WinterX'));
+context.pending=null;
+context.packageRequest('refresh_repositories');
+assert.strictEqual(alerts[alerts.length-1].title,'Bridge Needed','source refresh must still require the bridge');
+console.log('Bridgeless install requests and newest-build selection passed');

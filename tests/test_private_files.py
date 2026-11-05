@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 import shlex
 from pathlib import Path
 import subprocess
@@ -54,7 +55,13 @@ class PrivateFilesTests(unittest.TestCase):
 
     @staticmethod
     def runner(stdout=b'', code=0):
-        return Mock(return_value=subprocess.CompletedProcess([], code, stdout, b''))
+        runner = Mock(return_value=subprocess.CompletedProcess([], code, stdout, b''))
+        def invoke(command, **options):
+            result = runner.return_value
+            marker = re.search(r'WINTERX_STATUS_[0-9a-f]{32}', command[-1]).group()
+            return subprocess.CompletedProcess(command, 0, result.stdout + ('\n' + marker + ':' + str(result.returncode) + '\n').encode(), result.stderr)
+        runner.side_effect = invoke
+        return runner
 
     def verified_adb(self, access='shell', root=False):
         uid = b'0' if root else b'10123'
@@ -109,6 +116,7 @@ class PrivateFilesTests(unittest.TestCase):
         store, runner = self.verified_adb('su', root=True)
         runner.return_value = subprocess.CompletedProcess([], 0, b'', b'')
         store.write('ruby/coloredbar.color', b'#123456', expected=b'#C9253D')
+        self.assertEqual(runner.call_args.args[0][3:5], ['shell', '-T'])
         script = runner.call_args.args[0][-1]
         self.assertIn('chown 10123:10123', script)
         self.assertIn('restorecon -F', script)
@@ -132,6 +140,7 @@ class PrivateFilesTests(unittest.TestCase):
         prefix = '/data/user/0/com.guille.spring/files/'
         runner.return_value = subprocess.CompletedProcess([], 0, (prefix + 'ruby/one\0' + prefix + 'ruby/two\0').encode(), b'')
         self.assertEqual(store.list_files('ruby'), ['ruby/one', 'ruby/two'])
+        self.assertNotIn('-quit', runner.call_args.args[0][-1], 'Android 10 toybox does not support find -quit')
         with self.assertRaises(AccessError):
             store.list_files('ruby', limit=1)
         for value in [b'/data/other\0', (prefix + 'outside\0').encode(), (prefix + 'ruby/../x\0').encode(), b'truncated']:
@@ -146,6 +155,14 @@ class PrivateFilesTests(unittest.TestCase):
         with self.assertRaises(AccessError): store.write('ruby/test', b'no', expected=None)
         self.assertIsNone(store.identity)
 
+    def test_missing_or_truncated_exit_frame_is_never_success(self):
+        store, runner = self.verified_adb()
+        runner.side_effect = None
+        for output in (b'', b'partial bytes', b'\nWINTERX_STATUS_wrong:0\n'):
+            runner.return_value = subprocess.CompletedProcess([], 0, output, b'')
+            with self.assertRaisesRegex(AccessError, 'status frame'):
+                store.read('ruby/missing')
+
     @unittest.skipIf(os.name == 'nt', 'Generated shell semantics fixture needs a POSIX host shell')
     def test_remote_command_preserves_binary_and_multiline_shell_semantics(self):
         # Execute the generated remote command in a disposable host shell, not ADB.
@@ -156,7 +173,8 @@ class PrivateFilesTests(unittest.TestCase):
             def runner(command, **options):
                 if 'echo denied' in command[-1]:
                     uid = str(os.getuid())
-                    return subprocess.CompletedProcess(command, 0, (device_root + '\n' + uid + '\n' + uid + ':' + str(os.getgid()) + '\nrw\n').encode(), b'')
+                    marker = re.search(r'WINTERX_STATUS_[0-9a-f]{32}', command[-1]).group()
+                    return subprocess.CompletedProcess(command, 0, (device_root + '\n' + uid + '\n' + uid + ':' + str(os.getgid()) + '\nrw\n\n' + marker + ':0\n').encode(), b'')
                 remote = command[-1].replace(device_root, str(root))
                 remote = remote.replace('stat -c', 'stat -f') if sys.platform == 'darwin' else remote
                 remote = remote.replace('sha256sum ', 'shasum -a 256 ') if sys.platform == 'darwin' else remote
@@ -168,6 +186,9 @@ class PrivateFilesTests(unittest.TestCase):
             store.write('ruby/binary', payload, expected=None)
             self.assertEqual(store.read('ruby/binary'), payload)
             self.assertEqual(store.list_files('ruby'), ['ruby/binary'])
+            (root / 'ruby/link').symlink_to(root / 'ruby/binary')
+            with self.assertRaises(AccessError): store.list_files('ruby')
+            (root / 'ruby/link').unlink()
             store.write('ruby/binary', b'next', expected=payload)
             def truncated(command, **options):
                 options['input'] = options['input'][:1]

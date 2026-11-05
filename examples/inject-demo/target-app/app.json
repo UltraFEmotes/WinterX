@@ -1,0 +1,11 @@
+{
+  "id": "me.example.inject-target",
+  "name": "Inject Target",
+  "version": "1.0",
+  "build": 1,
+  "minSpring": 1,
+  "genre": "Utilities",
+  "description": "A plain app installed by the Inject Demo tweak. The tweak's script runs inside it before this app's own code and adds a snowflake to its title.",
+  "statusBarStyle": "default",
+  "prerenderedIcon": false
+}

@@ -127,6 +127,8 @@ class Repositories:
                             target = 'package-art/' + hashlib.sha256(payload).hexdigest() + Path(name).suffix.lower()
                             ruby_packages._atomic(self.files / target, payload)
                             art[name] = target
+                        if metadata.get('source'):
+                            metadata['sourceCode'] = metadata['source']
                         metadata.update(filename=filename, source=url, sourceName=source['name'],
                                         installedVersion=installed.get(metadata['id'], {}).get('version'),
                                         installedSha256=installed.get(metadata['id'], {}).get('sha256'))

@@ -1,13 +1,11 @@
 # Ruby's built-in repository
 
-This local index contains **Animaper and ColoredBar**, with matching source and hosted packages in [Ruby-Repo](https://github.com/UltraFEmotes/Ruby-Repo). Both select compiled hooks in compatible WinterX engines and use Spring's actual Settings app for preferences. The built-in source works through the Mac.APK bridge.
+This local index is Ruby's always-present **built-in source**. It lists the seven official source-backed Java/Dex code packages, version 0.2.0: **Animaper, ColoredBar, DockIn, FreeMe, Message+, SnowyHome and SSH**. Ruby shows it as "Ruby's Built-in Repository" on Mac.APK and in rooted Android sessions (`tools/android_runtime.py` uses this folder by default).
 
-ColoredBar provides presets, exact RGB hex colours and app exclusions. Updated engines permanently exclude Ruby, whose red navigation and bottom tabs are its own built-in appearance. Basic ColoredBar behaviour was live-confirmed on Mac.APK; newer coverage fixes and recovery remain experimental.
+Listing a package never installs it. A fresh WinterX core ships with **zero tweaks installed**; each package is installed only when the user taps Install in Ruby, then loads after Spring is reopened through WinterX. Preferences for every installed package live in Spring Settings → **WINTERX TWEAKS**. Each package needs a WinterX core with the native package runtime (`winterx-native-hooks-v1`); older engines show it as unavailable.
 
-Settings Button Test, UI Color Test, Free Icon Placement Test and executable developer examples stay outside this index. Preserve existing users' test data; do not silently uninstall it. SnowyHome, SSH, FreeMe, DockIn and Message+ remain development drafts, not working catalogue entries. The selected home test and newer unselected batch are documented in [development status](../docs/development-status.md).
+Package archives are versioned (`packages/<name>-<version>.springys`). Older archives in `packages/` (the earlier JavaScript/hook-based Animaper and ColoredBar, Settings Button Test, UI Color Test, Free Icon Placement Test and IExplored) are kept for existing users and history but are not listed. Preserve existing users' data; never uninstall anything silently.
 
-See the [package guide](../docs/springys-format.md), [ColoredBar notes](../docs/coloredbar.md) and [repository guide](../docs/repository-design.md).
+SSH stays stopped until it is explicitly started in its Settings page with a configured key. Message+ video and reactions are unfinished.
 
-The `sources/freeme` and `sources/dockin` manifests are unlisted drafts requiring verified running engines with `freeme-grid-v1` and `dockin-native-v1`, respectively. Alpha6 is incompatible; the prepared alpha8-local engine includes both. Neither draft is installed automatically. See [layout development status](../docs/layout-tweaks.md) before a developer trial.
-
-`sources/snowyhome` is a separate unlisted draft requiring **snowyhome-render-v1** hooks, which the prepared alpha8 **does not include**. Icon-pack authoring/loading and native appearance controls passed isolated source/packaged checks in a separate experiment, not live validation. See [SnowyHome development](../docs/snowyhome.md). Nothing is added to this catalogue automatically.
+See the [native package guide](../docs/native-packages.md), [rooted Android guide](../docs/rooted-android.md) and [repository guide](../docs/repository-design.md).

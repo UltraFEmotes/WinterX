@@ -186,8 +186,10 @@ def process(request, data, inbox, base=DEFAULT_BASE):
             packages = ruby_packages.Packages(data, ruby_data / 'settings-test.enabled', apply_settings,
                                               extra_hooks=extra_hooks,
                                               tweak_root=macapk_jailbreak.DATA / 'files' / 'winterx-tweaks',
-                                              supported_tweaks=engine is not None and tweak_runtime.supported_by(engine),
-                                              supported_capabilities=('home.read', 'home.grid') if engine is not None and tweak_runtime.home_supported_by(engine) else ())
+                                               supported_tweaks=engine is not None and tweak_runtime.supported_by(engine),
+                                               supported_capabilities=(('home.read', 'home.grid') if engine is not None and tweak_runtime.home_supported_by(engine) else ())
+                                                   + (('native.hooks',) if engine is not None and tweak_runtime.native_packages_supported_by(engine) else ()),
+                                               supported_native=engine is not None and tweak_runtime.native_packages_supported_by(engine))
             if action in ('add_repository', 'remove_repository', 'refresh_repositories'):
                 import ruby_repositories
                 repos = ruby_repositories.Repositories(data, packages, builtin_root=ROOT / 'builtin-repo')

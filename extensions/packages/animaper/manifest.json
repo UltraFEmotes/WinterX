@@ -1,0 +1,19 @@
+{
+  "format": "winterx.springys/3",
+  "type": "tweak",
+  "runtime": "java",
+  "api": "winterx.native/1",
+  "id": "me.weirdmm.animaper",
+  "name": "Animaper",
+  "version": "0.2.0",
+  "author": "WeirdMM",
+  "license": "MIT",
+  "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/animaper",
+  "entry": "winterx.packages.AnimaperEntry",
+  "description": "Nine Home-page animations, including a cylindrical Barrel effect. The animation and Settings code are installed from this package. Existing selection and saved layouts are preserved.",
+  "settings_entry": "winterx-animaper-page",
+  "capabilities": ["native.hooks"],
+  "features": ["animation.page-effects", "animation.barrel"],
+  "exports": ["home.draw-location", "render.home.begin", "render.home.icon-context", "render.home.end", "render.icon.begin", "render.icon.end", "cache.tiles-allowed", "settings.page", "settings.action"],
+  "previews": []
+}

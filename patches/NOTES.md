@@ -1,0 +1,16 @@
+# Spring 0.8.1 integration notes
+
+The supplied APK SHA-256 is `f07f980fe681a6de9c4ce8735ae1c0bb0f852f447fbdb925d2dec37cf9778e5c`. Names below are obfuscated and only describe this build.
+
+- The iOS 4 and iOS 6 root Settings sections are built separately in `E1/Z3`'s static initializer. Both must be patched. Its last group contains Spring Settings. `patches/settings_test.py` adds a second row in the decoded copy only when `files/ruby/settings-test.enabled` exists. Tap handling was located in `x1/i1.b4(FF)Z`, where the selected `E1/V6` row ID can be intercepted. The experiment uses an Android toast because a Spring-native alert hook has not been located. Assembling succeeds and Mac.APK launched the test APK in an isolated fresh data root; the Settings row and its tap have not been interaction-tested. A converted-JAR test now checks both root models with the tweak enabled and disabled; the fixed build has booted in Mac.APK, while the on-screen row still needs user verification.
+- `files/ios4_pages.json` and `files/ios6_pages.json` contain ordered page arrays, a dock array and folder entries. They do not encode arbitrary x/y coordinates. Free positioning needs a position store plus changes to drawing, hit-testing, drag/drop and persistence; editing the existing lists alone cannot implement it.
+- Spring contains both code-drawn colors and many packaged UI images, including `assets/ios4/uikit/`. A universal UI color test needs an explicit rendering/asset strategy; recoloring a few PNGs is not enough to prove universal coverage.
+- Spring caches at least `ios4_installed.json` in memory. External edits cannot be assumed to take effect live and may be overwritten. A real respring needs an isolated, verified restart and controlled backup/restore of modified data.
+
+The patched APK writes `files/ruby/boot-ok-v1` at startup. The Settings row is gated by a marker, and code-level checks cover both enabled and disabled states. Before integration with Ruby, add a reliable request protocol and verified boot handshake, test the Settings row interactively, add reversible respring behavior, and confirm how to replace the APK without losing existing app data. Do not replace the user's installed APK while these remain unresolved.
+
+## Free-position research (0.8.1)
+
+Spring's edit controller is `E1/O1`: `i1.m0(long)` constructs it from the saved `E1/i2` page model. `O1.p(float,float,int)` computes drag targets, `O1.r()` removes the transient `\u0000hole` sentinel from pages and `O1.t()` preserves the current edit layout. Spring uses `\u0000hole` as a single transient drag placeholder, not as a documented persistent empty slot. Persisting it without changing the normal home renderer, hit testing, drag bookkeeping, and finalization would risk invisible/duplicated icons or corrupting a layout. No free-position hook has been enabled yet.
+
+The initial screen overlay did not visibly render on Mac.APK. The revised experiment intercepts app asset loading and selects recolored shared UIKit navigation-bar PNGs when `files/ruby/ui-colors.enabled` exists; Safe Mode and missing assets fall back to the original files. It preserves the existing gradient and does not intentionally recolor wallpaper, icons or photographs. Hook tests cover asset selection and fallback; actual app coverage and rendering still need interactive testing.

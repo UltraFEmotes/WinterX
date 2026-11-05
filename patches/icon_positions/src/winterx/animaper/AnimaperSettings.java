@@ -57,19 +57,12 @@ public final class AnimaperSettings {
             }
         } catch (Exception ignored) { return "wave"; }
     }
-    /** Add a separate section dynamically, so live installation needs no reboot. */
+    public static void rows(List<V6> rows) {
+        if (enabled()) rows.add(row(ROW, "Animaper"));
+    }
+    /** Compatibility entry point; all tweak rows belong to the shared section. */
     public static T6 decorate(T6 page) {
-        if (page == null || !"root".equals(page.a) || !enabled()) return page;
-        try {
-            for (Object sectionObject : page.c) {
-                W6 section=(W6)sectionObject;
-                for (Object rowObject : section.c) if (ROW.equals(((V6)rowObject).a)) return page;
-            }
-            List<W6> sections=new ArrayList<>();
-            for (Object section : page.c) sections.add((W6)section);
-            sections.add(new W6(null,null,null,null,Collections.singletonList(row(ROW,"Animaper"))));
-            return new T6(page.a,page.b,sections);
-        } catch (RuntimeException ignored) { return page; }
+        return winterx.tweaks.TweakSettings.decorate(page);
     }
     public static T6 page(String id) {
         if (!PAGE.equals(id) || !enabled()) return null;

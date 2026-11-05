@@ -40,7 +40,7 @@ class FreeMePackageTests(unittest.TestCase):
             self.assertEqual(meta['id'], 'com.winterx.freeme')
             catalogue = json.loads((ROOT / 'builtin-repo/index.json').read_text())
             ids = [springys_tool.springys.inspect(ROOT / 'builtin-repo' / item['url'])[0]['id'] for item in catalogue['packages']]
-            self.assertNotIn(meta['id'], ids)
+            self.assertIn(meta['id'], ids)  # Listed now as its native 0.2.0 build
 
     def test_install_remove_preserves_layout_state_and_never_restarts(self):
         with tempfile.TemporaryDirectory() as name:

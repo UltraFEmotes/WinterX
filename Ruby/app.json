@@ -1,11 +1,11 @@
 {
   "id": "com.ruby.manager",
   "name": "Ruby",
-  "version": "1.9",
-  "build": 19,
+  "version": "2.0.3",
+  "build": 23,
   "minSpring": 8,
   "genre": "Utilities",
-  "description": "An experimental package manager for Spring 0.8.1 on Mac.APK.",
+  "description": "The package manager for Spring 0.8.1 with a compatible WinterX runtime. Browse and install source-backed Java/Dex and JavaScript .springys tweaks through the Ruby bridge. Open Spring Settings → WINTERX TWEAKS for installed tweak preferences. Setup: https://github.com/UltraFEmotes/WinterX",
   "statusBarStyle": "blackOpaque",
   "tallScreen": true,
   "permissions": {

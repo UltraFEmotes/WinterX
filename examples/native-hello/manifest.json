@@ -1,0 +1,19 @@
+{
+  "format": "winterx.springys/3",
+  "type": "tweak",
+  "runtime": "java",
+  "api": "winterx.native/1",
+  "id": "me.example.hello-native",
+  "name": "Hello Native",
+  "version": "1.0.0",
+  "author": "WinterX Community Example",
+  "license": "MIT",
+  "source": "https://github.com/UltraFEmotes/WinterX/tree/main/examples/native-hello",
+  "entry": "me.example.winterx.HelloNative",
+  "description": "A standalone native-code example using the same public WinterX API as official tweaks. Its Settings button saves a counter in its own package data.",
+  "capabilities": ["native.hooks"],
+  "exports": ["settings.page", "settings.tap"],
+  "features": ["example.native-counter"],
+  "settings_entry": "main",
+  "previews": []
+}

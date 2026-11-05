@@ -30,22 +30,11 @@ BRIDGELESS_ALPHA2_SHA = 'a52f16a8ec0537a30cbafd4bbc97e5a2f812b91568d27c2c25f08b4
 BRIDGELESS_ALPHA4_SHA = 'f03c4ae6c534337b2e046a8ee004c36caf5ee8f0e409b3d9727fc8031a410cfd'
 LOCAL_ALPHA8_SHA = 'e1fc328e5cb794f8d8ebbac713e9cfaba6d7db08af14c5c13345c80137b6c6db'
 LOCAL_SNOWY_SHA = '49bf7482544ab22bc528c482c25e5133c1ddef94cff4e5192bc8383abd52bc9f'
-PATCHED = WORKSPACE / 'builds/WinterXSpring-0.8.1-native-controls-alpha.apk'
+PATCHED = WORKSPACE / 'builds/WinterXSpring-0.8.1-ruby-sources-alpha.apk'
 STATE = WORKSPACE / '.ruby-state'
 ORIGINAL_SHA = 'f07f980fe681a6de9c4ce8735ae1c0bb0f852f447fbdb925d2dec37cf9778e5c'
 LEGACY_PATCH_SHA = '98659eea58cd8d7100528b1985e91fa82bb8d7c2048e14dfd741afae91cd17bd'
-PATCH_SHA = '6951e734de54f67c28de8186335c12f767d93054ae04092b9fad4f293ac4c2ab'
-
-# Local builds differ byte-for-byte, so pin the exact file built on this Mac.
-_local_build = STATE / 'local-build.json'
-if _local_build.is_file():
-    record = json.loads(_local_build.read_text())
-    candidate = (WORKSPACE / record['apk']).resolve(strict=True)
-    if not candidate.is_relative_to((WORKSPACE / 'builds').resolve()) or candidate.suffix != '.apk':
-        raise ValueError('Invalid local build path')
-    if len(record['sha256']) != 64 or any(c not in '0123456789abcdef' for c in record['sha256']):
-        raise ValueError('Invalid local build hash')
-    PATCHED, PATCH_SHA = candidate, record['sha256']
+PATCH_SHA = '13845eb0579aed0037dcd62649f4e70936d9d0227907898c5f5701292383a0b0'
 
 
 def digest(path):

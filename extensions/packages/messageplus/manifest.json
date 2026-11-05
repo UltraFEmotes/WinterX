@@ -1,0 +1,19 @@
+{
+  "format": "winterx.springys/3",
+  "type": "tweak",
+  "runtime": "java",
+  "api": "winterx.native/1",
+  "id": "com.winterx.messageplus",
+  "name": "Message+",
+  "version": "0.2.0",
+  "author": "WeirdMM",
+  "license": "MIT",
+  "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/messageplus",
+  "entry": "winterx.packages.MessagePlusEntry",
+  "description": "Adds Settings inside Messages and JPEG photo-quality choices. UI and photo behavior are delivered as independent code. Video sending and reactions are not implemented in this version.",
+  "settings_entry": "winterx-layout-p/messageplus/",
+  "capabilities": ["native.hooks"],
+  "features": ["messages.photo-quality"],
+  "exports": ["messages.list-button", "media.photo-quality", "messages.pointer-down", "messages.pointer-move", "messages.pointer-up", "messages.pointer-cancel", "settings.page", "settings.action"],
+  "previews": []
+}

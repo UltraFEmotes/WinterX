@@ -1,0 +1,11 @@
+{
+  "format": "winterx.springys/1",
+  "id": "me.weirdmm.settings-test",
+  "name": "Settings Button Test",
+  "version": "1.0.0",
+  "author": "WeirdMM",
+  "description": "Adds a Ruby Test row to Spring Settings.",
+  "hook": "test.settings",
+  "icon": "assets/icon.png",
+  "previews": []
+}

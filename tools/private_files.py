@@ -142,9 +142,16 @@ class AdbFiles:
         self.identity = None
 
     def _run(self, script, payload=None, missing=False):
-        command = [self.adb, '-s', self.serial, 'exec-out']
-        command.append(shlex.join(self._remote(script)))
-        return self._capture(command, payload, missing, 'ADB')
+        # exec-out does not forward client stdin. Binary writes require a raw
+        # shell-v2 stream (-T), while read-only commands can keep exec-out.
+        command = [self.adb, '-s', self.serial, *(['shell', '-T'] if payload is not None else ['exec-out'])]
+        # exec-out preserves binary bytes but does not reliably propagate the
+        # remote exit status. Frame it explicitly, outside the script's own
+        # set -e/exit/trap scope, so missing files and guard failures stay distinct.
+        marker = 'WINTERX_STATUS_' + uuid.uuid4().hex
+        framed = 'set +e\n(\n' + script + '\n)\nwinterx_status=$?\nprintf ' + shlex.quote('\n' + marker + ':%s\n') + ' "$winterx_status"\n'
+        command.append(shlex.join(self._remote(framed)))
+        return self._capture(command, payload, missing, 'ADB', marker)
 
     def _remote(self, script):
         if self.access == 'su':
@@ -157,20 +164,28 @@ class AdbFiles:
         # entire sh -c argument, including newlines, traps and inner single quotes.
         return remote
 
-    def _capture(self, command, payload, missing, transport):
+    def _capture(self, command, payload, missing, transport, marker=None):
         try:
             result = self.runner(command, input=payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  timeout=20, check=False, shell=False)
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise AccessError(transport + ' could not reach the selected device: ' + str(exc)) from exc
-        if missing and result.returncode == MISSING:
+        code, output = result.returncode, result.stdout
+        if marker is not None and code == 0:
+            prefix = ('\n' + marker + ':').encode('ascii')
+            position = output.rfind(prefix)
+            status = output[position + len(prefix):] if position >= 0 else b''
+            if position < 0 or not re.fullmatch(rb'[0-9]{1,3}\n', status) or int(status) > 255:
+                raise AccessError('ADB did not return a complete remote status frame')
+            code, output = int(status), output[:position]
+        if missing and code == MISSING:
             return None
-        if result.returncode:
-            if result.returncode == 45:
+        if code:
+            if code == 45:
                 raise ConflictError('Android private file changed; operation refused')
             detail = result.stderr.decode('utf-8', errors='replace').strip()[:200]
-            raise AccessError(transport + ' private-folder access failed' + (': ' + detail if detail else ''))
-        return result.stdout
+            raise AccessError(transport + ' private-folder access failed (status ' + str(code) + ')' + (': ' + detail if detail else ''))
+        return output
 
     def verify(self):
         """Read-only identity/path/permission check; does not grant or enable root."""
@@ -271,7 +286,9 @@ class AdbFiles:
         script, q = self._guard(relative, directory=True)
         # Refuse links, rather than silently omitting a link substituted for data.
         script += 'if test ! -e ' + q + '; then exit 44; fi\n'
-        script += 'links=$(find ' + q + ' -type l -print -quit)\ntest -z "$links"\n'
+        # Android 10's toybox find has no -quit. One bounded byte is enough to
+        # reject either a link or a traversal error, without buffering the tree.
+        script += 'links=$(find ' + q + ' -type l -print 2>&1 | head -c 1)\ntest -z "$links"\n'
         # Bound output on device as well as host; every safe relative path <= 1024.
         script += 'find ' + q + ' -type f -print0 | head -c ' + str((limit + 1) * 1026) + '\n'
         raw = self._run(script, missing=True)

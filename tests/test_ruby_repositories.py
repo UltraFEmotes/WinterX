@@ -56,9 +56,11 @@ class RepositoryTests(unittest.TestCase):
                                                 builtin_root=ROOT / 'builtin-repo')
         data = repo.refresh()
         self.assertTrue(data['sources'][0]['builtIn'])
-        self.assertEqual(len(data['packages']), 2)
-        self.assertEqual({p['hook'] for p in data['packages']}, {'tweak.animaper', 'tweak.coloredbar'})
-        self.assertEqual({p['id'] for p in data['packages']}, {'me.weirdmm.animaper', 'me.weirdmm.coloredbar'})
+        self.assertEqual(data['sources'][0]['name'], "Ruby's Built-in Repository")
+        self.assertEqual([p['id'] for p in data['packages']], ['me.weirdmm.animaper', 'me.weirdmm.coloredbar', 'com.winterx.dockin',
+            'com.winterx.freeme', 'com.winterx.messageplus', 'com.winterx.snowyhome', 'com.winterx.ssh'])
+        self.assertEqual({p['format'] for p in data['packages']}, {'winterx.springys/3'})
+        self.assertTrue(all(p['sourceCode'].startswith('https://github.com/UltraFEmotes/Ruby-Repo/') for p in data['packages']))
         self.assertIsNone(data['sources'][0]['error'])
 
     def test_rejects_bad_hash_without_installing(self):

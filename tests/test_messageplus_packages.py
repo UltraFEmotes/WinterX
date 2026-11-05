@@ -23,7 +23,7 @@ class MessagePlusPackageTests(unittest.TestCase):
             self.assertEqual(meta['hook'], 'tweak.messageplus')
             catalogue = json.loads((ROOT / 'builtin-repo/index.json').read_text())
             ids = [springys_tool.springys.inspect(ROOT / 'builtin-repo' / item['url'])[0]['id'] for item in catalogue['packages']]
-            self.assertNotIn(meta['id'], ids)
+            self.assertIn(meta['id'], ids)  # Listed now as its native 0.2.0 build
             data = root / 'spring'; ruby = data / 'files/ruby'; ruby.mkdir(parents=True)
             protected = {data / 'files/ios6_pages.json': b'saved home/folder/dock',
                          ruby / 'messageplus/photo-quality': b'95\n',

@@ -15,7 +15,8 @@ const live=launch({},true);
 assert(live.views.some(v=>v.text==='Successfully Jailbroken'));
 const button=live.views.find(v=>v.title==='Jailbreak');assert.strictEqual(button.enabled,false);
 live.ctx.active=false;live.ctx.refresh();assert.strictEqual(button.enabled,true);
-assert(live.views.some(v=>(v.text||'').includes('Start the Ruby bridge')));
+assert(live.views.some(v=>(v.text||'').includes('start the Ruby bridge')));
+assert(live.views.some(v=>(v.text||'').includes('Rooted Android')));
 for (const version of [undefined,'0.8.1','0.9 Preview 1','0.9','unknown']) {
  const saved={'winterx.version.v1':version};
  if(version && version!=='0.8.1')saved['jailbreak.request.v1']='old-preview-request';
@@ -33,7 +34,8 @@ for (const version of [undefined,'0.8.1','0.9 Preview 1','0.9','unknown']) {
  assert.strictEqual(request.version,'0.8.1');
 }
 const manifest=JSON.parse(fs.readFileSync('RubyJailbreak/app.json','utf8'));
-assert.strictEqual(manifest.version,'0.6');assert.strictEqual(manifest.build,6);
-assert(manifest.description.includes('Spring 0.8.1 on Mac.APK only'));
+assert.strictEqual(manifest.version,'0.7');assert.strictEqual(manifest.build,7);
+assert(manifest.description.includes('Android 10 ARM64 emulator'));
+assert(manifest.description.includes('original installed Spring APK'));
 assert(manifest.description.includes('https://github.com/UltraFEmotes/WinterX'));
 console.log('WinterX: bridgeless status, 0.8.1-only UI, saved-preview migration, request version and description passed');

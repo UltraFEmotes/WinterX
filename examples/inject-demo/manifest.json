@@ -1,0 +1,19 @@
+{
+  "format": "winterx.springys/3",
+  "type": "tweak",
+  "runtime": "java",
+  "api": "winterx.native/1",
+  "id": "me.example.inject-demo",
+  "name": "Inject Demo",
+  "version": "1.0.0",
+  "author": "WinterX Community Example",
+  "license": "MIT",
+  "source": "https://github.com/UltraFEmotes/WinterX/tree/main/examples/inject-demo",
+  "entry": "me.example.injectdemo.InjectDemo",
+  "description": "Shows app script injection and bundled apps: installs the Inject Target app and runs a script inside it that adds a snowflake to its title.",
+  "capabilities": ["native.hooks"],
+  "exports": ["inject.none"],
+  "apps": ["apps/InjectTarget.sapp"],
+  "inject": [{ "apps": ["me.example.inject-target"], "script": "inject/snowflake-titles.js" }],
+  "previews": []
+}

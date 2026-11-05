@@ -11,13 +11,14 @@ import springys
 import springys_registry
 
 ID = re.compile(r'^[a-z0-9]+(?:[.-][a-z0-9]+)+$')
+LEGACY_HOOKS = frozenset(('test.settings', 'test.colors', 'test.icons', 'tweak.animaper', 'tweak.coloredbar',
+                          'tweak.freeme', 'tweak.dockin', 'tweak.snowyhome', 'tweak.messageplus', 'tweak.ssh'))
 
 
 def _same_stage(source, expected):
     """Staged registry tree still matches its recorded sha256 before it runs."""
     try:
         digest = (source / 'sha256').read_text(encoding='utf-8').strip()
-        code = (source / 'code/main.js').read_bytes()
         return digest == expected and springys_registry._same_tree(source, expected)
     except (OSError, ValueError):
         return False
@@ -30,7 +31,9 @@ def _sync_tree(source, target):
     if target.is_symlink() or target.resolve() != target.absolute():
         raise ValueError('Tweak storage must not contain symlinks')
     changes = []
-    for relative in ('code/main.js', 'manifest.json', 'sha256', 'manifest.sha256'):
+    manifest = json.loads((source / 'manifest.json').read_text())
+    files = tuple(manifest.get('files', {})) if manifest.get('format') == 'winterx.springys/3' else ('code/main.js',)
+    for relative in (*files, 'manifest.json', 'sha256', 'manifest.sha256'):
         path = source / relative
         destination = target / relative
         if destination.is_symlink() or destination.resolve() != destination.absolute():
@@ -84,19 +87,20 @@ def icon_thumbnail(root, payload, directory='package-art'):
 
 
 class Packages:
-    def __init__(self, app_files, marker, apply, extra_hooks=None, tweak_root=None, supported_tweaks=False, supported_capabilities=()):
+    def __init__(self, app_files, marker, apply, extra_hooks=None, tweak_root=None, supported_tweaks=False, supported_capabilities=(), supported_native=False):
         self.files = Path(app_files)
         self.imports = self.files / 'imports'
         self.marker = Path(marker)
         self.apply = apply
+        self.supported_native = supported_native
         # Engine-visible location (Spring's own files dir) for tweak code.
         self.tweaks_root = Path(tweak_root or (self.files / 'winterx-tweaks'))
         self.hooks = {'test.settings': (self.marker, lambda enabled: self.apply(enabled))}
         if extra_hooks:
             self.hooks.update(extra_hooks)
         self.registry = springys_registry.Registry(self.files / 'package-registry', self._reconcile,
-                                                     supported_hooks=tuple(self.hooks), supported_tweaks=supported_tweaks,
-                                                     supported_capabilities=supported_capabilities)
+                                                     supported_hooks=() if supported_native else tuple(self.hooks), supported_tweaks=supported_tweaks,
+                                                     supported_capabilities=supported_capabilities, supported_native=supported_native)
 
     def _reconcile(self, hooks, tweaks=None):
         # Change only hooks and tweaks owned by this transaction. Other manually
@@ -131,6 +135,10 @@ class Packages:
                 raise RuntimeError('Installed tweak code failed integrity check for ' + tweak_id)
             _sync_tree(source, target)
         for hook in sorted(managed):
+            if self.supported_native and hook in LEGACY_HOOKS:
+                # Historical records/markers remain recovery data for old engines.
+                # They cannot activate anything in the core-only runtime.
+                continue
             if hook not in self.hooks:
                 raise ValueError('Unsupported hook: ' + hook)
             marker, apply = self.hooks[hook]

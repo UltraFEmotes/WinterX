@@ -1,0 +1,19 @@
+{
+  "format": "winterx.springys/3",
+  "type": "tweak",
+  "runtime": "java",
+  "api": "winterx.native/1",
+  "id": "com.winterx.dockin",
+  "name": "DockIn",
+  "version": "0.2.0",
+  "author": "WeirdMM",
+  "license": "MIT",
+  "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/dockin",
+  "entry": "winterx.packages.DockInEntry",
+  "description": "Choose four to seven dock icons from native Settings. Default and minimum are four. Geometry, touch handling, animation and admission rules are supplied by this independent code package.",
+  "settings_entry": "winterx-layout-p/dockin",
+  "capabilities": ["native.hooks"],
+  "features": ["dock.capacity"],
+  "exports": ["dock.icon.begin-legacy", "dock.icon.begin-native", "dock.icon.begin-motion", "dock.icon.end", "dock.geometry-enabled", "dock.hit", "dock.delete-hit", "dock.edit-capacity", "dock.normalize-capacity", "dock.launch-size", "dock.location", "dock.frame", "dock.hover", "dock.edit-location", "dock.motion-begin", "home.hover", "home.edit-location", "home.drag-begin", "settings.page", "settings.action"],
+  "previews": []
+}

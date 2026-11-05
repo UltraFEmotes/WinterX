@@ -1,117 +1,47 @@
-# WinterX
+# WinterX & Ruby
 
-![WinterX snowflake boot logo](docs/images/winterx.webp)
+WinterX is a fan-made project by WeirdMM for [Spring](https://spring.elguille.me), the iOS-style Android simulator. Ruby is its iOS 6-inspired package manager. This is a fun project built for experimenting with Spring and sharing tweaks with its community.
 
-WinterX is WeirdMM's fan-made jailbreak and tweak project for **Spring**, the iOS-style Android simulation. Ruby is its experimental package manager. This is a beta made for fun; it is not an iOS jailbreak and is not affiliated with Spring, Apple, or Cydia.
+![Ruby's package screen in Spring](docs/images/ruby-packages.png)
+![Spring's iOS-style Settings screen](docs/images/spring-settings.png)
 
-![Spring Settings in the launcher](docs/images/spring-settings.png)
+WinterX targets **Spring 0.8.1**. Its new core contains generic hooks and loaders; tweaks are independently installed **Java/Dex or JavaScript code packages**. **Fresh installations include no tweaks.** Animaper and the other installed tweaks share **Settings → WINTERX TWEAKS**, while Ruby keeps its own red bars independently.
 
-## Current status
+The rooted workflow preserves Spring's original APK and app identity. Live testing uses an **Android 10 ARM64 emulator on macOS**; physical devices, other platforms and rootless support are not established by that test. See [development status](docs/development-status.md). Message+ video sending and reactions remain unfinished.
 
-- **Mac.APK:** experimental source build for the specific Spring 0.8.1 APK below. The jailbreak uses a local Mac bridge and a patched launcher. Ruby can manage supported packages; several features are still in development.
-- **Executable `.springys/2` tweaks:** independently authored JavaScript can add native Spring Settings, storage and alerts; basic execution/callbacks were live-confirmed on Mac.APK. New experimental engines add manifest-declared asynchronous home snapshots and revision-checked **same-page** FreeMe moves. This is not unrestricted home/dock/folder hooking or a hardened sandbox; native dispatch, limits and recovery still need live checks.
-- **Rooted Android and emulators:** **not supported yet**. There is no working Android installer, root service, or LAN bridge in this version. The patched APK produced here is unsigned and intended for Mac.APK; do not install it as an Android update. Root access alone does not make this release compatible. Android support and a tested installation guide are planned.
-- **Built-in tweak repository:** includes **Animaper and ColoredBar**. ColoredBar has presets, exact RGB colours and app exclusions in Spring Settings. Updated engines keep Ruby's own red navigation and bottom tabs, even without tweaks or in Safe Mode. SnowyHome, SSH, FreeMe, DockIn and Message+ remain unlisted development drafts, not working releases.
-- **Prepared local test:** normal-mode SnowyHome scrolling and FreeMe folder backgrounds are corrected, and Animaper adds genuine cylindrical [Barrel](docs/animaper.md). The latest SSH-terminal/snowflake build was selected after the user confirmed Spring closed and a fresh backup preserved all **485 current entries** with zero changed paths. Layouts, effect selection, keys/packs, original package pins and earlier engines/defaults remain intact. Preparation never launched Spring; the Home API Example stays uninstalled.
-- **SSH built-ins and terminal:** the newest engine adds an interactive **`winterx>` prompt** and **blue-snowflake Neofetch**. Type `neofetch`, `winterx-app list`, or the guarded open/close/new-install commands directly after logging in. One-shot commands still work. The prompt uses no OS shell/root process; SSH requires public-key authentication and explicit Settings Start. Live terminal/output/actions and visible rendering still need a user trial. See [SSH commands](docs/ssh.md) and [development status](docs/development-status.md).
-- **Message+:** implements Messages' main-list Edit → native Settings and photo quality 65/85/95; **video sending and reactions are not implemented**. Packaged/spied checks do not establish live UI or delivery. [SnowyHome import](docs/snowyhome.md) and [same-page home APIs](docs/tweak-runtime-design.md#experimental-home-api) also still need user trials.
-- **Portable bridge progress:** bounded directory/ADB/SSH-client transfers, recovery journals and Ruby inventory/repository requests are implemented in source. Android tweak installation/deployment/reconciliation remain refused/unverified. The optional key-authenticated on-device SSH service is separate; development tools have not started a live listener or connection. No network/root setup was performed.
-- **Ruby 1.9 source:** adds capability-gated Barrel selection and retains **Join our Discord**: [WinterX community](https://discord.gg/4JTe27ZRNd). The new engine preserves the older Ruby trusted-script pins and independent red bars. Preparing the engine does not install Ruby 1.9; native Spring Settings offers Barrel with older Ruby versions too.
-- **WinterX companion 0.6:** displays only supported Spring **0.8.1**, with no preview selector. Its app description links this repository and explains the required bridge/local engine.
+## Try the development build
 
-No Spring APK, Spring SDK, Mac.APK, built binaries, personal app data, or third-party artwork is distributed here. Get the original Spring and SDK from their respective distributors. Spring: [spring.elguille.me](https://spring.elguille.me/).
+1. [Build the core and apps locally](docs/native-packages.md) using your separately obtained Spring APK/SDK.
+2. Follow the [rooted Android/emulator setup](docs/rooted-android.md) or [Mac.APK core workflow](docs/native-packages.md#macapk-core-workflow).
+3. Install Ruby and WinterX through Spring's Developer Mode/inbox importer.
+4. In Ruby, refresh Sources and install the code packages you want. Wait for the result, then fully reopen Spring through WinterX to load them.
 
-## Install on Mac.APK (build from source)
+Packages: [Animaper](docs/animaper.md), [ColoredBar](docs/coloredbar.md), [FreeMe and DockIn](docs/layout-tweaks.md), [SnowyHome](docs/snowyhome.md), [Message+](docs/messageplus.md), and [SSH](docs/ssh.md). SSH starts only through its explicit Settings control.
 
-This is an advanced, experimental setup. Back up your Spring data before proceeding. You need several GB free and exactly one Spring Launcher window when jailbreaking. The scripts currently expect an Apple Silicon Mac, Mac.APK at `/Applications/Mac.apk.app`, and the Spring Launcher app at `/Applications/Spring-Launcher.app`. Other installations may need code changes.
+Spring itself and its APK are not part of WinterX. Ruby and WinterX are independent fan projects and are not affiliated with Spring, Apple, or Cydia.
 
-### 1. Prepare dependencies
+## Developers
 
-Install Git, Python 3, Node.js (for UI tests), Homebrew `apktool` and `openjdk`, Android SDK Build Tools **36.0.0**, and Mac.APK with Spring 0.8.1 already installed. Install Android command-line tools separately and run `sdkmanager 'build-tools;36.0.0'`. The current builder looks for D8 under `~/Library/Android/sdk/build-tools/36.0.0/lib/d8.jar` and Java under `/opt/homebrew/opt/openjdk/bin/`. It uses Mac.APK's local framework and runtime. For the Homebrew dependencies:
+- **[Making WinterX tweaks](docs/making-tweaks.md)**: tutorial and full reference (manifest, Java API, every hook point, Settings pages, publishing)
+- [Build a `.springys` package](docs/springys-format.md)
+- [Create a repository](docs/repository-design.md)
+- [WinterX testing and recovery](docs/testing-winterx.md)
+- [Built-in repository development](builtin-repo/README.md)
+- [Actual executable-tweak implementation and API](docs/tweak-runtime-design.md)
+- [Native code packages and public hooks](docs/native-packages.md) · [Standalone community example](examples/native-hello/)
+- [FreeMe and DockIn](docs/layout-tweaks.md) · [Portable bridge/SSH-client development](docs/android-bridge.md)
 
-```sh
-brew install apktool openjdk
-```
-
-Clone the project, put the **original, unmodified** Spring 0.8.1 APK in the checkout as `Spring-0.8.1.apk`, and unpack the Spring SDK as `SpringSDK-r10/` so that `SpringSDK-r10/tools/spring_pack.py` exists:
+Check and build the Ruby app with Spring SDK r10:
 
 ```sh
-gh repo clone UltraFEmotes/WinterX
-cd WinterX
-shasum -a 256 Spring-0.8.1.apk
+python3 SpringSDK-r10/tools/spring_pack.py check Ruby
+python3 tools/build_sapp.py Ruby out/Ruby.sapp
+python3 -m unittest discover -s tests -q
+node tests/ruby_ui_smoke.js
 ```
 
-The supported APK's SHA-256 must be `f07f980fe681a6de9c4ce8735ae1c0bb0f852f447fbdb925d2dec37cf9778e5c`. Preview and other Spring versions are not supported. The installed Spring APK must match too.
-
-Set up the Python dependency used for package artwork and the color test:
-
-```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install Pillow
-```
-
-### 2. Build the local launcher and apps
-
-```sh
-mkdir -p builds
-python tools/generate_theme.py Spring-0.8.1.apk
-WINTERX_BUILD_ANIMAPER=1 WINTERX_BUILD_TRUSTED_FILES=1 WINTERX_BUILD_INBOX=1 \
-  python patches/icon_positions/build.py Spring-0.8.1.apk builds/WinterXSpring-local.apk
-python tools/configure_build.py builds/WinterXSpring-local.apk
-python SpringSDK-r10/tools/spring_pack.py pack RubyJailbreak -o builds/WinterX.sapp
-python SpringSDK-r10/tools/spring_pack.py pack Ruby -o builds/Ruby.sapp
-```
-
-The generated theme uses resources from your own APK and stays on your machine. The build refuses to overwrite an existing output. The local configuration records the build's SHA-256, which the bridge checks before launching it.
-
-The builder decodes only bytecode/metadata instead of duplicating Spring's large asset library. Final assembly verifies stock resources remain unchanged apart from WinterX's boot images. This reduces temporary disk use without removing assets from the finished launcher.
-
-### 3. Install the apps in Spring
-
-Enable Spring's sideloading/developer mode if needed. Copy both apps into the Spring inbox:
-
-```sh
-INBOX="$HOME/Library/Application Support/MacApk/com.guille.spring/sdcard/Android/data/com.guille.spring/files/sapps-inbox"
-mkdir -p "$INBOX"
-cp builds/WinterX.sapp builds/Ruby.sapp "$INBOX/"
-```
-
-Fully quit **Spring Launcher** and reopen it so stock Spring imports the apps. Reopening only the app inside Spring is not enough.
-
-### 4. Jailbreak
-
-With the virtual environment active, run the bridge in a terminal and leave it running:
-
-```sh
-python tools/ruby_bridge.py
-```
-
-Open the original Spring Launcher, open **WinterX**, and tap **Jailbreak**. The bridge checks the original and patched APKs, backs up app data, and starts the patched launcher. Ruby should be available after Spring starts. Some local features work without the bridge, but jailbreak and parts of package management still require it. On Mac.APK, a respring can leave Spring stuck on its loading screen: fully quit and reopen the launcher when needed.
-
-**Updating:** do not replace an engine APK in use. Keep the old APK and data backup, fully quit Spring, build to a new filename, configure that file, then deliberately reopen the launcher. Engine changes and newly installed/updated executable tweaks require a full launcher reopen. A v2 install reports staging, not successful execution, and does not automatically restart Spring. Native ColoredBar/Animaper marker changes do not need a respring on compatible engines. Never run stock and patched Spring simultaneously.
-
-## Safe Mode and recovery
-
-Ruby can enter Safe Mode to temporarily disable tweaks. If Spring cannot start, fully close Spring Launcher, activate the virtual environment, run `python tools/prepare_safe_mode.py`, then start the original launcher, start the bridge and jailbreak again. Safe Mode is experimental. Backups made by the bridge are stored under the checkout's `.ruby-state/backups/`; preserve them if recovering data.
-
-## For developers
-
-Run `python3 tools/check_source_tests.py` for the fixture-independent suite (**146 passing tests**), plus four JavaScript smoke runners in the [testing guide](docs/testing-winterx.md). Full local discovery passed **154 tests** with external inputs present. The renderer/actions baseline passed 27 verification jobs; the terminal/snowflake update passed seven focused packaged jobs with unchanged native/resources verified byte-for-byte. Coverage includes **64 renderer cases**, **12 Barrel checks**, interactive command/cleanup tests and **20 preparation safeguards** across all five accepted pins. These checks do not establish live SSH/UI/delivery or Android compatibility. User-supplied artwork/packs remain local.
-
-- [Make a `.springys` package: tutorial, artwork, updates and format reference](docs/springys-format.md)
-- [Creating an experimental Ruby repository](docs/repository-design.md)
-- [Executable-tweak runtime and supported API](docs/tweak-runtime-design.md)
-- [ColoredBar preferences, coverage and Ruby branding](docs/coloredbar.md)
-- [Message+ native Messages Settings and transport limits](docs/messageplus.md) · [Optional on-device SSH](docs/ssh.md)
-- [Testing and recovery](docs/testing-winterx.md) · [Release checklist](docs/release-checklist.md)
-- [Windows/Linux and Android bridge development](docs/android-bridge.md) — inventory/repositories, bounded transports and host recovery exist; Android engine deployment/tweak reconciliation and real-platform validation are not ready.
-- Source is in `patches/`, `tools/`, `Ruby/`, `RubyJailbreak/`, and `IExplored/`. The [built-in repository](https://github.com/UltraFEmotes/Ruby-Repo) contains Animaper and ColoredBar. Developer examples remain source-only, outside its index.
-
-A v1 `.springys` archive selects a compiled hook. A v2 archive contains its author's `tweak/main.js`, runs in a separate QuickJS worker and uses the documented WinterX API. The actual runtime/Settings/home API, registry/bridge, bootstrap and independent examples are source—not only a format proposal. Java/reflection, shell execution, networking, unrestricted home/dock/folder mutation and custom animation hooks are not exposed to tweak code. Repository downloads use HTTPS and verify package hashes, but a matching hash does not make a source trustworthy. Install executable tweaks only from authors you trust.
-
-With the SDK, APK, generated theme, and Pillow in place, run `python -m unittest discover -s tests -q`. JavaScript checks include `node tests/ruby_ui_smoke.js` and `node tests/tweak_runtime_smoke.js`. Packaged-helper checks are listed in the testing guide. Node and JVM-spy checks do not replace native QuickJS or live UI testing. Ruby's new red bars/Discord button and the Settings/App Store coverage fixes still need a user trial; earlier basic ColoredBar and executable-example behaviour were live-confirmed.
+Reviewed source/docs are published separately. Third-party Spring assets, the Spring APK/SDK, private app data and build outputs are excluded; third-party artwork must not be assumed to be covered by the project source license.
 
 ## License
 
-Original WinterX code and project-created artwork are under the [MIT License](LICENSE). Spring, Mac.APK, their artwork, trademarks, and the Spring screenshot belong to their respective owners and are not relicensed here.
+Original WinterX and Ruby project code is available under the [MIT License](LICENSE). Third-party software, artwork, trademarks, and Spring screenshots retain their respective owners' rights and are not relicensed by that license. The Spring APK and SDK are excluded from the source repository.

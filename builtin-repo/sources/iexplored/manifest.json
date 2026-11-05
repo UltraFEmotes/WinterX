@@ -1,0 +1,11 @@
+{
+  "format": "winterx.springys/1",
+  "id": "me.weirdmm.iexplored",
+  "name": "IExplored",
+  "version": "0.4.0",
+  "author": "WeirdMM",
+  "description": "Browse and edit Spring files, with recoverable trash.",
+  "hook": "app.iexplored",
+  "icon": "assets/icon.png",
+  "previews": []
+}

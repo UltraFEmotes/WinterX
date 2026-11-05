@@ -1,0 +1,17 @@
+{
+  "format": "winterx.springys/3",
+  "type": "tweak",
+  "runtime": "java",
+  "api": "winterx.native/1",
+  "id": "me.example.hook-demo",
+  "name": "Hook Demo",
+  "version": "1.0.0",
+  "author": "WinterX Community Example",
+  "license": "MIT",
+  "source": "https://github.com/UltraFEmotes/WinterX/tree/main/examples/hook-demo",
+  "entry": "me.example.hookdemo.HookDemo",
+  "description": "Shows Cydia-style method hooks: changes the network name in Settings → General → About to \"WinterX ❄\" by hooking one of Spring's own methods. No Settings page.",
+  "capabilities": ["native.hooks"],
+  "exports": ["hooks.none"],
+  "previews": []
+}

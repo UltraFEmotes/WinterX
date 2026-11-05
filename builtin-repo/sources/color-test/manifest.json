@@ -1,0 +1,11 @@
+{
+  "format": "winterx.springys/1",
+  "id": "me.weirdmm.color-test",
+  "name": "UI Color Test",
+  "version": "1.0.0",
+  "author": "WeirdMM",
+  "description": "Recolors supported Spring navigation bars red.",
+  "hook": "test.colors",
+  "icon": "assets/icon.png",
+  "previews": []
+}

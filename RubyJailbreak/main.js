@@ -9,11 +9,12 @@ var screen = new UIViewController({ title: "WinterX", background: "#e4e5e8" });
 screen.add(new UILabel({ frame: [20, 30, 280, 46], text: "WinterX", size: 25, bold: true, align: "center", color: "#1d467d" }));
 screen.add(new UILabel({ frame: [30, 90, 260, 54], text: "Jailbreak Spring", size: 16, align: "center", lines: 2, color: "#444444" }));
 screen.add(new UILabel({ frame: [55, 142, 210, 38], text: "Supports Spring " + selectedVersion, size: 14, align: "center", color: "#444444" }));
-var message = screen.add(new UILabel({ frame: [25, 185, 270, 80], text: "Start the Ruby bridge on your Mac, then tap Jailbreak.", size: 14, lines: 4, align: "center", color: "#555555" }));
+var setupMessage = "Mac.APK: start the Ruby bridge, then tap Jailbreak. Rooted Android: launch Spring with the rooted WinterX bridge on your computer.";
+var message = screen.add(new UILabel({ frame: [25, 185, 270, 80], text: setupMessage, size: 14, lines: 4, align: "center", color: "#555555" }));
 var button = screen.add(new UIButton({ frame: [45, 280, 230, 44], title: "Jailbreak", onTap: jailbreak }));
 screen.add(new UIButton({ frame: [85, 340, 150, 38], title: "Check Status", onTap: refresh }));
 function refresh() {
-  // The patched Spring runtime exposes this status without the Mac bridge.
+  // The active Spring runtime exposes this status on either supported workflow.
   try {
     if (files.exists("winterx/status")) {
       button.enabled = false;
@@ -21,14 +22,14 @@ function refresh() {
       return;
     }
   } catch (e) {}
-  if (!current) { button.enabled = true; message.text = "Start the Ruby bridge on your Mac, then tap Jailbreak."; return; }
+  if (!current) { button.enabled = true; message.text = setupMessage; return; }
   var result = "results/" + current + ".json";
   if (!files.exists(result)) { button.enabled = false; message.text = "Waiting for the Ruby bridge. Spring will restart during jailbreak."; return; }
   try {
     var reply = files.readJSON(result);
     if (reply.action !== "jailbreak") {
       button.enabled = true;
-      message.text = "Please restart the Ruby bridge on your Mac and try again.";
+      message.text = "Please reconnect the Ruby bridge on your computer and try again.";
       return;
     }
     if (!reply.ok) {
