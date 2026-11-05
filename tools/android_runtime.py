@@ -277,10 +277,15 @@ def main():
                 detached.wait(2 if last_error is not None else 1)
         except KeyboardInterrupt:
             pass
-        except Exception:
-            if not detached.is_set(): raise
+        except Exception as failure:
+            # Spring closing (swiped away, force-stopped, emulator shut down) destroys the script before or after
+            # Frida's "detached" event; either way it is the normal end of a session, not a crash.
+            import frida
+            if not detached.is_set() and not isinstance(failure, (frida.InvalidOperationError, frida.ProcessNotFoundError, frida.TransportError)): raise
+            detached.set()
         finally:
             if runtime.session is not None and not detached.is_set(): runtime.session.detach()
+        print('Spring closed, so this WinterX session has ended. Start it again to reopen Spring with WinterX.', flush=True)
 
 
 if __name__ == '__main__': main()

@@ -5,16 +5,16 @@ WinterX is a fan-made project by WeirdMM for [Spring](https://spring.elguille.me
 ![Ruby's package screen in Spring](docs/images/ruby-packages.png)
 ![Spring's iOS-style Settings screen](docs/images/spring-settings.png)
 
-WinterX targets **Spring 0.8.1**. Its new core contains generic hooks and loaders; tweaks are independently installed **Java/Dex or JavaScript code packages**. **Fresh installations include no tweaks.** Animaper and the other installed tweaks share **Settings → WINTERX TWEAKS**, while Ruby keeps its own red bars independently.
+WinterX targets **Spring 0.8.1**. Its core contains no tweaks, only the means to run them: tweaks are independently installed **Java/Dex code packages** that can hook any of Spring's methods Cydia-style, run their own JavaScript inside Spring apps, add Settings pages and bring their own apps. **Fresh installations include no tweaks.** Want to make one? Start with **[Making WinterX tweaks](docs/making-tweaks.md)**. Animaper and the other installed tweaks share **Settings → WINTERX TWEAKS**, while Ruby keeps its own red bars independently.
 
-The rooted workflow preserves Spring's original APK and app identity. Live testing uses an **Android 10 ARM64 emulator on macOS**; physical devices, other platforms and rootless support are not established by that test. See [development status](docs/development-status.md). Message+ video sending and reactions remain unfinished.
+The rooted workflow preserves Spring's original APK and app identity. Building and launching work from **macOS, Linux and Windows**; live testing so far uses an **Android 10 ARM64 emulator driven from macOS**, so physical devices and the Linux/Windows hosts aren't verified yet, and rootless support is still to come. See [development status](docs/development-status.md). Message+ video sending and reactions remain unfinished.
 
 ## Try the development build
 
 1. [Build the core and apps locally](docs/native-packages.md) using your separately obtained Spring APK/SDK.
-2. Follow the [rooted Android/emulator setup](docs/rooted-android.md) or [Mac.APK core workflow](docs/native-packages.md#macapk-core-workflow).
+2. Follow the [rooted Android/emulator setup](docs/rooted-android.md) (`tools/rooted_launch.py setup`, then the start script for your OS) or the [Mac.APK core workflow](docs/native-packages.md#macapk-core-workflow).
 3. Install Ruby and WinterX through Spring's Developer Mode/inbox importer.
-4. In Ruby, refresh Sources and install the code packages you want. Wait for the result, then fully reopen Spring through WinterX to load them.
+4. In Ruby, open the built-in repository and install the tweaks you want. When the install console finishes, fully reopen Spring through WinterX to load them.
 
 Packages: [Animaper](docs/animaper.md), [ColoredBar](docs/coloredbar.md), [FreeMe and DockIn](docs/layout-tweaks.md), [SnowyHome](docs/snowyhome.md), [Message+](docs/messageplus.md), and [SSH](docs/ssh.md). SSH starts only through its explicit Settings control.
 

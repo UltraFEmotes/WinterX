@@ -49,12 +49,21 @@ This builds a tweak called **Hello Native** that adds a Settings page with a cou
 
 ### 1. Get the tools
 
-You need macOS with:
+Tweaks can be built on **macOS, Linux or Windows**. You need:
 
-- Homebrew OpenJDK and `apktool`,
-- Android build-tools 36.0.0 (for `d8`),
-- Mac.APK's converter and Android framework (the build scripts find them),
+- **Python 3.9+** and a **JDK 17 or newer** (set `JAVA_HOME` if `javac` isn't on your PATH),
+- the **Android SDK** with a platform (`sdkmanager "platforms;android-34"`) and build-tools (`sdkmanager "build-tools;36.0.0"`); set `ANDROID_HOME` if it isn't in the usual place,
+- [**apktool**](https://apktool.org) (only for building the core),
+- [**dex2jar**](https://github.com/pxb1988/dex2jar) (only for building the core; set `WINTERX_DEX2JAR` to its `d2j-dex2jar` script). On a Mac with Mac.APK installed, Mac.APK's converter is used instead,
 - your own copy of **Spring 0.8.1** (`Spring-0.8.1.apk`, SHA-256 `f07f980fe681a6de9c4ce8735ae1c0bb0f852f447fbdb925d2dec37cf9778e5c`).
+
+Check what's found:
+
+```sh
+python3 tools/toolchain.py
+```
+
+It lists each tool and where it came from; every path can be overridden with an environment variable (see the top of `tools/toolchain.py`). On Windows, use `py -3` wherever this guide says `python3`. The core and tweaks built this way are the same on every system; the Spring DEX in the core comes out byte-identical with or without Mac.APK.
 
 ### 2. Build the WinterX API once
 
@@ -577,7 +586,7 @@ Rules: up to 4 apps per package; each needs an `app.json` with an `id` (reverse-
 - **Nothing happens.** Check that the point is in `exports`, spelled exactly as in `native-api.json`, that you reopened Spring through WinterX after installing, and that Safe Mode is off.
 - **Wrong argument types.** Compare your casts with the descriptor in `native-api.json`.
 - **Recovery.** Ruby's **Safe Mode** stops all tweak code from running; leave it and reopen Spring to load tweaks again.
-- **Local checks.** `python3 extensions/check.py out/core/core-engine.jar <folder-of-springys>` loads packages against the real converted engine (see the official packages for how the checks are written).
+- **Local checks** (macOS with Mac.APK, which provides the Java runtime these run Spring in). `python3 extensions/check.py out/core/core-engine.jar <folder-of-springys>` loads packages against the real converted engine (see the official packages for how the checks are written).
 
 ## Limits and rules
 

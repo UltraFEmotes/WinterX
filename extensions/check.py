@@ -20,6 +20,9 @@ JAVAC = Path('/opt/homebrew/opt/openjdk/bin/javac')
 def main():
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument('jar', type=Path); parser.add_argument('packages', type=Path)
     args = parser.parse_args()
+    if not FRAMEWORK.exists() or not JAVA.exists():
+        raise SystemExit('These checks run Spring inside Mac.APK\'s Java runtime, so they need macOS with Mac.APK installed. '
+                         'Building tweaks and the core works without it.')
     with tempfile.TemporaryDirectory(prefix='winterx-code-package-check-') as name:
         base = Path(name).resolve(); classes = base / 'classes'; classes.mkdir()
         cp = str(args.jar.resolve(strict=True)) + ':' + str(FRAMEWORK)

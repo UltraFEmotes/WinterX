@@ -1,62 +1,92 @@
-# Rooted Android / emulator workflow
+# WinterX on a rooted Android phone or emulator
 
-The rooted WinterX loader preserves the **original installed Spring 0.8.1 APK, signing identity and app UID**. At a fresh Spring start it prepends locally built generic core/hook DEX before Spring classes load. Ruby then installs independent code packages. The loader itself installs no tweaks.
+On Android, WinterX runs inside the **normally installed Spring 0.8.1 app**. Nothing is reinstalled: the APK, its signature, its app ID and your data stay exactly as they are. Your computer starts Spring with WinterX's core loaded, through Frida, and Spring then runs your tweaks.
 
-Live development target: **Android 10 / API 29 / ARM64 emulator, root ADB, SELinux Enforcing, macOS host**. The code targets API 26+, but physical devices, other Android versions/ABIs and Windows/Linux hosts are not yet verified. Rootless support is deferred.
+This works from **macOS, Linux and Windows**. It's been tested end to end on an Android 10 (API 29) ARM64 emulator from macOS. The Linux and Windows steps use the same Python launcher; they haven't been run on those systems yet, so please report anything that goes wrong.
 
-## Prerequisites
+## What you need
 
-- Original supported Spring 0.8.1 installed normally; complete Spring's own sign-in/setup and enable Developer Mode.
-- Actual root access to that explicit test target (`--access shell` for already-root ADB, or `--access su` for a working root manager).
-- Android platform-tools, Python with `frida==17.25.2` and Pillow, and Node/npm for building the loader.
-- A locally built [core-only runtime and Ruby/WinterX apps](native-packages.md).
-- A matching Frida 17.25.2 server, started explicitly on the target's **127.0.0.1:27042**. Obtain it from the official Frida release for the target architecture. The tools do not root a device or install/start this daemon automatically.
+On the device:
 
-Tested ARM64 server SHA-256: `7bb6219131819c11e5fe53b3e32fae0b8d1ff4c2a9c35c1a549d2703ea0f3b9b`; official compressed asset SHA-256: `08d7b7f02256621c9089cecd6495a5eb43861bf560a7ed86ad376e75d16a1fb6`.
+- **Spring 0.8.1**, installed normally, signed in, and with **Developer Mode** turned on in Spring's Settings.
+- **Root over adb.** Emulator images without Google Play give you this with `adb root`. On a rooted phone, a root manager providing `su` works too. WinterX never roots a device for you.
+- An **arm64-v8a** or **x86_64** CPU (most phones and most emulators).
 
-## Stage and launch
+On your computer:
 
-Choose your device serial explicitly. These example commands use an already-root emulator:
+| Tool | macOS | Linux | Windows |
+| --- | --- | --- | --- |
+| Python 3.9+ | `brew install python` or python.org | your package manager | python.org (includes `py`) |
+| Frida's Python bindings | `python3 -m pip install frida==17.25.2` | same | `py -3 -m pip install frida==17.25.2` |
+| adb (Android platform-tools) | Android Studio, or `sdkmanager platform-tools` | same, or your package manager | Android Studio, or `sdkmanager platform-tools` |
+| Node.js (to build the loader once) | nodejs.org or `brew install node` | your package manager | nodejs.org |
+| A WinterX core | built with [`extensions/build.py`](native-packages.md#build-the-core-locally) | same | same |
 
-```sh
-export SERIAL=emulator-5554
-adb -s "$SERIAL" forward tcp:27048 tcp:27042
-npm --prefix tools/android_agent ci
-node tools/android_agent/build.mjs out/root-loader.js
+The launcher downloads the matching **Frida server** for your device's CPU from Frida's official releases and checks its SHA-256 before pushing it. Pinned hashes: arm64 `7bb6219131819c11e5fe53b3e32fae0b8d1ff4c2a9c35c1a549d2703ea0f3b9b`, x86_64 `81a916d8e5e23c01350a31521b364489751785a17954b340cfaa644b8c474d19`.
 
-python3 tools/android_runtime.py --serial "$SERIAL" --access shell --state out/root-session inspect
-```
-
-Fully close Spring before staging. Use the same private host state directory for subsequent launches/recovery:
+Check that everything is found with:
 
 ```sh
-python3 tools/android_runtime.py --serial "$SERIAL" --access shell --state out/root-session \
-  stage out/core/android-runtime
-python3 tools/android_runtime.py --serial "$SERIAL" --access shell --state out/root-session \
-  launch out/root-loader.js --bridge --builtin-repo builtin-repo
+python3 tools/toolchain.py
 ```
 
-Staging verifies the original APK hash/version/UID, makes a fresh bounded private-data backup and copies only the pinned generic runtime files. Launch refuses an existing Spring process and verifies the app-side DEX hashes, ABI, UID and session acknowledgement. Keep this host command connected for Ruby requests. Later reopens use the same `launch` command after Spring has been fully closed. Late Frida reattachment was unreliable on the tested Android 10 target; retain the initial session instead.
+## One-time setup
 
-The local repository option makes packages available in Ruby; it does not install them. A fresh core has an empty installed list.
-
-## Install the apps and tweaks
-
-With Developer Mode on, send the locally built `.sapp` apps to Spring's inbox:
+Connect the device (or start the emulator) and check `adb devices` lists it. Then, from the WinterX folder:
 
 ```sh
-adb -s "$SERIAL" push out/Ruby.sapp /sdcard/Android/data/com.guille.spring/files/sapps-inbox/
-adb -s "$SERIAL" push out/WinterX.sapp /sdcard/Android/data/com.guille.spring/files/sapps-inbox/
+python3 tools/rooted_launch.py setup --core out/core
 ```
 
-Spring's own importer handles the apps. Ruby 2.0.1 includes the Android refresh-budget correction; use it with a core that trusts build 21. Open Ruby, refresh Sources, choose packages and tap Install. Wait for the completion result before closing Spring. Fully reopen through WinterX to load new code, then open **Settings → WINTERX TWEAKS**.
+(On Windows use `py -3` instead of `python3`.)
 
-## Recovery and preservation
+Setup checks root, puts the Frida server on the device, verifies that the installed Spring is the supported 0.8.1, **backs up Spring's private data** to your computer, and copies WinterX's core files into Spring's own folder. If Spring is open, it asks before closing it. Your layouts, settings and sign-in are kept.
 
-The rooted bridge accepts scan, repository, install and remove requests from Ruby. Each write checks the owned runtime and exact expected bytes. Its host journal is bound to the target, app UID, canonical private folder and native-file policy. It stages only package code/manifests/notices/artwork and Ruby registry outputs. It never synchronizes saved layouts, login material, animation/dock preferences, SSH keys, or package state/data from a host mirror.
+Setup is stored per device in `~/.winterx/android/devices/<serial>/` (`%USERPROFILE%\.winterx\...` on Windows). Keep that folder: it holds the backup and the record of what was staged. Set `WINTERX_HOME` to keep it somewhere else.
 
-Keep the private host state directory. On interruption, reconnect through a fresh verified launch with the same state so pending file transactions can recover. External edits that differ from both expected and replacement bytes block recovery instead of being overwritten. Reopen after recovery to load the resulting code revision.
+Run setup again whenever you build a new core.
 
-A package fault is recorded in its `last-error.txt`; the provider is quarantined for that session. Ruby's Safe Mode works independently of installed tweaks. After leaving Safe Mode, reopen through WinterX. The installed Spring APK is never replaced or uninstalled by this workflow, and backups are never restored automatically.
+## Start Spring with WinterX
 
-For the older read-only/inventory transports, see [portable bridge details](android-bridge.md). Those tools do not by themselves load the rooted runtime.
+| macOS | Linux | Windows |
+| --- | --- | --- |
+| double-click **Start WinterX Android.command** | `./start-winterx-android.sh` | double-click **start-winterx-android.bat** |
+
+Or run `python3 tools/rooted_launch.py start` directly. Spring opens showing the WinterX boot screen. **Keep that window open while you use Spring**: it also serves Ruby when you add or refresh sources. Installing and removing tweaks happens inside WinterX itself and doesn't need it.
+
+When Spring is closed (swiped away, force-stopped, or the device shuts down), the window says the session has ended. Start it again to bring WinterX back. If Spring was opened normally, without WinterX, the launcher asks before closing it.
+
+With more than one device connected, choose one with `--serial <serial from adb devices>` or the `WINTERX_SERIAL` environment variable. To use a particular Python (for example one in a virtual environment with Frida installed), set `WINTERX_PYTHON` for the wrapper scripts.
+
+## Install Ruby, WinterX and tweaks
+
+With Developer Mode on, copy the apps you built into Spring's inbox; Spring installs them on its own:
+
+```sh
+adb push out/Ruby.sapp /sdcard/Android/data/com.guille.spring/files/sapps-inbox/
+adb push out/WinterX.sapp /sdcard/Android/data/com.guille.spring/files/sapps-inbox/
+```
+
+Open **Ruby**: the built-in repository is already listed under Sources. Pick a tweak and tap **Install**; Ruby shows the install console until it's done. Fully close Spring and start it again with WinterX to load new tweaks, then find their settings in **Settings → WINTERX TWEAKS**.
+
+## Recovery
+
+- **Safe Mode** in Ruby starts Spring with no tweak code at all. Use it if a tweak misbehaves, remove the tweak in Ruby, leave Safe Mode, and start Spring with WinterX again.
+- A tweak that crashes is switched off for that session and its error is written to `winterx-tweaks/<id>/last-error.txt` in Spring's files.
+- Package installs are journalled: an interrupted install or removal is finished or rolled back the next time WinterX handles a request.
+- Spring's APK is never replaced or uninstalled, and the backup from setup is never restored automatically. To go back to plain Spring, just open Spring normally instead of through WinterX.
+
+## Troubleshooting
+
+| Message | What to do |
+| --- | --- |
+| `This device has no root over adb` | Use an emulator image without Google Play (`adb root` works there), or a rooted phone with `su`. |
+| `Frida … is installed but WinterX needs 17.25.2` | `python3 -m pip install frida==17.25.2` for the Python the launcher runs with. |
+| `No pinned Frida server for this CPU` | Only arm64-v8a and x86_64 are supported. |
+| `This device isn't set up yet` | Run `setup --core out/core` first. |
+| `Launch didn't start; retrying once…` | A Frida attach timeout; the launcher retries automatically. If it fails twice, run it again. |
+| Spring opens without the WinterX boot screen | It was opened normally. Close it and use the launcher. |
+
+## Advanced: the lower-level tool
+
+`tools/rooted_launch.py` wraps `tools/android_runtime.py`, which you can drive directly (`inspect`, `stage`, `launch --bridge`) with an explicit `--state` folder and your own Frida server. See [portable bridge details](android-bridge.md) for older read-only transports.
