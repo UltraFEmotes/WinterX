@@ -17,13 +17,18 @@ def main():
     parser.add_argument('--packaged', action='store_true'); args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='winterx-home-api-') as tmp:
         root = Path(tmp).resolve(); classes = root / 'classes'; classes.mkdir(); data = root / 'data'; data.mkdir()
+        alias = root / 'overlay-data'; alias.symlink_to(data, target_is_directory=True)
         sources = [HERE / 'android/app/Application.java', HERE / 'android/app/ActivityThread.java',
                    ROOT / 'patches/icon_positions/test/android/util/Log.java', HERE / 'tweaks/HomeApiCheck.java']
-        if not args.packaged: sources.append(ROOT / 'patches/icon_positions/src/winterx/tweaks/HomeApi.java')
+        if not args.packaged:
+            sources += [ROOT / 'patches/icon_positions/src/winterx/tweaks/HomeApi.java',
+                        ROOT / 'patches/icon_positions/src/winterx/layout/FreeMe.java']
         cp = str(args.jar.resolve(strict=True)) + ':' + str(FRAMEWORK)
         subprocess.run([JAVAC, '--release', '21', '-cp', cp, '-d', str(classes), *map(str, sources)], check=True)
-        subprocess.run([str(JAVA), '-Xverify:all', '-Druby.test.dir=' + str(data), '-cp', str(classes) + ':' + cp,
-                        'winterx.tweaks.HomeApiCheck'], check=True)
+        for files in (data / 'direct', alias / 'aliased'):
+            files.mkdir()
+            subprocess.run([str(JAVA), '-Xverify:all', '-Druby.test.dir=' + str(files), '-cp', str(classes) + ':' + cp,
+                            'winterx.tweaks.HomeApiCheck'], check=True)
 
 
 if __name__ == '__main__': main()

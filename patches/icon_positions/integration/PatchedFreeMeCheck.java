@@ -43,7 +43,7 @@ public class PatchedFreeMeCheck {
         new File(dir, "free-icons.enabled").createNewFile();
         E1.i6 profile = (E1.i6)unsafe().allocateInstance(E1.i6.class);
         set(profile, "b", 640); set(profile, "c", E1.t.j ? 1136 : 960); set(profile, "d", 40); set(profile, "e", 114);
-        set(profile, "k", new E1.k0(16, 4, 34, 27, 38, 62, 0, 0, List.of(34, 186, 338, 490)));
+        set(profile, "k", new E1.k0(4, 4, 34, 27, 38, 62, 0, 0, List.of(34, 186, 338, 490)));
         x1.i1 host = (x1.i1)unsafe().allocateInstance(x1.i1.class);
         set(host, "e", profile); set(host, "b", E1.r7.T); set(host, "L6", 0f);
         x1.P0 callback = x1.P0.class.getDeclaredConstructor(x1.i1.class, int.class).newInstance(host, 0);
@@ -51,6 +51,17 @@ public class PatchedFreeMeCheck {
         List<E1.c> stock = entries(page(model, 0));
         check(FreeMe.entries(stock, profile, 0) == stock, "uninstalled FreeMe changed entries");
         new File(dir, "freeme.enabled").createNewFile();
+        List<String> fullIds = new ArrayList<>(); for (int i = 0; i < 16; i++) fullIds.add("full-" + i);
+        List<E1.c> fullPage = entries(fullIds), resolved = FreeMe.entries(fullPage, profile, 0);
+        check(resolved != fullPage && resolved.size() == 16, "normal four-row/sixteen-icon page fell back after invalid capacity");
+        for (int i = 0; i < resolved.size(); i++) check(resolved.get(i).b == i / 4 && resolved.get(i).c == i % 4, "normal grid cell changed");
+        E1.k0 normalGrid = profile.k;
+        set(profile, "k", new E1.k0(5, 4, 34, 27, 38, 62, 0, 0, List.of(34, 186, 338, 490)));
+        for (int i = 16; i < 20; i++) fullIds.add("full-" + i);
+        fullPage = entries(fullIds); resolved = FreeMe.entries(fullPage, profile, 0);
+        check(resolved != fullPage && resolved.size() == 20 && resolved.get(19).b == 4 && resolved.get(19).c == 3, "five-row/twenty-cell native page rejected");
+        set(profile, "k", normalGrid);
+        check(!new File(dir, "freeme-slots-v1.json").exists(), "rendering wrote sparse-grid data");
         E1.O1 edit = new E1.O1(model, 16, 4, callback);
         drop(edit, 0, 0, 0, profile, 11, 1000);
         E1.i2 moved = edit.r();

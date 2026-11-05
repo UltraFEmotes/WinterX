@@ -1,6 +1,7 @@
 package winterx.messages;
 
 import android.app.ActivityThread;
+import android.app.Application;
 import com.guille.spring.LauncherActivity;
 import E1.N0;
 import E1.T6;
@@ -29,7 +30,12 @@ public final class MessagePlus {
     private static boolean armed;
     private MessagePlus() {}
     private static File root() {
-        return ActivityThread.currentApplication() == null ? null : ActivityThread.currentApplication().getFilesDir();
+        try {
+            Application app = ActivityThread.currentApplication();
+            // Android/Mac.APK owns this root; aliases above it are legitimate. Links
+            // beneath the canonical root remain refused by safe(), including ruby/.
+            return app == null ? null : app.getFilesDir().getCanonicalFile();
+        } catch (Exception failure) { return null; }
     }
     private static boolean safe(File file) {
         try { return !Files.isSymbolicLink(file.toPath()) && file.getCanonicalFile().equals(file.getAbsoluteFile()); }

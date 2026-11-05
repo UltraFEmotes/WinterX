@@ -40,7 +40,14 @@ public final class FreeMe {
     }
     public static boolean enabled() { return installed() && !new File(folder(), "freeme.disabled").isFile(); }
     private static File file() { return new File(folder(), "freeme-slots-v1.json"); }
-    private static int capacity(i6 profile) { return profile.k.a; }
+    /** Spring's GridProfile stores rows and columns, not a pre-multiplied capacity. */
+    public static int capacity(i6 profile) {
+        if (profile == null || profile.k == null) throw new IllegalArgumentException("Home grid unavailable");
+        int rows = profile.k.a, columns = profile.k.b;
+        long cells = (long)rows * columns;
+        if (rows < 1 || columns < 1 || cells > 100) throw new IllegalArgumentException("Invalid home grid dimensions");
+        return (int)cells;
+    }
     private static List<String> ids(List<c> entries) {
         List<String> result = new ArrayList<>();
         for (c entry : entries) result.add(entry.a.a);

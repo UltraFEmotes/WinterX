@@ -19,10 +19,11 @@ TEST_SHA = bundle.ENGINE_SHA
 def verify(plan):
     if control.spring_pids():
         raise RuntimeError('Fully quit Spring Launcher first. This command never stops or resprings it.')
-    if plan.get('status') != 'prepared' or plan.get('apk_sha256') != TEST_SHA:
+    expected_sha = plan.get('apk_sha256')
+    if plan.get('status') != 'prepared' or expected_sha not in (TEST_SHA, bundle.UI_FIX_SHA):
         raise ValueError('The local test has not been prepared and verified.')
     apk = Path(plan['apk']).resolve(strict=True)
-    if jailbreak.digest(apk) != TEST_SHA:
+    if jailbreak.digest(apk) != expected_sha:
         raise ValueError('The local test APK failed its checksum check.')
     if not Path(plan['backup']).is_dir():
         raise ValueError('The stopped-session backup is missing.')
@@ -32,6 +33,7 @@ def verify(plan):
 
 def launch(plan, timeout=120):
     apk = verify(plan)
+    expected_sha = plan['apk_sha256']
     root = jailbreak.STATE / 'overlay/android'
     if not root.is_dir():
         raise ValueError('The prepared Mac.APK overlay is missing.')
@@ -53,9 +55,9 @@ def launch(plan, timeout=120):
                 if time.monotonic() - receipt_at >= 3:
                     if (control.spring_pids() != [child.pid] or
                             not control.is_overlay_process(child.pid, apk, root) or
-                            jailbreak.digest(apk) != TEST_SHA):
+                            jailbreak.digest(apk) != expected_sha):
                         raise RuntimeError('The startup receipt does not match the only running test engine.')
-                    record = {'pid': child.pid, 'apk': str(apk), 'apk_sha256': TEST_SHA,
+                    record = {'pid': child.pid, 'apk': str(apk), 'apk_sha256': expected_sha,
                               'backup': plan['backup'], 'localTest': True}
                     active = jailbreak.STATE / 'active.json'
                     temp = active.with_suffix('.tmp')
@@ -79,8 +81,10 @@ def launch(plan, timeout=120):
 def main():
     plan = json.loads((jailbreak.STATE / 'local-test.json').read_text(encoding='utf-8'))
     record = launch(plan)
-    print('Combined SnowyHome + DockIn + FreeMe experimental engine started.')
-    print('Unlock Spring and open Settings for the three installed tweaks.')
+    print(bundle.LABEL + ' experimental engine started.')
+    print('Unlock Spring and open Settings for the five installed tweaks.')
+    print('SnowyHome import/home APIs are included. SSH remains stopped until explicit Settings Start.')
+    print('Message+ photo settings are included; video sending/reactions remain unavailable.')
     print('Try ColoredBar, Animaper, then Code Tweak Example → Run My Code.')
     print('Saved-layout backup: ' + record['backup'])
     print('For Ruby package operations, start the Ruby bridge separately.')

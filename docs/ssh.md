@@ -4,7 +4,9 @@ An optional on-device SSH/SFTP engine is implemented in source and the separate 
 
 ## Explicit native controls
 
-On a compatible running engine with the unlisted `com.winterx.ssh` / `tweak.ssh` package, **Spring Settings → Tweaks → SSH** offers **Start SSH for This Session** and **Stop SSH**. Install, boot and Safe Mode exit never start it automatically.
+On a compatible running engine with the unlisted `com.winterx.ssh` / `tweak.ssh` package, **Spring Settings → WINTERX TWEAKS → SSH** offers **Start SSH for This Session** and **Stop SSH**. Install, boot and Safe Mode exit never start it automatically.
+
+The selected reviewed batch2 and enabled marker were verified during a missing-UI report. Its path guard nevertheless rejected Mac.APK's legitimate platform-files alias. The separate UI-fix candidate resolves that trusted root while retaining rejection of links in markers, `ruby/`, SSH directories and authorized keys. Building it does not change the running engine or start SSH.
 
 - Binds **127.0.0.1:2222** only; username **winterx**; public-key authentication only. No passwords, root, automatic LAN exposure, forwarding or interactive PTY.
 - Plain RSA (3072+ bits), Ed25519 or P-256 public keys in `files/ruby/ssh/authorized_keys`, maximum eight keys / 16 KiB. Options/certificates are refused. Actual Android crypto support still needs verification.
@@ -32,6 +34,6 @@ All outputs must be new. These commands build only; they do not configure the se
 
 ## Verification boundaries
 
-`patches/ssh/check.py` checks actual configuration, host identity persistence and authentication without calling Start; its keys live only in disposable fixtures. `patches/tests/check_ssh_service.py converted-engine.jar --packaged` checks serialized Start/Stop before state changes, pre-worker/busy cancellation, resource ownership, failed Start and Safe Mode/removal/key-change stopping using an **engine spy with no sockets or commands**. Packaged/source-overlay modes pass on the reviewed build; the original unsynchronized batch fails the stronger lock test as a negative control.
+`patches/ssh/check.py` checks actual configuration, host identity persistence and authentication without calling Start; its keys live only in disposable fixtures. `patches/tests/check_ssh_service.py converted-engine.jar --packaged` checks both iOS 4/6 root rows, direct/aliased platform roots, child-link refusal, serialized Start/Stop before state changes, pre-worker/busy cancellation, resource ownership, failed Start and Safe Mode/removal/key-change stopping using an **engine spy with no sockets or commands**. The reviewed build passes the locking/direct-root tests but fails the newer alias regression. The original unsynchronized batch also fails the stronger lock test as a negative control.
 
-NIO/JCE/host-key permission compatibility on Android, authenticated connection, SFTP, exec, service refresh and signing-compatible deployment remain unverified. The local batch2 and SSH bundle remain unselected/uninstalled and outside working catalogues.
+NIO/JCE/host-key permission compatibility on Android, authenticated connection, SFTP, exec, service refresh and signing-compatible deployment remain unverified. SSH is enabled in the user-authorized reviewed local test, not started or installed on Android. The correction candidate remains unselected; SSH stays outside working catalogues.

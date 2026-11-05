@@ -1,4 +1,4 @@
-"""Stopped-session activation of three checksum-pinned local-test hooks only.
+"""Stopped-session activation of five checksum-pinned local-test hooks only.
 
 Not an offline third-party installer: live Ruby retains running-engine checks.
 No executable code, other hooks or saved preferences change here.
@@ -11,15 +11,23 @@ import springys_registry
 import tweak_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
-ENGINE_SHA = '49bf7482544ab22bc528c482c25e5133c1ddef94cff4e5192bc8383abd52bc9f'
-ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-snowyhome-experimental2.apk'
+ENGINE_SHA = '71fc52605f2d32294597dd9496956e72b3a02d485b4b233703087d6a75ae980d'
+ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-tweaks-batch2-reviewed.apk'
+UI_FIX_SHA = '3ca1213cf316081d958e2871caa367578595bfe5cb3de4cfd625972921c60169'
+UI_FIX_ENGINE = ROOT / 'builds/WinterXSpring-0.8.1-tweaks-batch2-ui-fix2.apk'
+LABEL = 'SnowyHome + DockIn + FreeMe + Message+ + SSH'
+PACKAGE_FILES = {'MessagePlus': 'MessagePlus-0.1.0-batch2-dev.springys',
+                 'SSH': 'SSH-0.1.0-batch2-dev.springys'}
 BUNDLE = (
     ('SnowyHome', '466237e8c8430a037a4b1c91cbfd7eaed17eda8a454e63c4ae217684a2c152aa'),
     ('DockIn', '40d6fa90dfca5c760f474d6587ba9e20ce2fa9acdad063c73e4263ba3394727a'),
     ('FreeMe', 'b85a98fc6849c9b0c729a59aff9b1ef0045045580886f9b4afcfda78ce793fdb'),
+    ('MessagePlus', '872b5bbf4d9edf2587d17fd0ebe9249fbb16b9bbe43b97e511c06a7308796483'),
+    ('SSH', '689f5f98d95a6e4198ca6a69fcb312875f8ffddcddf24f2d53fcab38ab77d7bb'),
 )
 CHECKS = (tweak_runtime.snowyhome_supported_by, tweak_runtime.dockin_supported_by,
-          tweak_runtime.freeme_supported_by)
+           tweak_runtime.freeme_supported_by, tweak_runtime.messageplus_supported_by,
+           tweak_runtime.ssh_supported_by, tweak_runtime.home_supported_by)
 
 
 def regular(path):
@@ -45,7 +53,7 @@ def inputs(apk, digest, expected_sha=ENGINE_SHA):
         raise ValueError('The combined local-test engine failed checksum/capability verification.')
     records = []
     for name, sha in BUNDLE:
-        path = regular(ROOT / 'builds' / (name + '-0.1.0-local-bundle.springys'))
+        path = regular(ROOT / 'builds' / PACKAGE_FILES.get(name, name + '-0.1.0-local-bundle.springys'))
         metadata, _ = springys.inspect(path, sha)
         key = name.lower()
         if (metadata.get('id') != 'com.winterx.' + key or metadata.get('hook') != 'tweak.' + key

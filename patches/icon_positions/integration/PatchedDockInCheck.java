@@ -32,7 +32,7 @@ public final class PatchedDockInCheck {
         for (String name : List.of("ios4_pages.json", "ios6_pages.json", "ios7_pages.json")) Files.writeString(new File(root, name).toPath(), "protected " + name);
         E1.i6 profile = (E1.i6)unsafe().allocateInstance(E1.i6.class);
         set(profile, "b", 640); set(profile, "c", E1.t.j ? 1136 : 960); set(profile, "d", 40); set(profile, "e", 114);
-        set(profile, "k", new E1.k0(16, 4, 34, 27, 38, 62, 0, 0, List.of(34, 186, 338, 490)));
+        set(profile, "k", new E1.k0(4, 4, 34, 27, 38, 62, 0, 0, List.of(34, 186, 338, 490)));
         set(profile, "l", new E1.r(178, 0, 34, 0, List.of(), null, List.of(), 0, 0));
         E1.t.f = profile.c / 2f;
         x1.i1 host = (x1.i1)unsafe().allocateInstance(x1.i1.class);

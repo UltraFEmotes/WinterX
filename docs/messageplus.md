@@ -1,6 +1,6 @@
 # Message+ — unlisted development tweak
 
-Message+ targets **Spring 0.8.1 Messages**, not WhatsApp. It replaces only the main conversation list's left **Edit** button with **Settings**, presenting Spring's native alert-based settings. It also adds **Message+** under native Spring Settings. Thread buttons and unrelated apps retain native routing.
+Message+ targets **Spring 0.8.1 Messages**, not WhatsApp. It replaces only the main conversation list's left **Edit** button with **Settings**, presenting Spring's native alert-based settings. It also adds **Message+** in native **Settings → WINTERX TWEAKS**. Thread buttons and unrelated apps retain native routing.
 
 ## Implemented
 
@@ -13,11 +13,13 @@ Message+ targets **Spring 0.8.1 Messages**, not WhatsApp. It replaces only the m
 
 ## Separate build and checks
 
-The local batch2 includes these hooks; the selected combined home test does not. Source build opt-in: `WINTERX_BUILD_MESSAGEPLUS=1` alongside the normal build flags. Build to a new filename and do not replace/select an engine in use.
+The selected reviewed batch2 includes these hooks, and Message+ was enabled by explicitly authorized stopped-session preparation. A live report found the UI missing despite the correct engine and marker: its path guard rejected Mac.APK's legitimate shared-data alias. The correction canonicalizes only the platform-supplied files root and still refuses redirects beneath it. It is in a separate, unselected UI-fix candidate; the running reviewed engine is not hot-patched. See [development status](development-status.md).
+
+Source build opt-in: `WINTERX_BUILD_MESSAGEPLUS=1` alongside the normal build flags. Build to a new filename and do not replace/select an engine in use.
 
 ```sh
 python3 tools/springys_tool.py build builtin-repo/sources/messageplus builds/MessagePlus-dev.springys
 python3 patches/tests/check_messageplus.py path/to/converted-engine.jar --packaged
 ```
 
-The checker verifies real packaged button/header models, native Settings routing and pointer entries, quality bounds, Safe Mode/removal and linked-storage preservation, with an **alert/application spy**. It does not start Spring or send anything. Live visual fit, concurrent alerts, Settings redraw and photo delivery remain unverified. Message+ stays outside working catalogues until those checks and real transport enhancements are complete.
+The checker verifies real packaged button/header models, both iOS 4/6 root rows, native Settings routing and pointer entries, quality bounds, Safe Mode/removal and child-link refusal, with an **alert/application spy**. It runs against both direct and aliased platform files roots; the original reviewed build passes the direct case but fails the alias regression. It does not start Spring or send anything. Live visual fit, concurrent alerts, Settings redraw and photo delivery remain unverified. Message+ stays outside working catalogues until those checks and real transport enhancements are complete.

@@ -17,7 +17,7 @@ class LocalTestBundleTests(unittest.TestCase):
         records, pins = [], []
         for name, _ in bundle.BUNDLE:
             source = bundle.ROOT / 'builtin-repo/sources' / name.lower()
-            path = root / 'builds' / (name + '-0.1.0-local-bundle.springys')
+            path = root / 'builds' / bundle.PACKAGE_FILES.get(name, name + '-0.1.0-local-bundle.springys')
             springys_tool.build(source, path)
             sha = hashlib.sha256(path.read_bytes()).hexdigest()
             pins.append((name, sha))
@@ -25,7 +25,7 @@ class LocalTestBundleTests(unittest.TestCase):
                             'name': name, 'sha256': sha, 'source': str(path)})
         return records, tuple(pins)
 
-    def test_three_hooks_installed_without_changing_existing_code_settings_or_safe_mode(self):
+    def test_pinned_hooks_installed_without_changing_existing_code_settings_or_safe_mode(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp).resolve(); data = root / 'data'; records, pins = self.fixture(root)
             registry = bundle.registry_root(data); registry.mkdir(parents=True)
@@ -35,6 +35,9 @@ class LocalTestBundleTests(unittest.TestCase):
             files = data / 'files'; (files / 'ruby').mkdir()
             for name in ('dockin.capacity', 'safe-mode.enabled', 'freeme-slots-v1.json', 'coloredbar.enabled'):
                 (files / 'ruby' / name).write_bytes(b'keep me')
+            for name in ('ssh/authorized_keys', 'ssh/host-key.ser', 'messageplus/photo-quality'):
+                path = files / 'ruby' / name; path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'preserved private settings')
             code = files / 'winterx-tweaks/example.code/data/save.txt'; code.parent.mkdir(parents=True)
             code.write_bytes(b'keep tweak state')
             before = preparation.inventory(data); stopped = Mock()

@@ -40,8 +40,12 @@ public final class SnowyHome {
     static File folder() {
         Application app = ActivityThread.currentApplication();
         if (app == null) return null;
-        File root = new File(app.getFilesDir(), "ruby"), dir = new File(root, "snowyhome");
-        return Files.isSymbolicLink(root.toPath()) || Files.isSymbolicLink(dir.toPath()) ? null : dir;
+        try {
+            // Resolve the platform-owned files alias once, retaining link refusal
+            // below that boundary for preferences, inboxes and immutable packs.
+            File root = new File(app.getFilesDir().getCanonicalFile(), "ruby"), dir = new File(root, "snowyhome");
+            return Files.isSymbolicLink(root.toPath()) || Files.isSymbolicLink(dir.toPath()) ? null : dir;
+        } catch (Exception failure) { return null; }
     }
     public static boolean enabled() {
         try {

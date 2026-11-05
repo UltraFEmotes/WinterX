@@ -4,8 +4,8 @@ SnowyHome implements **icon packs, badge colours, hidden icon labels and corner 
 
 ## Engine and readiness
 
-- Ordinary Ruby operations require a verified **running** engine with `snowyhome-render-v1` and actual renderer hooks. Helpers alone are not enough. The narrowly scoped combined-test preparer can activate the three checksum-pinned home drafts only while Spring is stopped and after a fresh backup.
-- The selected experimental2 engine has 5,195 converted classes; an earlier read-only check matched its sole process and checksum/receipt. The latest check found Spring closed; a retained receipt is not a live-engine guarantee. **This engine does not include the newer private-inbox import.** The separate, unselected batch2 includes import/home APIs/optional SSH/Message+ and converted to 6,979 classes. Packaged bitmap/icon-resolver/native Settings and import-preservation checks pass; they do **not** establish visible pointer/folder/dock/launch behaviour or Android compatibility. See [development status](development-status.md).
+- Ordinary Ruby operations require a verified **running** engine with `snowyhome-render-v1` and actual renderer hooks. Helpers alone are not enough. The narrowly scoped combined-test preparer can activate the five checksum-pinned drafts only while Spring is stopped and after a fresh backup.
+- The selected reviewed batch2 has 6,979 converted classes and includes private-inbox import/home APIs/optional SSH/Message+. Read-only checks verified its sole actual process, checksum and receipt. A live missing-Settings investigation reproduced a platform-files alias bug in SSH/Message+, and the same bug in SnowyHome pack import/loading. The source correction canonicalizes the trusted files root without allowing links beneath it; a separate UI-fix candidate is not automatically selected. Earlier isolated checks did not exercise this alias. Packaged/source bitmap tests are not proof of visible pointer/folder/dock/launch behaviour or Android compatibility. See [development status](development-status.md).
 - `builtin-repo/sources/snowyhome/manifest.json` is an unlisted v1 compiled-hook draft, not an executable third-party example. Compatible Mac.APK installs/removals change only the live marker; they do not restart Spring or erase preferences, packs, saved pages or FreeMe cells. Incompatible engines refuse the request.
 
 Build a **new, separate** engine from the exact original APK and documented local dependencies:
@@ -20,7 +20,7 @@ This builds only. Do not replace an engine in use, silently change the selected 
 
 ## Native controls
 
-**Settings → Tweaks → SnowyHome** has:
+**Settings → WINTERX TWEAKS → SnowyHome** has:
 
 - **Icon Pack:** Stock Icons or a verified revision; newer engines also offer **Import Icon Pack** from the private inbox.
 - **Badge Colour:** stock/red/blue/green/purple/orange/graphite. White glyphs, highlights, transparent margins, alpha and badge dimensions are preserved.
@@ -55,7 +55,7 @@ python3 tools/iconpack_tool.py inspect my-icons.zip
 python3 tools/iconpack_tool.py export my-icons.zip my-export
 ```
 
-Outputs must be new. Export creates `my-export/<package-sha256>/` with a pinned manifest and icons. **It does not install or select the pack, connect to a device, or write to Spring's private folder.** For an explicitly authorized trial, back up current data and use verified private-folder access. On the selected experimental2, copy the exported revision into `files/ruby/snowyhome/packs/`, then choose it in Settings.
+Outputs must be new. Export creates `my-export/<package-sha256>/` with a pinned manifest and icons. **It does not install or select the pack, connect to a device, or write to Spring's private folder.** For an explicitly authorized trial, back up current data and use verified private-folder access. The older experimental2 supported exported revisions but not private-inbox import. The reviewed batch2 includes import yet rejects its aliased root until the correction engine is explicitly selected while Spring is stopped.
 
 On newer import-capable engines, copy the ZIP into `files/ruby/snowyhome/inbox/`, then open **SnowyHome → Icon Pack → Import Icon Pack** and select its name. Import runs on a worker and updates its status; return to/reopen the native page to see completion and select the verified revision. It publishes a checksum-named revision without selecting it, deleting the source ZIP or replacing an existing revision—even if that existing revision is invalid. Preferences, layouts and other packs stay unchanged. The inbox scan is limited to 32 entries and accepts bounded, simple ZIP filenames. Automatic completion redraw is not live-verified.
 
@@ -71,6 +71,7 @@ The icon resolver returns a private same-size bitmap copy. Native folder composi
 python3 tools/check_source_tests.py
 python3 patches/tests/check_snowyhome.py /path/to/converted-experimental.jar --packaged
 python3 patches/tests/check_engine_hooks.py /path/to/converted-experimental.jar
+python3 patches/tests/check_iconpacks.py /path/to/converted-engine.jar /path/to/real-pack.zip
 ```
 
-Without `--packaged`, the SnowyHome runner overlays current sources; that is **not** evidence that the chosen APK includes them. Live tests must still check home/dock/edit/folder transitions, native caches and dynamic icons, Settings refresh, Safe Mode, removal and interaction with FreeMe/DockIn/Animaper.
+Without `--packaged`, the SnowyHome runner overlays current sources; that is **not** evidence that the chosen APK includes them. It now runs direct and aliased platform-root cases and refuses child links. The real-pack checker defaults to packaged native import, picker, per-image checksum/PNG decoding, renderer/pixel and layout-preservation checks in disposable storage. Its explicit `--source-snowy` mode is development-only. Neither runner installs packs into the user's Spring. Live tests must still check home/dock/edit/folder transitions, native caches and dynamic icons, Settings refresh, Safe Mode, removal and interaction with FreeMe/DockIn/Animaper.

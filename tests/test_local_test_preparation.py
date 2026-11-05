@@ -48,3 +48,15 @@ class LocalTestPreparationTests(unittest.TestCase):
              patch.object(preparation.launcher.control, 'stop_spring') as stop:
             with self.assertRaises(RuntimeError): preparation.prepare(Path('not-read.apk'))
             backup.assert_not_called(); stop.assert_not_called()
+
+    def test_ui_fix_cannot_be_selected_while_running_or_with_an_unpinned_hash(self):
+        with patch.object(preparation.launcher.control, 'spring_pids', return_value=[42]), \
+             patch.object(preparation.launcher.control, 'snapshot_app_data') as backup:
+            with self.assertRaises(RuntimeError):
+                preparation.prepare(preparation.bundle.UI_FIX_ENGINE, preparation.bundle.UI_FIX_SHA)
+            backup.assert_not_called()
+        with patch.object(preparation.launcher.control, 'spring_pids', return_value=[]), \
+             patch.object(preparation.launcher.control, 'snapshot_app_data') as backup:
+            with self.assertRaisesRegex(ValueError, 'explicitly pinned'):
+                preparation.prepare(Path('not-read.apk'), '0' * 64)
+            backup.assert_not_called()

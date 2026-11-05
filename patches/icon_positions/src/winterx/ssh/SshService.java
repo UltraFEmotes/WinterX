@@ -1,6 +1,7 @@
 package winterx.ssh;
 
 import android.app.ActivityThread;
+import android.app.Application;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.concurrent.Executors;
@@ -24,7 +25,13 @@ public final class SshService {
         try { Class.forName("winterx.ssh.SshServerEngine", false, SshService.class.getClassLoader()); return true; }
         catch (Throwable unavailable) { return false; }
     }
-    private static File files() { return ActivityThread.currentApplication() == null ? null : ActivityThread.currentApplication().getFilesDir(); }
+    private static File files() {
+        try {
+            Application app = ActivityThread.currentApplication();
+            // Trust only the platform's files root, not links in ruby/ or SSH storage.
+            return app == null ? null : app.getFilesDir().getCanonicalFile();
+        } catch (Exception failure) { return null; }
+    }
     private static boolean safe(File file) {
         try { return !Files.isSymbolicLink(file.toPath()) && file.getCanonicalFile().equals(file.getAbsoluteFile()); }
         catch (Exception failure) { return false; }

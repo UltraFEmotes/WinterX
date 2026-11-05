@@ -35,6 +35,15 @@ public final class MessagePlusCheck {
         check(page != null && ((E1.W6)page.c.get(0)).c.size() == 3, "native settings choices missing");
         check(((E1.W6)page.c.get(0)).d.contains("unavailable"), "unsupported transport advertised");
         ArrayList<E1.V6> rows = new ArrayList<>(); MessagePlus.rows(rows); check(rows.size() == 1, "root settings row missing");
+        List<E1.T6> roots = new ArrayList<>(); roots.add(E1.Z3.c);
+        for (Object value : E1.Z3.s) if ("root".equals(((E1.T6)value).a)) roots.add((E1.T6)value);
+        check(roots.size() == 2, "native iOS 4/6 roots missing");
+        for (E1.T6 root : roots) {
+            E1.T6 decorated = winterx.tweaks.TweakSettings.decorate(root); int found = 0;
+            for (Object section : decorated.c) for (Object row : ((E1.W6)section).c)
+                if ("winterx-layout-p/messageplus/main".equals(((E1.V6)row).a)) found++;
+            check(found == 1, "Message+ missing/duplicated in native root Settings");
+        }
         x1.i1 spring = (x1.i1)unsafe().allocateInstance(x1.i1.class);
         E1.i6 profile = (E1.i6)unsafe().allocateInstance(E1.i6.class); set(profile, "b", 640); set(spring, "e", profile);
         for (E1.r7 stage : E1.r7.values()) if (stage.a()) { set(spring, "b", stage); break; }
@@ -69,6 +78,20 @@ public final class MessagePlusCheck {
         marker.createNewFile(); Files.delete(prefs.toPath()); File outside = new File(ruby, "outside"); Files.writeString(outside.toPath(), "preserved");
         Files.createSymbolicLink(prefs.toPath(), outside.toPath());
         check(!MessagePlus.action("winterx-layout-a/messageplus/photo/65") && MessagePlus.photoQuality(85) == 85 && Files.readString(outside.toPath()).equals("preserved"), "linked preference followed");
-        System.out.println("Message+: native models/settings actions, bounded photo quality, scaled pointer entries, cancellation, unrelated apps/threads, Safe Mode/removal and linked-storage preservation passed (alert spy; not live UI/delivery)");
+        Files.delete(prefs.toPath()); Files.writeString(prefs.toPath(), "95");
+        File settings = prefs.getParentFile(), savedSettings = new File(ruby, "saved-messageplus");
+        Files.move(settings.toPath(), savedSettings.toPath()); Files.createSymbolicLink(settings.toPath(), savedSettings.toPath());
+        check(MessagePlus.photoQuality(85) == 85 && !MessagePlus.action("winterx-layout-a/messageplus/photo/65") &&
+            Files.readString(new File(savedSettings, "photo-quality").toPath()).equals("95"), "linked preference directory followed");
+        Files.delete(settings.toPath()); Files.move(savedSettings.toPath(), settings.toPath());
+        marker.delete(); Files.createSymbolicLink(marker.toPath(), outside.toPath());
+        check(!MessagePlus.enabled() && MessagePlus.button(stock) == stock, "linked marker enabled Message+");
+        Files.delete(marker.toPath()); Files.createSymbolicLink(marker.toPath(), new File(ruby, "missing-marker").toPath());
+        check(!MessagePlus.enabled(), "dangling marker enabled Message+"); Files.delete(marker.toPath()); marker.createNewFile();
+        File savedRuby = new File(ruby.getParentFile(), "saved-ruby");
+        Files.move(ruby.toPath(), savedRuby.toPath()); Files.createSymbolicLink(ruby.toPath(), savedRuby.toPath());
+        check(!MessagePlus.enabled() && !MessagePlus.action("winterx-layout-a/messageplus/photo/65") &&
+            Files.readString(new File(savedRuby, "messageplus/photo-quality").toPath()).equals("95"), "linked ruby directory followed");
+        System.out.println("Message+: native iOS 4/6 rows/models/actions, bounded photo quality, scaled pointer entries, cancellation, unrelated apps/threads, Safe Mode/removal and child-link refusal passed at " + ruby.getParentFile().getName() + " (alert spy; not live UI/delivery)");
     }
 }

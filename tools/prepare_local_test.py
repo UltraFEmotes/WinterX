@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Back up a fully stopped Spring and select the checksum-pinned local test. Never launch it."""
 from datetime import datetime
+import argparse
 import json
 import os
 from pathlib import Path
@@ -54,18 +55,21 @@ def preserved(before, after):
         if path not in before and path.startswith(REGISTRY + 'art/'):
             continue
         if before.get(path) != after.get(path):
-            raise RuntimeError('Persisted data changed outside the three local-test hooks: ' + path)
+            raise RuntimeError('Persisted data changed outside the pinned local-test hooks: ' + path)
 
 
-def prepare(apk):
+def prepare(apk, expected_sha=None):
     stopped()
+    expected_sha = launcher.TEST_SHA if expected_sha is None else expected_sha
+    if expected_sha not in (launcher.TEST_SHA, bundle.UI_FIX_SHA):
+        raise ValueError('The local-test engine is not an explicitly pinned candidate.')
     apk = Path(apk)
     if apk.is_symlink():
         raise ValueError('The local test APK must not be a symlink.')
     apk = apk.resolve(strict=True)
-    if launcher.jailbreak.digest(apk) != launcher.TEST_SHA:
+    if launcher.jailbreak.digest(apk) != expected_sha:
         raise ValueError('The local test APK failed its pinned checksum check.')
-    records = bundle.inputs(apk, launcher.jailbreak.digest, launcher.TEST_SHA)
+    records = bundle.inputs(apk, launcher.jailbreak.digest, expected_sha)
     state, data = launcher.jailbreak.STATE, launcher.jailbreak.DATA
     if state.is_symlink() or not (state / 'overlay/android').is_dir():
         raise ValueError('The prepared Mac.APK overlay is missing or unsafe.')
@@ -96,7 +100,7 @@ def prepare(apk):
     if hashes(data / 'files') != before:
         raise RuntimeError('Protected data changed; the new test was not selected. No backup was restored.')
     stopped()
-    plan = {'status': 'prepared', 'label': 'SnowyHome + DockIn + FreeMe', 'apk': str(apk), 'apk_sha256': launcher.TEST_SHA,
+    plan = {'status': 'prepared', 'label': bundle.LABEL, 'apk': str(apk), 'apk_sha256': expected_sha,
             'backup': str(backup), 'layout_sha256': before, 'previous_test': previous,
             'packages': previous.get('packages', []) if previous else [],
             'prepared_at': datetime.now().isoformat(), 'engine_launched': False,
@@ -114,7 +118,10 @@ def prepare(apk):
 
 
 if __name__ == '__main__':
-    plan = prepare(bundle.ENGINE)
-    print('Combined local test prepared; SnowyHome, DockIn and FreeMe installed/enabled. Spring was not launched.')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--ui-fix', action='store_true', help='Explicitly select the pinned shared-path/grid correction, only with Spring fully closed')
+    args = parser.parse_args()
+    plan = prepare(bundle.UI_FIX_ENGINE, bundle.UI_FIX_SHA) if args.ui_fix else prepare(bundle.ENGINE)
+    print(bundle.LABEL + ' prepared. Spring was not launched; SSH starts only from Settings.')
     print('Backup: ' + plan['backup'])
     print('Start it yourself with Start WinterX Local Test.command, not the stock launcher.')

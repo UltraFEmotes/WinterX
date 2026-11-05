@@ -127,6 +127,21 @@ public final class SnowyHomeCheck {
         check(!themed.isRecycled(), "cached displayed bitmap recycled after preference change");
         check(new String(Files.readAllBytes(pages.toPath()), StandardCharsets.UTF_8).equals("preserved layout"), "saved pages modified");
         check(new String(Files.readAllBytes(sparse.toPath()), StandardCharsets.UTF_8).equals("preserved cells"), "sparse cells modified");
-        System.out.println("SnowyHome: isolated native Settings, verified icon packs, alpha/dimensions, corners, labels, immutable badge artwork, tamper fallback and Safe Mode passed");
+        safe.delete(); marker.createNewFile();
+        File packs = new File(folder, "packs"), savedPacks = new File(folder, "saved-packs");
+        Files.move(packs.toPath(), savedPacks.toPath()); Files.createSymbolicLink(packs.toPath(), savedPacks.toPath());
+        check(!SnowySettings.action(ACTION + "pack/" + args[0]), "linked packs directory selected");
+        try { PackImport.install(token); throw new AssertionError("linked packs imported"); } catch (java.io.IOException expected) {}
+        Files.delete(packs.toPath()); Files.move(savedPacks.toPath(), packs.toPath());
+        File inbox = new File(folder, "inbox"), savedInbox = new File(folder, "saved-inbox");
+        Files.move(inbox.toPath(), savedInbox.toPath()); Files.createSymbolicLink(inbox.toPath(), savedInbox.toPath());
+        check(PackImport.inbox().isEmpty(), "linked inbox followed");
+        try { PackImport.install(token); throw new AssertionError("linked inbox imported"); } catch (java.io.IOException expected) {}
+        Files.delete(inbox.toPath()); Files.move(savedInbox.toPath(), inbox.toPath());
+        File savedRuby = new File(files, "saved-ruby"); Files.move(ruby.toPath(), savedRuby.toPath());
+        Files.createSymbolicLink(ruby.toPath(), savedRuby.toPath());
+        check(!SnowyHome.enabled() && SnowyHome.icon(mail, original) == original && !SnowySettings.action(ACTION + "labels"), "linked ruby directory enabled appearance");
+        check(java.util.Arrays.equals(saved, Files.readAllBytes(new File(savedRuby, "snowyhome/preferences.json").toPath())), "linked ruby changed preferences");
+        System.out.println("SnowyHome: native Settings/import, verified icons, alpha/dimensions/corners/labels, immutable badges, tamper/Safe Mode and child-link refusal passed at " + files.getName());
     }
 }

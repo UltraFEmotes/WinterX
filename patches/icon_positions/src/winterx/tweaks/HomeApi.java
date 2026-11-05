@@ -18,7 +18,8 @@ public final class HomeApi {
     public static final String ABI = "winterx-home-grid-v1";
     private HomeApi() {}
     private static File gridFile() throws Exception {
-        File root = android.app.ActivityThread.currentApplication().getFilesDir();
+        // The platform-supplied root may be aliased; child storage must not be.
+        File root = android.app.ActivityThread.currentApplication().getFilesDir().getCanonicalFile();
         File path = new File(root, "ruby/freeme-slots-v1.json");
         if (Files.isSymbolicLink(path.toPath()) || !path.getCanonicalFile().equals(path.getAbsoluteFile()))
             throw new java.io.IOException("Home storage links refused");
@@ -41,7 +42,7 @@ public final class HomeApi {
             throw new java.io.IOException("Home unavailable or Safe Mode enabled");
         if (spring.W1 != null) throw new java.io.IOException("Finish home editing before using the home API");
         GridSlots grid = FreeMe.enabled() ? GridSlots.load(gridFile()) : new GridSlots();
-        int capacity = spring.e.k.a, columns = spring.e.k.b;
+        int capacity = FreeMe.capacity(spring.e), columns = spring.e.k.b;
         JSONArray pages = new JSONArray(); pages.put(page((List<c>)spring.L1, 0, capacity, grid));
         int count = ((List<?>)spring.L1).size();
         for (int i = 0; i < spring.S1.size(); i++) {
@@ -72,12 +73,13 @@ public final class HomeApi {
             ((Number)pageValue).doubleValue() != ((Number)pageValue).intValue() ||
             ((Number)slotValue).doubleValue() != ((Number)slotValue).intValue()) throw new java.io.IOException("Grid page/slot must be integers");
         int page = ((Number)pageValue).intValue(), slot = ((Number)slotValue).intValue(); String id = request.getString("id");
-        if (page < 0 || page >= before.getJSONArray("pages").length() || slot < 0 || slot >= spring.e.k.a ||
+        int capacity = before.getInt("capacity");
+        if (page < 0 || page >= before.getJSONArray("pages").length() || slot < 0 || slot >= capacity ||
             id.startsWith("folder:") || id.equals("folder-utilities")) throw new java.io.IOException("Invalid home grid move");
         List<String> ids = ids(page == 0 ? (List<c>)spring.L1 : (List<c>)spring.S1.get(page - 1));
         if (!ids.contains(id)) throw new java.io.IOException("This API moves existing icons within their current page only");
         File file = gridFile(); GridSlots grid = GridSlots.load(file);
-        Map<String, Integer> slots = grid.resolve(page, ids, spring.e.k.a);
+        Map<String, Integer> slots = grid.resolve(page, ids, capacity);
         for (Map.Entry<String, Integer> entry : slots.entrySet())
             if (!entry.getKey().equals(id) && entry.getValue() == slot) throw new java.io.IOException("Cell occupied");
         slots.put(id, slot); grid.replace(page, slots);
