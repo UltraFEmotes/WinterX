@@ -40,9 +40,24 @@ final class SpringFrames implements Choreographer.FrameCallback {
         Choreographer.getInstance().postFrameCallback(this);
     }
 
+    /** Spring's activity: remembered from its animation loop, or found among the app's running activities. */
+    static Object activity() {
+        if (launcher != null) return launcher;
+        try {
+            Object thread = Class.forName("android.app.ActivityThread").getMethod("currentActivityThread").invoke(null);
+            Field records = thread.getClass().getDeclaredField("mActivities"); records.setAccessible(true);
+            for (Object record : ((java.util.Map<?, ?>)records.get(thread)).values()) {
+                Field field = record.getClass().getDeclaredField("activity"); field.setAccessible(true);
+                Object activity = field.get(record);
+                if (activity != null && activity.getClass().getName().equals("com.guille.spring.LauncherActivity")) return launcher = activity;
+            }
+        } catch (ReflectiveOperationException | RuntimeException ignored) {}
+        return null;
+    }
+
     /** Leave whatever is open (Settings) for the Home screen, the same way Spring's Home button does. */
     static void home() {
-        Object activity = launcher;
+        Object activity = activity();
         if (activity == null) return;
         new Handler(Looper.getMainLooper()).post(() -> {
             try {

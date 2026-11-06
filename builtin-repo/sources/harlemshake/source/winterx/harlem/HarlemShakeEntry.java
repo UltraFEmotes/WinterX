@@ -25,6 +25,7 @@ public final class HarlemShakeEntry implements NativeTweak {
         this.context = context;
         shake = new HarlemShake(context);
         shake.start();
+        FilePicker.install(context);
     }
 
     @Override public void stop() { if (shake != null) shake.stop(); }
@@ -38,7 +39,7 @@ public final class HarlemShakeEntry implements NativeTweak {
             case "settings.page": return "main".equals(a[0]) ? page() : null;   // only our own page, never Spring's
             case "settings.tap":
                 if ("dance".equals(a[1])) { boolean starting = !shake.busy(); shake.toggle(); if (starting) SpringFrames.home(); }
-                else if ("song".equals(a[1])) note = importSong();
+                else if ("song".equals(a[1])) pickSong();
                 return null;
             default: return null;
         }
@@ -50,9 +51,45 @@ public final class HarlemShakeEntry implements NativeTweak {
         String songTitle = note != null ? note : shake.song().isFile() ? "✓ Song ready" : "Import song";
         V6 song = Z3.g(Z3.a, row + "song", songTitle, null, null, null, 0x18);
         W6 section = new W6("HARLEM SHAKE", null,
-            "Tap Do the Harlem Shake and Settings closes to start the dance on your Home screen. To use a different song, put an MP3 in Spring's Android/data/com.guille.spring/files/harlemshake folder and tap the song row.",
+            "Tap Do the Harlem Shake and Settings closes to start the dance on your Home screen. Tap the song row to choose a different song.",
             null, Arrays.asList(dance, song));
         return new T6("winterx-tw-p/" + context.id(), "Harlem Shake", Collections.singletonList(section));
+    }
+
+    /** Choose a song with the system file picker; without one, fall back to the harlemshake folder. */
+    private void pickSong() {
+        boolean opened = FilePicker.open("audio/*", file -> new Thread(() -> note = copySong(file), "harlem-import").start());
+        if (!opened) note = importSong();
+    }
+
+    private String copySong(android.net.Uri file) {
+        Application app = ActivityThread.currentApplication();
+        if (app == null) return "Couldn't import the song";
+        String name = "song";
+        try (android.database.Cursor row = app.getContentResolver().query(file, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+            if (row != null && row.moveToFirst() && row.getString(0) != null) name = row.getString(0);
+        } catch (RuntimeException unnamed) {}
+        try (java.io.InputStream in = app.getContentResolver().openInputStream(file)) {
+            if (in == null) return "Couldn't open that file";
+            return save(in, name);
+        } catch (Exception failure) { return "Couldn't import: " + failure.getClass().getSimpleName(); }
+    }
+
+    /** Write a song to this tweak's data atomically, refusing anything over 20 MB. */
+    private String save(java.io.InputStream in, String name) throws java.io.IOException {
+        File target = shake.song(), temporary = new File(target.getPath() + ".tmp");
+        target.getParentFile().mkdirs();
+        long total = 0;
+        try (FileOutputStream out = new FileOutputStream(temporary)) {
+            byte[] buffer = new byte[65536];
+            for (int n; (n = in.read(buffer)) > 0;) {
+                if ((total += n) > MAX_SONG) { out.close(); temporary.delete(); return "That song is over 20 MB"; }
+                out.write(buffer, 0, n);
+            }
+            out.getFD().sync();
+        }
+        if (!temporary.renameTo(target)) return "Couldn't save the song";
+        return "✓ Imported " + name;
     }
 
     /** Copy the first MP3 found in Spring's external harlemshake folder into this tweak's own data. */
@@ -65,15 +102,7 @@ public final class HarlemShakeEntry implements NativeTweak {
             if (files != null) for (File file : files)
                 if (file.isFile() && file.getName().toLowerCase(Locale.ROOT).endsWith(".mp3") && file.length() <= MAX_SONG) { found = file; break; }
             if (found == null) return "No MP3 in the harlemshake folder";
-            File target = shake.song(), temporary = new File(target.getPath() + ".tmp");
-            target.getParentFile().mkdirs();
-            try (FileInputStream in = new FileInputStream(found); FileOutputStream out = new FileOutputStream(temporary)) {
-                byte[] buffer = new byte[65536];
-                for (int n; (n = in.read(buffer)) > 0;) out.write(buffer, 0, n);
-                out.getFD().sync();
-            }
-            if (!temporary.renameTo(target)) return "Couldn't save the song";
-            return "✓ Imported " + found.getName();
+            try (FileInputStream in = new FileInputStream(found)) { return save(in, found.getName()); }
         } catch (Exception failure) { return "Couldn't import: " + failure.getClass().getSimpleName(); }
     }
 }
