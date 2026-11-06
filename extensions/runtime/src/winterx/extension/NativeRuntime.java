@@ -257,6 +257,8 @@ public final class NativeRuntime {
             try {
                 Object value = pkg.implementation.call(point, arguments);
                 if (value != null && expected != null && !expected.isInstance(value)) throw new IOException("Extension returned the wrong hook type");
+                // A Settings page must be the page Spring asked for; a tweak can never stand in for Settings' own pages.
+                if ("settings.page".equals(point) && value instanceof E1.T6 && arguments.length > 0 && !String.valueOf(arguments[0]).equals(((E1.T6)value).a)) continue;
                 if ("all".equals(policy)) continue;
                 if ("and".equals(policy)) { if (Boolean.FALSE.equals(value)) return false; continue; }
                 if ("or".equals(policy)) { if (Boolean.TRUE.equals(value)) return true; continue; }

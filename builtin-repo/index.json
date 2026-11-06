@@ -29,6 +29,14 @@
     {
       "url": "packages/ssh-0.2.0.springys",
       "sha256": "a88c4352f8dbbe02dc75ddb9bbcb22d09fdb2bc72e8b4df42431026bc6f120c8"
+    },
+    {
+      "url": "packages/gravity-0.1.0.springys",
+      "sha256": "f03d46509b8049f0d9491275df9048838bbdba878eccd44f34b46cbb12e6d94f"
+    },
+    {
+      "url": "packages/harlemshake-0.1.0.springys",
+      "sha256": "3e0ad76ec2978b3b98cca1b978afd62c801bf09f3bfeb19837cf62eec0efc186"
     }
   ]
 }

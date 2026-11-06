@@ -130,10 +130,17 @@ def runtime(device, access, *args):
     return subprocess.run(command)
 
 
+ASSUME_YES = False
+
+
 def close_spring(device, reason):
     if not device.spring_running(): return
-    answer = input('Spring is running on the device. Close it %s? [y/N] ' % reason).strip().lower()
-    if answer != 'y': raise SystemExit('Left Spring running; nothing changed.')
+    question = 'Spring is running on the device. Close it %s? [y/N] ' % reason
+    if ASSUME_YES: print(question + 'y (--yes)')
+    else:
+        try: answer = input(question).strip().lower()
+        except EOFError: answer = ''
+        if answer != 'y': raise SystemExit('Left Spring running; nothing changed. (Use --yes to close it without asking.)')
     device.shell('am force-stop com.guille.spring'); time.sleep(1)
 
 
@@ -149,11 +156,14 @@ def check_frida_python():
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--serial', default=os.environ.get('WINTERX_SERIAL'), help='device from "adb devices" (default: the only one)')
+    parser.add_argument('--yes', action='store_true', help='close a running Spring without asking')
     commands = parser.add_subparsers(dest='command', required=True)
     setup = commands.add_parser('setup', help='prepare a device once (backs up Spring\'s data first)')
     setup.add_argument('--core', type=Path, required=True, help='core build folder from extensions/build.py runtime')
     commands.add_parser('start', help='start Spring with WinterX and keep Ruby\'s bridge running')
     args = parser.parse_args()
+    global ASSUME_YES
+    ASSUME_YES = args.yes
     check_frida_python()
     device = Device(args.serial); access = device.rooted()
     ensure_server(device, access)

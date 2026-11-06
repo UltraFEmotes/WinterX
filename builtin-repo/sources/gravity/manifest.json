@@ -1,0 +1,19 @@
+{
+  "format": "winterx.springys/3",
+  "type": "tweak",
+  "runtime": "java",
+  "api": "winterx.native/1",
+  "id": "com.winterx.gravity",
+  "name": "Gravity",
+  "version": "0.1.0",
+  "author": "WeirdMM",
+  "license": "MIT",
+  "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/gravity",
+  "entry": "winterx.gravity.GravityEntry",
+  "description": "Shake your phone and the Home icons fall as solid tiles: they tumble, land on their corners and pile up the way the phone is tilted. Grab them and throw them around, then shake again or press Home and they float back into place. Icon labels hide while they're loose.",
+  "settings_entry": "main",
+  "capabilities": ["native.hooks"],
+  "features": ["fun.gravity"],
+  "exports": ["render.home.icon-context", "render.icon.begin", "render.icon.end", "cache.tiles-allowed", "render.hide-labels", "settings.page", "settings.tap"],
+  "previews": []
+}
