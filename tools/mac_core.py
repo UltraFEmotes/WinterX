@@ -223,9 +223,15 @@ def serve(child, record):
     state = jailbreak.STATE / ('native-code-bridge' if version == '0.8.1' else 'native-code-bridge-' + version)
     bridge = NativeBridge(store, state, verify, builtin=ROOT / 'builtin-repo')
     print('Ruby code-package bridge is ready.', flush=True)
+    # The WinterX app's Jailbreak (switching Spring versions) works without the separate Ruby bridge too.
+    import ruby_bridge
+    apps = [ruby_bridge.jailbreak_data(jailbreak.BASE, folder) for folder in ruby_bridge.SPRING_FOLDERS.values()]
     while child.poll() is None:
         count = bridge.once()
         if count: print('Completed', count, 'Ruby package request(s).', flush=True)
+        for app in apps:
+            for request in sorted((app / 'requests').glob('*.json')):
+                ruby_bridge.process_jailbreak(request, app, None)
         time.sleep(1)
 
 

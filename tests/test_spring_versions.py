@@ -70,7 +70,7 @@ class JailbreakVersionTests(unittest.TestCase):
     def setUp(self):
         import tempfile, ruby_bridge, mac_core
         self.bridge, self.core = ruby_bridge, mac_core
-        self.dir = Path(tempfile.mkdtemp()); (self.dir / 'requests').mkdir(); (self.dir / 'results').mkdir()
+        self.dir = Path(tempfile.mkdtemp()); (self.dir / 'requests').mkdir()      # results/ is the bridge's to create
         self.switched = []
         self.saved = mac_core.switch, mac_core.jailbreak.STATE
         mac_core.switch = lambda version: self.switched.append(version) or {'ok': True, 'message': 'Successfully Jailbroken', 'springVersion': version}
@@ -81,11 +81,17 @@ class JailbreakVersionTests(unittest.TestCase):
         self.core.switch, self.core.jailbreak.STATE = self.saved
         shutil.rmtree(self.dir)
 
-    def request(self, inbox=None, **record):
-        record = {'id': '1-2', **record}
-        path = self.dir / 'requests/1-2.json'; path.write_text(json.dumps(record))
+    def request(self, inbox=None, age=0, **record):
+        import time
+        rid = '%d-2' % ((time.time() - age) * 1000)
+        record = {'id': rid, **record}
+        path = self.dir / 'requests' / (rid + '.json'); path.write_text(json.dumps(record))
         self.bridge.process_jailbreak(path, self.dir, inbox)
-        return json.loads((self.dir / 'results/1-2.json').read_text())
+        return json.loads((self.dir / 'results' / (rid + '.json')).read_text())
+
+    def test_old_taps_never_restart_spring(self):
+        reply = self.request(age=self.bridge.REQUEST_LIFETIME + 5, action='jailbreak', version='0.9-preview1')
+        self.assertFalse(reply['ok']); self.assertIn('expired', reply['message']); self.assertEqual(self.switched, [])
 
     def test_preview_starts_its_core(self):
         reply = self.request(action='jailbreak', version='0.9-preview1')

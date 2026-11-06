@@ -19,6 +19,7 @@ DEFAULT_BASE = Path.home() / 'Library/Application Support/MacApk/com.guille.spri
 APP_ID = 'com.ruby.manager'
 JAILBREAK_ID = 'com.ruby.jailbreak'
 ID = re.compile(r'^[0-9]+-[0-9]+$')
+REQUEST_LIFETIME = 10 * 60                     # seconds a WinterX app request stays valid
 class _SDK:
     """Only .sapp operations need the separately obtained Spring SDK, not tweak/file requests."""
     module = None
@@ -315,12 +316,16 @@ def process_jailbreak(request, data, inbox):
     if not ID.fullmatch(request.stem):
         return
     result = data / 'results' / (request.stem + '.json')
-    if result.exists():
+    if result.exists() or result.parent.is_symlink():
         return
+    result.parent.mkdir(exist_ok=True)                  # a version's app may not have had a reply yet
     try:
         record = json.loads(request.read_text(encoding='utf-8'))
         if record.get('id') != request.stem:
             raise ValueError('Invalid jailbreak request')
+        # A tap the bridge wasn't running for must not restart Spring later, out of the blue.
+        if time.time() * 1000 - int(request.stem.split('-')[0]) > REQUEST_LIFETIME * 1000:
+            raise ValueError('This request expired. Tap Jailbreak again.')
         if record.get('action') == 'jailbreak':
             version = record.get('version', '0.8.1')
             if version not in SPRING_FOLDERS:
