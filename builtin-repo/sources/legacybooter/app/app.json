@@ -1,0 +1,11 @@
+{
+  "id": "com.winterx.iphoneos1",
+  "name": "iPhone OS 1",
+  "version": "1.0",
+  "build": 1,
+  "minSpring": 1,
+  "genre": "Utilities",
+  "description": "The original iPhone running iPhone OS 1.0, inside Spring. Installed and run by the LegacyBooter tweak, using kelindi's iphone-1-emulator.",
+  "statusBarStyle": "blackOpaque",
+  "prerenderedIcon": false
+}

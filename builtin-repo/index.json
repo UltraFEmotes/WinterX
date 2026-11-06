@@ -41,6 +41,10 @@
     {
       "url": "packages/androidkeyboard-0.1.0.springys",
       "sha256": "9c00737f2b0ff22fa0f1eac765896095e59e9656ec38abfb73edef10679426da"
+    },
+    {
+      "url": "packages/legacybooter-0.1.0.springys",
+      "sha256": "1e6e89a47ed451f2f3b500afb154e23763a9a5dfcc1bc5740179846184bd551b"
     }
   ]
 }

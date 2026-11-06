@@ -1,0 +1,28 @@
+{
+  "format": "winterx.springys/3",
+  "type": "tweak",
+  "runtime": "java",
+  "api": "winterx.native/1",
+  "id": "com.winterx.legacybooter",
+  "name": "LegacyBooter",
+  "version": "0.1.0",
+  "author": "WeirdMM",
+  "license": "MIT",
+  "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/legacybooter",
+  "entry": "winterx.legacyboot.LegacyBooterEntry",
+  "description": "Adds an iPhone OS 1 app to Spring: the original iPhone running iPhone OS 1.0 in kelindi's iphone-1-emulator, with its own Home button. Each launch starts fresh; the emulator and firmware download on first launch.",
+  "settings_entry": "main",
+  "capabilities": [
+    "native.hooks"
+  ],
+  "features": [
+    "apps.iphone-os-1"
+  ],
+  "exports": [
+    "settings.page"
+  ],
+  "previews": [],
+  "apps": [
+    "apps/IPhoneOS1.sapp"
+  ]
+}
