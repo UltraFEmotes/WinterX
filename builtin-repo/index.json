@@ -37,6 +37,10 @@
     {
       "url": "packages/harlemshake-0.1.2.springys",
       "sha256": "e39618ee2d0b483bafd6e3c21078bcae6fc6c88d3bb3293cccc917ea113c6bd8"
+    },
+    {
+      "url": "packages/androidkeyboard-0.1.0.springys",
+      "sha256": "9c00737f2b0ff22fa0f1eac765896095e59e9656ec38abfb73edef10679426da"
     }
   ]
 }

@@ -16,7 +16,7 @@ The rooted workflow preserves Spring's original APK and app identity. Building a
 3. Install Ruby and WinterX through Spring's Developer Mode/inbox importer.
 4. In Ruby, open the built-in repository and install the tweaks you want. When the install console finishes, fully reopen Spring through WinterX to load them.
 
-Packages: [Animaper](docs/animaper.md), [ColoredBar](docs/coloredbar.md), [FreeMe and DockIn](docs/layout-tweaks.md), [SnowyHome](docs/snowyhome.md), [Message+](docs/messageplus.md), [SSH](docs/ssh.md), plus two just-for-fun tweaks: **Gravity** (shake the phone and the Home icons fall, tumble and can be thrown around) and **Harlem Shake** (a remake of the 2013 meme tweak: one icon dances, then they all do at the drop). SSH starts only through its explicit Settings control.
+Packages: [Animaper](docs/animaper.md), [ColoredBar](docs/coloredbar.md), [FreeMe and DockIn](docs/layout-tweaks.md), [SnowyHome](docs/snowyhome.md), [Message+](docs/messageplus.md), [SSH](docs/ssh.md), plus two just-for-fun tweaks: **Gravity** (shake the phone and the Home icons fall, tumble and can be thrown around) and **Harlem Shake** (a remake of the 2013 meme tweak: one icon dances, then they all do at the drop), and **Android Keyboard** (type into Spring with your real keyboard on Mac.APK, or use your phone's own keyboard, instead of the iOS one). SSH starts only through its explicit Settings control.
 
 Spring itself and its APK are not part of WinterX. Ruby and WinterX are independent fan projects and are not affiliated with Spring, Apple, or Cydia.
 
