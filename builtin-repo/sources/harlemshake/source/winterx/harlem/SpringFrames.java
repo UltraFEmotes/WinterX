@@ -40,6 +40,18 @@ final class SpringFrames implements Choreographer.FrameCallback {
         Choreographer.getInstance().postFrameCallback(this);
     }
 
+    /** Leave whatever is open (Settings) for the Home screen, the same way Spring's Home button does. */
+    static void home() {
+        Object activity = launcher;
+        if (activity == null) return;
+        new Handler(Looper.getMainLooper()).post(() -> {
+            try {
+                Method home = activity.getClass().getDeclaredMethod("onHomePressed"); home.setAccessible(true);
+                home.invoke(activity);
+            } catch (ReflectiveOperationException ignored) {}
+        });
+    }
+
     /** Spring stops its loop when nothing of its own is moving; restart it while we still are. */
     static void kick() {
         Object activity = launcher;

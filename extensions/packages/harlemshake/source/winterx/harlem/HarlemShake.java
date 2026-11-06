@@ -36,11 +36,25 @@ final class HarlemShake {
 
     HarlemShake(TweakContext context) { this.context = context; }
 
-    void start() { SpringFrames.install(context); }
+    void start() { SpringFrames.install(context); unpackSong(); }
     void stop() { finish(); frames.stop(); }
     boolean busy() { return wanted || dancing; }
 
     File song() { return context.data("song.mp3"); }
+
+    /** A build that carries the song (winterx.harlem.BuiltInSong) writes it out once; an imported song is never replaced. */
+    private void unpackSong() {
+        File song = song();
+        if (song.isFile()) return;
+        try {
+            byte[] bytes = (byte[])Class.forName("winterx.harlem.BuiltInSong").getMethod("bytes").invoke(null);
+            File temporary = new File(song.getPath() + ".tmp");
+            song.getParentFile().mkdirs();
+            try (java.io.FileOutputStream out = new java.io.FileOutputStream(temporary)) { out.write(bytes); out.getFD().sync(); }
+            temporary.renameTo(song);
+        } catch (ClassNotFoundException noSong) {                     // published builds don't include the song
+        } catch (Exception failure) { context.data("song.mp3.tmp").delete(); }
+    }
 
     /** Starts on the next Home frame (like the original's Activator event), or stops a dance in progress. */
     synchronized void toggle() {

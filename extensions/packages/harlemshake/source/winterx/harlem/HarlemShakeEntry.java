@@ -37,7 +37,7 @@ public final class HarlemShakeEntry implements NativeTweak {
             case "cache.tiles-allowed": return !shake.busy();        // every icon draws separately while dancing
             case "settings.page": return "main".equals(a[0]) ? page() : null;   // only our own page, never Spring's
             case "settings.tap":
-                if ("dance".equals(a[1])) shake.toggle();
+                if ("dance".equals(a[1])) { boolean starting = !shake.busy(); shake.toggle(); if (starting) SpringFrames.home(); }
                 else if ("song".equals(a[1])) note = importSong();
                 return null;
             default: return null;
@@ -47,10 +47,10 @@ public final class HarlemShakeEntry implements NativeTweak {
     private T6 page() {
         String row = "winterx-tw-r/" + context.id() + "/main/";
         V6 dance = Z3.g(Z3.a, row + "dance", shake.busy() ? "Stop dancing" : "Do the Harlem Shake", null, null, null, 0x18);
-        String songTitle = note != null ? note : shake.song().isFile() ? "✓ Song installed (tap to replace)" : "Import song";
+        String songTitle = note != null ? note : shake.song().isFile() ? "✓ Song ready" : "Import song";
         V6 song = Z3.g(Z3.a, row + "song", songTitle, null, null, null, 0x18);
         W6 section = new W6("HARLEM SHAKE", null,
-            "Tap Do the Harlem Shake, then go to your Home screen. For the music, put an MP3 in Spring's Android/data/com.guille.spring/files/harlemshake folder and tap Import song.",
+            "Tap Do the Harlem Shake and Settings closes to start the dance on your Home screen. To use a different song, put an MP3 in Spring's Android/data/com.guille.spring/files/harlemshake folder and tap the song row.",
             null, Arrays.asList(dance, song));
         return new T6("winterx-tw-p/" + context.id(), "Harlem Shake", Collections.singletonList(section));
     }
