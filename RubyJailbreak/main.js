@@ -16,7 +16,7 @@ var chosen = false;                            // picked a version this session
 function nameOf(id) { return VERSIONS.filter(function (v) { return v.id === id; })[0].name; }
 var choices = [];
 VERSIONS.forEach(function (version, i) {
-  choices.push(screen.add(new UIButton({ frame: [45, 136 + i * 40, 230, 36], title: version.name, version: version.id,
+  choices.push(screen.add(new UIButton({ frame: [45, 136 + i * 40, 230, 36], title: version.name,
     onTap: function () { chosen = true; selectVersion(version.id); } })));
 });
 function selectVersion(id) {
@@ -24,7 +24,8 @@ function selectVersion(id) {
   if (id !== selectedVersion) { current = null; storage.remove("jailbreak.request.v1"); }
   selectedVersion = id;
   storage.set("winterx.version.v1", id);
-  choices.forEach(function (choice) { choice.title = (choice.version === id ? "\u2713 " : "") + nameOf(choice.version); });
+  // Spring's views keep only their own properties, so buttons are matched to VERSIONS by position.
+  choices.forEach(function (choice, i) { choice.title = (VERSIONS[i].id === id ? "\u2713 " : "") + VERSIONS[i].name; });
   refresh();
 }
 var setupMessage = "Mac.APK: start the Ruby bridge, then tap Jailbreak. Rooted Android: launch Spring with the rooted WinterX bridge on your computer.";

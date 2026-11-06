@@ -2,7 +2,9 @@ const vm=require('vm'),fs=require('fs'),assert=require('assert');
 const source=fs.readFileSync('RubyJailbreak/main.js','utf8');
 function launch(saved, active) {
  const views=[], writes={};
- function View(o){Object.assign(this,o);this.add=x=>{views.push(x);return x;};}
+ // Like Spring's views, keep only known properties (a custom one such as version is dropped).
+ const KEEP=['frame','text','title','size','bold','align','color','lines','background','onTap','enabled'];
+ function View(o){for(const k of KEEP)if(k in o)this[k]=o[k];this.add=x=>{views.push(x);return x;};}
  function Nav(root){this.root=root;}
  const ctx={UIViewController:View,UILabel:View,UIButton:View,UINavigationController:Nav,UIApplication:{run(){}},
   UIAlertView:{show(){throw Error('Unexpected alert');}},
@@ -49,7 +51,7 @@ assert.strictEqual(on.message(),'Spring 0.9 Preview 1 is jailbroken. Tap Jailbre
 const unknown=launch({},true);assert.strictEqual(unknown.jailbreak.enabled,false);
 unknown.pick('Spring 0.9 Preview 1').onTap();assert.strictEqual(unknown.jailbreak.enabled,true);
 const manifest=JSON.parse(fs.readFileSync('RubyJailbreak/app.json','utf8'));
-assert.strictEqual(manifest.version,'0.8');assert.strictEqual(manifest.build,8);
+assert.strictEqual(manifest.version,'0.8');assert.strictEqual(manifest.build,9);
 assert(manifest.description.includes('Spring 0.9 Preview 1'));
 assert(manifest.description.includes('Android 10 ARM64 emulator'));
 assert(manifest.description.includes('https://github.com/UltraFEmotes/WinterX'));

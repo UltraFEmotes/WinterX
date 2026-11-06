@@ -135,6 +135,11 @@ def launch(timeout=120, version=None):
         if boot.resolve() != boot.absolute() or boot.is_symlink() or boot.exists() and not boot.is_file():
             raise ValueError('Unsafe runtime boot receipt')
         stopped(); boot.unlink(missing_ok=True)
+        if core.get('springVersion', '0.8.1') != '0.8.1':
+            # The runtime only creates a missing receipt, so clear the other versions' folders too.
+            for folder in (jailbreak.BASE / 'data/data').glob('com.guille.spring_*'):
+                receipt = folder / 'files/ruby/boot-ok-v1'
+                if receipt.is_file() and not receipt.is_symlink(): receipt.unlink()
         started = time.time() - 1
         child = control.start_overlay(Path(core['apk']), android_root, state / 'core-runtime.log')
         try:

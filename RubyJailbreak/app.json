@@ -2,7 +2,7 @@
   "id": "com.ruby.jailbreak",
   "name": "WinterX",
   "version": "0.8",
-  "build": 8,
+  "build": 9,
   "minSpring": 5,
   "genre": "Utilities",
   "description": "WinterX is WeirdMM's fan-made jailbreak companion for Spring 0.8.1 and Spring 0.9 Preview 1. Use Ruby to install independent Java/Dex and JavaScript tweak packages, then find their preferences under Spring Settings \u2192 WINTERX TWEAKS. Fresh WinterX runtimes include no tweaks.\n\nMac.APK uses the local bridge and a locally built WinterX engine. The experimental rooted Android workflow preserves the original installed Spring APK and launches it through the computer's rooted bridge; it has been tested on an Android 10 ARM64 emulator. Rootless support is deferred. Choose which Spring version to jailbreak before tapping Jailbreak; on Mac.APK the bridge starts that version's prepared WinterX core. This companion shows runtime status and does not jailbreak Android or install the runtime by itself.\n\nWinterX is not an iOS jailbreak and is not affiliated with Spring or Apple.\n\nSource code, setup guide and updates:\nhttps://github.com/UltraFEmotes/WinterX",
