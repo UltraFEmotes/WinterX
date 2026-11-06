@@ -69,7 +69,7 @@ class BridgePackageTests(unittest.TestCase):
                 ruby_bridge.process(path, files, root / 'inbox')
                 result = json.loads((files / ('results/' + number + '-0.json')).read_text())
                 self.assertTrue(result['ok'], result)
-            with patch.object(macapk_jailbreak, 'DATA', root / 'spring'), patch.object(safe_mode, 'set_marker_and_respring', side_effect=apply):
+            with patch.object(macapk_jailbreak, 'DATA', root / 'spring'), patch.object(macapk_jailbreak, 'STATE', root / 'state'), patch.object(safe_mode, 'set_marker_and_respring', side_effect=apply):
                 package('1.0')
                 request('1', 'install_package', filename='test.springys')
                 self.assertTrue(marker.exists())
