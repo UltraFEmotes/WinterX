@@ -19,6 +19,8 @@ from private_files import AdbFiles, AccessError
 
 PACKAGE = 'com.guille.spring'
 SOURCE_SHA = 'f07f980fe681a6de9c4ce8735ae1c0bb0f852f447fbdb925d2dec37cf9778e5c'
+# Supported installed Spring APKs -> the version name Android reports for them.
+SOURCES = {SOURCE_SHA: '0.8.1', 'c500d2f7316c36e3f97fb65bda7178445513630d132f711fe80bfc79a7a16cb6': '0.9'}
 ABI = 'winterx-native-hooks-v1'
 MAX_DEX = 32 * 1024 * 1024
 
@@ -56,12 +58,12 @@ class RootRuntime:
         apk = lines[3][8:]
         if not re.fullmatch(r'/data/app/[A-Za-z0-9_~+./=-]+/base\.apk', apk): raise AccessError('Unexpected installed APK path')
         checksum = self.shell('sha256sum ' + shlex.quote(apk) + '\n').split()[0]
-        if checksum != SOURCE_SHA: raise AccessError('Installed Spring must match the supported original 0.8.1 APK; no package is replaced')
+        if checksum not in SOURCES: raise AccessError('Installed Spring must be a supported original APK (0.8.1 or 0.9 Preview 1); no package is replaced')
         package = self.shell('dumpsys package ' + PACKAGE + '\n')
         uid = re.search(r'\buserId=(\d+)\b', package)
         version = re.search(r'\bversionName=([^\s]+)', package)
-        if uid is None or version is None or version.group(1) != '0.8.1' or not 10000 <= int(uid.group(1)) < 100000:
-            raise AccessError('Expected the original Spring 0.8.1 owner-user package')
+        if uid is None or version is None or version.group(1) != SOURCES[checksum] or not 10000 <= int(uid.group(1)) < 100000:
+            raise AccessError('Expected the original Spring %s owner-user package' % SOURCES[checksum])
         self.identity = {'serial': self.store.serial, 'uid': int(uid.group(1)), 'api': int(lines[1]), 'abi': lines[2],
                          'apkPath': apk, 'apkSha256': checksum, 'package': PACKAGE, 'access': self.store.access}
         return dict(self.identity)
@@ -134,7 +136,7 @@ class RootRuntime:
         root = Path(payload).resolve(strict=True)
         manifest = json.loads((root / 'manifest.json').read_text())
         if (manifest.get('format') != 'winterx.android-runtime/1' or manifest.get('package') != PACKAGE or
-                manifest.get('sourceApkSha256') != SOURCE_SHA or manifest.get('runtimeAbi') != ABI or manifest.get('preinstalledTweaks') != [] or
+                manifest.get('sourceApkSha256') != identity['apkSha256'] or manifest.get('runtimeAbi') != ABI or manifest.get('preinstalledTweaks') != [] or
                 set(manifest.get('files', {})) != {'spring-hooks.dex', 'winterx-core.dex'}):
             raise ValueError('Invalid core-only runtime manifest')
         values = {}

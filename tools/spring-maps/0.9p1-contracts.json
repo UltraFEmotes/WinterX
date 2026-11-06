@@ -1,0 +1,40 @@
+{
+ "format": "winterx.contracts-overrides/1",
+ "extra": {
+  "dock.hover": [
+   "(Ly1/J1;FFILy1/U6;)LF1/H0;",
+   "null"
+  ],
+  "dock.edit-location": [
+   "(Ly1/J1;IILy1/U6;)LG1/c;",
+   "null"
+  ],
+  "dock.motion-begin": [
+   "(Ly1/J1;Ly1/U6;)V",
+   ""
+  ],
+  "settings.rows": [
+   "(Ljava/util/List;)V",
+   ""
+  ],
+  "settings.tap": [
+   "(Ljava/lang/String;Ljava/lang/String;)V",
+   ""
+  ],
+  "home.snapshot": [
+   "(Lr1/E1;)Lorg/json/JSONObject;",
+   "null"
+  ],
+  "home.move": [
+   "(Lr1/E1;Lorg/json/JSONObject;)Lorg/json/JSONObject;",
+   "null"
+  ]
+ },
+ "defaults": {
+  "home.location": "y1.c4.w(p0, p1.b, p1.c)",
+  "folder.background-entries": "p0.e(p0.c())",
+  "dock.edit-capacity": "Math.max(4, p0 == null ? 0 : p0.f.size())",
+  "dock.launch-size": "p0.e.e"
+ },
+ "tiles": "D.a"
+}

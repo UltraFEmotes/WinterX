@@ -5,15 +5,35 @@
   "api": "winterx.native/1",
   "id": "com.winterx.snowyhome",
   "name": "SnowyHome",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "WeirdMM",
   "license": "MIT",
   "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/snowyhome",
   "entry": "winterx.packages.SnowyHomeEntry",
   "description": "Icon packs, badge colours, hidden labels (icons move down to fill the space) and corner controls. Includes native Settings and bounded pack import. Appearance and import behavior ship in this code package; no icon pack is installed or selected automatically.",
   "settings_entry": "winterx-layout-p/snowy/main",
-  "capabilities": ["native.hooks"],
-  "features": ["appearance.icon-packs", "appearance.badges"],
-  "exports": ["render.custom-icons-enabled", "render.hide-labels", "render.icon-bitmap", "render.badge-artwork", "render.icon.begin", "render.icon.end", "cache.tiles-allowed", "cache.folder-layers-allowed", "settings.page", "settings.action"],
-  "previews": []
+  "capabilities": [
+    "native.hooks"
+  ],
+  "features": [
+    "appearance.icon-packs",
+    "appearance.badges"
+  ],
+  "exports": [
+    "render.custom-icons-enabled",
+    "render.hide-labels",
+    "render.icon-bitmap",
+    "render.badge-artwork",
+    "render.icon.begin",
+    "render.icon.end",
+    "cache.tiles-allowed",
+    "cache.folder-layers-allowed",
+    "settings.page",
+    "settings.action"
+  ],
+  "previews": [],
+  "spring": [
+    "0.8.1",
+    "0.9-preview1"
+  ]
 }

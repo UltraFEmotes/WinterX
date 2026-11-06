@@ -5,15 +5,28 @@
   "api": "winterx.native/1",
   "id": "com.winterx.ssh",
   "name": "SSH",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "WeirdMM",
   "license": "MIT; Apache-2.0; MIT (SLF4J)",
   "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/ssh",
   "entry": "winterx.packages.SshEntry",
   "description": "Explicitly started, key-authenticated loopback SSH/SFTP with an interactive WinterX prompt, blue-snowflake Neofetch and guarded Spring-app commands. Protocol, command and Settings code are in this package. Installation never starts the listener.",
   "settings_entry": "winterx-layout-p/ssh",
-  "capabilities": ["native.hooks"],
-  "features": ["ssh.prompt", "ssh.info", "ssh.app-actions"],
-  "exports": ["settings.page", "settings.action"],
-  "previews": []
+  "capabilities": [
+    "native.hooks"
+  ],
+  "features": [
+    "ssh.prompt",
+    "ssh.info",
+    "ssh.app-actions"
+  ],
+  "exports": [
+    "settings.page",
+    "settings.action"
+  ],
+  "previews": [],
+  "spring": [
+    "0.8.1",
+    "0.9-preview1"
+  ]
 }

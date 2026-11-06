@@ -154,8 +154,15 @@ public final class NativeRuntime {
         String entry = manifest.getString("entry");
         if (!entry.matches("[A-Za-z_$][\\w$]*(?:\\.[A-Za-z_$][\\w$]*)+") || entry.startsWith("winterx.extension.")) throw new IOException("Invalid extension entry class");
         JSONObject payloads = manifest.getJSONObject("files");
+        // Supported Spring versions (default 0.8.1); each other version has its own code/<version>/ build.
+        String version = winterx.runtime.SpringVersion.current();
+        JSONArray supported = manifest.optJSONArray("spring");
+        boolean supports = supported == null ? winterx.runtime.SpringVersion.DEFAULT.equals(version) : false;
+        for (int i = 0; supported != null && i < supported.length(); i++) if (version.equals(supported.optString(i))) supports = true;
+        if (!supports) throw new IOException("Doesn't support Spring " + version);
         boolean android = "Dalvik".equals(System.getProperty("java.vm.name")) || "ART".equals(System.getProperty("java.vm.name"));
-        String relative = android ? "code/classes.dex" : "code/classes.jar", expected = payloads.getString(relative);
+        String code = winterx.runtime.SpringVersion.codeDirectory();
+        String relative = code + (android ? "classes.dex" : "classes.jar"), expected = payloads.getString(relative);
         if (!expected.matches("[0-9a-f]{64}")) throw new IOException("Invalid code checksum");
         File source = new File(root, relative);
         if (!expected.equals(digest(source, MAX_CODE))) throw new IOException("Extension code checksum mismatch");

@@ -112,7 +112,8 @@ public final class DockIn {
     }
     public static M1.b editLocation(O1 edit, int page, int index, i6 profile) {
         if (edit == null || page != -1) return null;
-        M1.b point = location(profile, index, edit.f.size());
+        // An icon leaving a full dock still asks for its old slot; Spring's own table only has four.
+        M1.b point = location(profile, index, Math.max(edit.f.size(), index + 1));
         if (point == null) return null;
         float scale = profile.b / 320f;
         return new M1.b(((Number)point.h).floatValue() / scale, ((Number)point.w).floatValue() / scale);

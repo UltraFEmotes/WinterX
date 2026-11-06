@@ -27,7 +27,18 @@ MAX_APPS = 4
 # Trusted WinterX apps keep their pinned installs; a package can never replace them.
 RESERVED_APPS = frozenset(('com.ruby.manager', 'com.ruby.jailbreak', 'com.winterx.iexplored'))
 META = frozenset(('format', 'type', 'runtime', 'api', 'entry', 'id', 'name', 'version', 'description', 'author',
-                  'license', 'source', 'exports', 'capabilities', 'files', 'icon', 'previews', 'features', 'requires', 'settings_entry', 'apps', 'inject'))
+                  'license', 'source', 'exports', 'capabilities', 'files', 'icon', 'previews', 'features', 'requires', 'settings_entry', 'apps', 'inject', 'spring'))
+SPRING_VERSION = re.compile(r'^[0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[a-z0-9]+)?$')
+
+
+def version_code(manifest):
+    """code/<version>/classes.{dex,jar} for each supported Spring version other than 0.8.1 (whose code is code/)."""
+    versions = manifest.get('spring')
+    if versions is None: return []
+    if (not isinstance(versions, list) or not 1 <= len(versions) <= 8 or len(set(versions)) != len(versions)
+            or any(not isinstance(v, str) or len(v) > 40 or not SPRING_VERSION.match(v) for v in versions)):
+        raise ValueError('Invalid supported Spring versions')
+    return [p for v in versions if v != '0.8.1' for p in ('code/%s/classes.dex' % v, 'code/%s/classes.jar' % v)]
 
 
 def safe_path(name):
@@ -162,6 +173,10 @@ def inspect_archive(archive, digest, include_code=False):
     if (not isinstance(declared, dict) or DEX not in declared or JAR not in declared
             or any(not isinstance(value, str) or not re.fullmatch('[0-9a-f]{64}', value) for value in declared.values())):
         raise error('Native package must pin both Android DEX and JVM code')
+    try: per_version = version_code(manifest)
+    except ValueError as bad: raise error(str(bad))
+    for name in per_version:
+        if name not in declared: raise error('Missing code for Spring ' + name.split('/')[1])
     if not any(SOURCE.fullmatch(name) and name.endswith('.java') for name in declared):
         raise error('Native packages must include editable Java source')
     icon = springys._art_path(manifest['icon']) if manifest.get('icon') else None
@@ -192,7 +207,7 @@ def inspect_archive(archive, digest, include_code=False):
         raise error('Native package contains undeclared files')
     payloads = {}
     for name, expected in declared.items():
-        if name not in (DEX, JAR) and not SOURCE.fullmatch(name) and not LICENSE.fullmatch(name) and not APP.fullmatch(name) and not INJECT.fullmatch(name):
+        if name not in (DEX, JAR) and name not in per_version and not SOURCE.fullmatch(name) and not LICENSE.fullmatch(name) and not APP.fullmatch(name) and not INJECT.fullmatch(name):
             raise error('Unsupported native code/source/license path: ' + name)
         raw = archive.read(name)
         if hashlib.sha256(raw).hexdigest() != expected:
@@ -210,6 +225,12 @@ def inspect_archive(archive, digest, include_code=False):
         raise error('Native Android entry class is missing')
     if any(reserved_class(name[1:-1]) for name in classes):
         raise error('Native package cannot replace platform/Spring/runtime classes')
+    for name in per_version:
+        if not name.endswith('.dex'): continue
+        try: other = dex_classes(payloads[name])
+        except (ValueError, IndexError, struct.error) as failure: raise error(str(failure)) from failure
+        if 'L' + entry.replace('.', '/') + ';' not in other: raise error('Native Android entry class is missing for ' + name)
+        if any(reserved_class(c[1:-1]) for c in other): raise error('Native package cannot replace platform/Spring/runtime classes')
     with zipfile.ZipFile(io.BytesIO(payloads[JAR])) as jar:
         entries = jar.infolist()
         if len(entries) > 20000 or sum(info.file_size for info in entries) > 64 * 1024 * 1024:

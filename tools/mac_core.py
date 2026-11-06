@@ -30,16 +30,21 @@ def stopped():
         raise RuntimeError('Fully quit Spring Launcher first. Core preparation/launch never closes an existing session.')
 
 
+# Spring versions a core may be built from: the installed 0.8.1, or another version's own APK (run as an overlay).
+SPRING_SOURCES = {jailbreak.ORIGINAL_SHA: '0.8.1',
+                  'c500d2f7316c36e3f97fb65bda7178445513630d132f711fe80bfc79a7a16cb6': '0.9-preview1'}
+
+
 def checked_core(directory):
     directory = Path(directory).resolve(strict=True)
     audit = json.loads((directory / 'core-audit.json').read_text())
     manifest = json.loads((directory / 'android-runtime/manifest.json').read_text())
-    apk = directory / 'WinterX-core-0.8.1.apk'
-    if (apk.is_symlink() or audit.get('apk_sha256') != jailbreak.digest(apk) or
+    version = SPRING_SOURCES.get(manifest.get('sourceApkSha256'))
+    apk = directory / ('WinterX-core-%s.apk' % version)
+    if (version is None or apk.is_symlink() or not apk.is_file() or audit.get('apk_sha256') != jailbreak.digest(apk) or
             audit.get('preinstalled_tweaks') != [] or audit.get('bundled_tweak_classes') != [] or
-            manifest.get('runtimeAbi') != ABI or manifest.get('sourceApkSha256') != jailbreak.ORIGINAL_SHA or
-            manifest.get('preinstalledTweaks') != []):
-        raise ValueError('Build and verify a core-only Spring 0.8.1 runtime first')
+            manifest.get('runtimeAbi') != ABI or manifest.get('preinstalledTweaks') != []):
+        raise ValueError('Build and verify a core-only Spring runtime first')
     with zipfile.ZipFile(apk) as archive:
         defined = []
         for name in archive.namelist():
@@ -49,7 +54,21 @@ def checked_core(directory):
             raise ValueError('Tweak implementation is bundled in this APK')
         if 'Lwinterx/extension/NativeRuntime;' not in defined or b'winterx/extension/NativeHooks' not in archive.read('classes.dex'):
             raise ValueError('The core native runtime or native bindings are missing')
-    return {'core': str(directory), 'apk': str(apk), 'apk_sha256': audit['apk_sha256'], 'runtimeAbi': ABI}
+    return {'core': str(directory), 'apk': str(apk), 'apk_sha256': audit['apk_sha256'], 'runtimeAbi': ABI, 'springVersion': version}
+
+
+def plan_path(state, version):
+    """0.8.1 keeps core-plan.json; other versions get their own, so switching never overwrites the other."""
+    return state / ('core-plan.json' if version in (None, '0.8.1') else 'core-plan-%s.json' % version)
+
+
+def booted_data(since):
+    """The Spring data folder whose boot receipt appeared after since (Mac.APK keeps one folder per Spring version)."""
+    root = jailbreak.BASE / 'data/data'
+    for folder in sorted(root.glob('com.guille.spring_*')):
+        receipt = folder / 'files/ruby/boot-ok-v1'
+        if receipt.is_file() and not receipt.is_symlink() and receipt.stat().st_mtime >= since: return folder.resolve(), receipt
+    return None, None
 
 
 def atomic_json(path, value):
@@ -92,15 +111,15 @@ def prepare(directory):
         plan = {**core, 'format': 'winterx.mac-core/1', 'status': 'prepared', 'data': str(data),
                 'androidRoot': str(android_root), 'backup': str(backup), 'preparedAt': datetime.now().isoformat(),
                 'preinstalledTweaks': [], 'persistedDataVerified': True}
-        atomic_json(state / 'core-plan.json', plan)
+        atomic_json(plan_path(state, core.get('springVersion')), plan)
         return plan
 
 
-def launch(timeout=120):
+def launch(timeout=120, version=None):
     stopped()
     state = jailbreak.STATE
     with exclusive_lock(state / 'core.lock'):
-        path = state / 'core-plan.json'
+        path = plan_path(state, version)
         if path.is_symlink(): raise ValueError('Unsafe core plan')
         plan = json.loads(path.read_text())
         if plan.get('format') != 'winterx.mac-core/1' or plan.get('status') != 'prepared' or plan.get('preinstalledTweaks') != []:
@@ -116,11 +135,15 @@ def launch(timeout=120):
         if boot.resolve() != boot.absolute() or boot.is_symlink() or boot.exists() and not boot.is_file():
             raise ValueError('Unsafe runtime boot receipt')
         stopped(); boot.unlink(missing_ok=True)
+        started = time.time() - 1
         child = control.start_overlay(Path(core['apk']), android_root, state / 'core-runtime.log')
         try:
             deadline = time.monotonic() + timeout; observed = None
             while time.monotonic() < deadline:
                 if child.poll() is not None: raise RuntimeError('Core exited during startup; see .ruby-state/core-runtime.log')
+                if core.get('springVersion', '0.8.1') != '0.8.1':                     # its own data folder, found by its receipt
+                    found, receipt = booted_data(started)
+                    if found is not None: data, boot = found, receipt
                 if boot.is_file() and not boot.is_symlink():
                     if observed is None: observed = time.monotonic()
                     if time.monotonic() - observed >= 3:
@@ -140,6 +163,42 @@ def launch(timeout=120):
             raise
 
 
+def switch(version, timeout=180):
+    """The WinterX app's Jailbreak for a modular core: quit Spring, then start the prepared core for version with its
+    package bridge in the background, and wait until that core is the one running."""
+    import subprocess
+    state = jailbreak.STATE
+    path = plan_path(state, version)
+    if not path.is_file() or path.is_symlink():
+        raise ValueError('Prepare the Spring %s core on this Mac first (tools/mac_core.py prepare)' % version)
+    active = state / 'active.json'
+    try:
+        record = json.loads(active.read_text())
+        if (record.get('springVersion') == version and control.spring_pids() == [int(record['pid'])] and
+                control.is_overlay_process(int(record['pid']), record['apk'], state / 'overlay/android')):
+            return {'ok': True, 'message': 'Successfully Jailbroken', 'springVersion': version}
+    except (OSError, ValueError, TypeError, KeyError):
+        pass
+    control.stop_spring()
+    started = time.time()
+    log = (state / ('core-launch-%s.log' % version)).open('w')
+    child = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), 'launch', '--bridge', '--spring', version],
+                             cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if child.poll() is not None:
+            tail = Path(log.name).read_text(errors='replace').strip().splitlines()[-1:] or ['no output']
+            raise RuntimeError('Spring %s did not start: %s' % (version, tail[0]))
+        try:
+            record = json.loads(active.read_text())
+            if active.stat().st_mtime >= started and record.get('springVersion') == version:
+                return {'ok': True, 'message': 'Successfully Jailbroken', 'springVersion': version}
+        except (OSError, ValueError):
+            pass
+        time.sleep(.5)
+    raise TimeoutError('Spring %s did not finish starting' % version)
+
+
 def serve(child, record):
     from native_bridge import NativeBridge
     from private_files import AccessError, DirectoryFiles
@@ -149,13 +208,15 @@ def serve(child, record):
         current = apk.stat()
         if (child.poll() is not None or control.spring_pids() != [child.pid] or
                 not control.is_overlay_process(child.pid, apk, jailbreak.STATE / 'overlay/android') or
-                bundle.data_root(jailbreak.DATA) / 'files' != root or
+                Path(record['data']).resolve() / 'files' != root or
                 (current.st_dev, current.st_ino, current.st_size, current.st_mtime_ns) !=
                 (pinned_stat.st_dev, pinned_stat.st_ino, pinned_stat.st_size, pinned_stat.st_mtime_ns)):
             raise AccessError('The verified running Mac.APK core changed')
         return {'phase': 'installed', 'runtimeAbi': ABI, 'coreFilesRoot': str(root),
                 'safeMode': (root / 'ruby/safe-mode.enabled').exists()}
-    bridge = NativeBridge(store, jailbreak.STATE / 'native-code-bridge', verify, builtin=ROOT / 'builtin-repo')
+    version = record.get('springVersion', '0.8.1')                    # each Spring version keeps its own bridge state
+    state = jailbreak.STATE / ('native-code-bridge' if version == '0.8.1' else 'native-code-bridge-' + version)
+    bridge = NativeBridge(store, state, verify, builtin=ROOT / 'builtin-repo')
     print('Ruby code-package bridge is ready.', flush=True)
     while child.poll() is None:
         count = bridge.once()
@@ -168,14 +229,15 @@ def main():
     commands = parser.add_subparsers(dest='command', required=True)
     prepare_command = commands.add_parser('prepare'); prepare_command.add_argument('core', type=Path)
     launch_command = commands.add_parser('launch'); launch_command.add_argument('--bridge', action='store_true')
+    launch_command.add_argument('--spring', help='which prepared Spring version to start (default 0.8.1), e.g. 0.9-preview1')
     args = parser.parse_args()
     if args.command == 'prepare':
         plan = prepare(args.core)
         print('Core prepared. Backup:', plan['backup'])
         print('Launch when ready: python3 tools/mac_core.py launch --bridge')
     else:
-        child, record = launch()
-        print('Core-only WinterX started for Spring 0.8.1. Install tweaks through Ruby.', flush=True)
+        child, record = launch(version=args.spring)
+        print('Core-only WinterX started for Spring %s. Install tweaks through Ruby.' % record.get('springVersion', '0.8.1'), flush=True)
         if args.bridge:
             try: serve(child, record)
             except KeyboardInterrupt: pass

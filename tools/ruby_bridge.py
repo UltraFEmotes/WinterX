@@ -43,8 +43,13 @@ def locations(base):
     return data, inbox
 
 
-def jailbreak_data(base):
-    return base / 'data/data/com.guille.spring_0.8.1/files/sapps-data' / JAILBREAK_ID / 'files'
+def jailbreak_data(base, folder='com.guille.spring_0.8.1'):
+    return base / 'data/data' / folder / 'files/sapps-data' / JAILBREAK_ID / 'files'
+
+
+# The WinterX app runs in each Spring version Mac.APK keeps, each with its own data folder. A version other than
+# 0.8.1 is jailbroken by starting its prepared modular core (tools/mac_core.py).
+SPRING_FOLDERS = {'0.8.1': 'com.guille.spring_0.8.1', '0.9-preview1': 'com.guille.spring_0_9Preview1'}
 
 
 def atomic_json(path, value):
@@ -317,8 +322,19 @@ def process_jailbreak(request, data, inbox):
         if record.get('id') != request.stem:
             raise ValueError('Invalid jailbreak request')
         if record.get('action') == 'jailbreak':
-            if record.get('version', '0.8.1') != '0.8.1':
-                raise ValueError('This WinterX build does not yet support the selected Spring version')
+            version = record.get('version', '0.8.1')
+            if version not in SPRING_FOLDERS:
+                raise ValueError('This WinterX build does not support the selected Spring version')
+            import mac_core
+            # A prepared modular core (0.9, or 0.8.1 once tools/mac_core.py prepare ran) is started directly;
+            # otherwise 0.8.1 keeps the original overlay jailbreak.
+            if version != '0.8.1' or mac_core.plan_path(mac_core.jailbreak.STATE, version).is_file():
+                print('Starting WinterX for Spring {}; Spring will respring'.format(version), flush=True)
+                response = mac_core.switch(version)
+                response['action'] = 'jailbreak'
+                atomic_json(result, response)
+                print(response['message'], flush=True)
+                return
             # Import only when requested. This operation deliberately restarts
             # Spring; the user initiates it by tapping Jailbreak.
             if str(ROOT / 'patches') not in sys.path:
@@ -333,7 +349,7 @@ def process_jailbreak(request, data, inbox):
             atomic_json(result, response)
             print(response['message'], flush=True)
             return
-        if record.get('action') != 'install_ruby':
+        if record.get('action') != 'install_ruby' or inbox is None:
             raise ValueError('Invalid jailbreak request')
         package = ROOT / 'Ruby.sapp'
         manifest = pack.check_zip(str(package))
@@ -429,6 +445,7 @@ def main():
     args = parser.parse_args()
     data, inbox = locations(args.base)
     setup = jailbreak_data(args.base)
+    others = [jailbreak_data(args.base, folder) for version, folder in SPRING_FOLDERS.items() if version != '0.8.1']
     spring_files = args.base / 'data/data/com.guille.spring_0.8.1/files'
     explorer_data = spring_files / 'sapps-data/com.winterx.iexplored/files'
     print('Ruby bridge watching package and jailbreak requests', flush=True)
@@ -438,6 +455,9 @@ def main():
             process(request, data, inbox, args.base)
         for request in sorted((setup / 'requests').glob('*.json')):
             process_jailbreak(request, setup, inbox)
+        for other in others:                       # Ruby setup is only offered through 0.8.1's inbox
+            for request in sorted((other / 'requests').glob('*.json')):
+                process_jailbreak(request, other, None)
         for request in sorted((explorer_data / 'requests').glob('*.json')):
             process_explorer(request, explorer_data, spring_files, ROOT / '.ruby-state/iexplored-trash')
         # Finish app-package operations only after Spring's install has been
@@ -454,6 +474,8 @@ def main():
             update_live_status(setup)
             if data.parent.exists():
                 update_live_status(data)
+            for other in others:
+                if other.exists(): update_live_status(other)
             last_status = time.monotonic()
         if args.once:
             break

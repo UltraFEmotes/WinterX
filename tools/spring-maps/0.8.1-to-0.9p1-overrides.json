@@ -1,0 +1,41 @@
+{
+ "format": "winterx.spring-map-overrides/1",
+ "from": "0.8.1",
+ "to": "0.9-preview1",
+ "classes": {
+  "E1/B0": "y1/B0",
+  "E1/H1": "C1/D0"
+ },
+ "methods": {
+  "LA/o;->i(LE1/i6;LI1/I0;LE1/q6;Ljava/util/Map;LZ1/l;)LC1/D1;": "LD/a;->i(Ly1/U6;LE1/e1;Ly1/c7;Ljava/util/concurrent/ConcurrentHashMap;LT1/l;)LC1/b0;",
+  "LA/o;->m(LE1/i6;LI1/I0;Ljava/util/Map;Landroid/graphics/Bitmap;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;)LI1/e0;": "LD/a;->l(Ly1/U6;LE1/e1;Ljava/util/Map;Landroid/graphics/Bitmap;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;Z)LE1/l0;",
+  "LI1/h0;->E(Landroid/graphics/Canvas;Landroid/graphics/Paint;LE1/i6;LI1/I0;Ljava/util/Map;Landroid/graphics/Bitmap;Ljava/lang/String;IIZZLI1/Z;Ljava/lang/String;)V": "LE1/o0;->F(Landroid/graphics/Canvas;Landroid/graphics/Paint;Ly1/U6;LE1/e1;Ljava/util/Map;Landroid/graphics/Bitmap;Ljava/lang/String;IIZZLE1/f0;Ljava/lang/String;ZLy1/V1;)V",
+  "LI1/h0;->o(Landroid/graphics/Canvas;LE1/q6;LI1/I0;Ljava/util/Map;Ljava/util/Map;LA/o;Landroid/graphics/Bitmap;Landroid/graphics/Bitmap;FFFLI1/d0;FJFLI1/c0;I)Z": "LE1/o0;->p(Landroid/graphics/Canvas;Ly1/c7;LE1/e1;Ljava/util/concurrent/ConcurrentHashMap;Ljava/util/Map;LD/a;Landroid/graphics/Bitmap;Landroid/graphics/Bitmap;FFFLE1/k0;FJFLE1/j0;I)Z",
+  "LI1/h0;->c(LE1/a;LE1/q6;LI1/I0;Ljava/util/Map;)Landroid/graphics/Bitmap;": "LE1/o0;->d(Ly1/a;Ly1/c7;LE1/e1;Ljava/util/Map;)Landroid/graphics/Bitmap;",
+  "LI1/R0;->run()V": "LE1/p1;->run()V",
+  "LE1/B0;->a(Ljava/lang/String;)LE1/T6;": "Ly1/B0;->a(Ljava/lang/String;)Ly1/P7;",
+  "Lt/i;->K(Ljava/lang/Object;)Ljava/util/List;": "Ls/i;->m0(Ljava/lang/Object;)Ljava/util/List;",
+  "LI1/j1;->p(LE1/q6;LE1/S1;)LI1/X;": "Ln/c;->R(Ly1/c7;Ly1/O1;)LE1/d0;",
+  "LI1/h0;->k(LE1/q6;JLE1/i6;FILI1/d0;LE1/S1;LE1/l4;LA/o;LI1/I0;Ljava/util/Map;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Paint;FLandroid/graphics/Canvas;)V": "LE1/o0;->l(Ly1/c7;JLy1/U6;FILE1/k0;Ly1/O1;Ly1/o4;LD/a;LE0/c;LE1/e1;Ljava/util/Map;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Paint;FLandroid/graphics/Canvas;)V",
+  "LI1/j1;->e(Landroid/graphics/Canvas;Landroid/graphics/Paint;LE1/q6;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Bitmap;Ljava/util/Map;LI1/I0;Ljava/util/Map;)V": "Ll2/d;->w(Landroid/graphics/Canvas;Landroid/graphics/Paint;Ly1/c7;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Bitmap;Ljava/util/Map;LE1/e1;Ljava/util/Map;)V",
+  "LE1/H1;->a(Ljava/lang/Object;)Ljava/lang/Object;": "LC1/D0;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+  "LE1/t;->G(FFLjava/util/List;ZIIZLE1/H1;Z)LE1/j2;": "Ly1/u;->M(FFLjava/util/List;ZIIZLC1/D0;Z)Ly1/j2;"
+ },
+ "fields": {
+  "LE1/O1;->h:LE1/H1;": "Ly1/J1;->h:LC1/D0;",
+  "Landroidx/core/graphics/drawable/IconCompat;->a:I": "Landroidx/core/graphics/drawable/IconCompat;->a:I",
+  "Landroidx/camera/lifecycle/a;->b:Lv/a;": "Landroidx/camera/lifecycle/a;->b:Lu/a;",
+  "LE1/q6;->b:Ljava/util/List;": "Ly1/c7;->b:Ljava/util/List;",
+  "LE1/q6;->c:Ljava/util/List;": "Ly1/c7;->c:Ljava/util/List;",
+  "LE1/q6;->f:I": "Ly1/c7;->f:I",
+  "LE1/q6;->g:I": "Ly1/c7;->g:I",
+  "LE1/q6;->h:I": "Ly1/c7;->h:I",
+  "LE1/q6;->C:LE1/B7;": "Ly1/c7;->H:Ly1/w8;",
+  "LE1/q6;->Y:Ljava/util/List;": "Ly1/c7;->d0:Ljava/util/List;",
+  "LE1/q6;->d0:I": "Ly1/c7;->i0:I",
+  "LE1/q6;->e0:I": "Ly1/c7;->j0:I",
+  "LE1/q6;->E0:LE1/r1;": "Ly1/c7;->L0:Ly1/n1;",
+  "LE1/L3;->d:Z": "Ly1/P3;->d:Z",
+  "LE1/s4;->B:Z": "Ly1/w4;->H:Z"
+ }
+}

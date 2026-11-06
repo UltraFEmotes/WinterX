@@ -30,6 +30,7 @@ import org.json.JSONObject;
 public final class PackageArchive {
     static final String FORMAT = "winterx.springys/3", API = "winterx.native/1";
     static final String DEX = "code/classes.dex", JAR = "code/classes.jar";
+    static final Pattern SPRING_VERSION = Pattern.compile("[0-9]+\\.[0-9]+(?:\\.[0-9]+)?(?:-[a-z0-9]+)?");
     static final int MAX_ZIP = 12 * 1024 * 1024, MAX_FILES = 128, MAX_PAYLOAD = 16 * 1024 * 1024, MAX_EXPANDED = 32 * 1024 * 1024;
     static final int MAX_ART = 2 * 1024 * 1024, MAX_APPS = 4;
     static final Pattern ID = Pattern.compile("[a-z0-9]+(?:[.-][a-z0-9]+)+");
@@ -47,7 +48,7 @@ public final class PackageArchive {
     static final Pattern OBFUSCATED = Pattern.compile("(?:[A-Za-z]|[A-Za-z][0-9]+)/.*", Pattern.DOTALL);
     static final Set<String> META = new HashSet<>(Arrays.asList("format", "type", "runtime", "api", "entry", "id", "name", "version",
         "description", "author", "license", "source", "exports", "capabilities", "files", "icon", "previews", "features", "requires",
-        "settings_entry", "apps", "inject"));
+        "settings_entry", "apps", "inject", "spring"));
     /** Trusted WinterX apps keep their pinned installs; a package can never replace them. */
     static final Set<String> RESERVED_APPS = new HashSet<>(Arrays.asList("com.ruby.manager", "com.ruby.jailbreak", "com.winterx.iexplored"));
 
@@ -282,6 +283,17 @@ public final class PackageArchive {
             pinned.put(name, (String)value);
         }
         if (!pinned.containsKey(DEX) || !pinned.containsKey(JAR)) throw error("Native package must pin both Android DEX and JVM code");
+        // Supported Spring versions: 0.8.1's code is code/, every other listed version needs its own code/<version>/.
+        List<String> versions = strings(manifest.opt("spring"), 8, SPRING_VERSION, 40);
+        if (manifest.has("spring") && (versions == null || versions.isEmpty() || new HashSet<>(versions).size() != versions.size()))
+            throw error("Invalid supported Spring versions");
+        Set<String> versionCode = new HashSet<>();
+        if (versions != null) for (String spring : versions) {
+            if ("0.8.1".equals(spring)) continue;
+            String dex = "code/" + spring + "/classes.dex", jar = "code/" + spring + "/classes.jar";
+            if (!pinned.containsKey(dex) || !pinned.containsKey(jar)) throw error("Missing code for Spring " + spring);
+            versionCode.add(dex); versionCode.add(jar);
+        }
         boolean javaSource = false;
         for (String name : pinned.keySet()) javaSource |= SOURCE.matcher(name).matches() && name.endsWith(".java");
         if (!javaSource) throw error("Native packages must include editable Java source");
@@ -321,7 +333,7 @@ public final class PackageArchive {
         Map<String, byte[]> payloads = new TreeMap<>();
         for (Map.Entry<String, String> file : pinned.entrySet()) {
             String name = file.getKey();
-            if (!DEX.equals(name) && !JAR.equals(name) && !SOURCE.matcher(name).matches() && !LICENSE.matcher(name).matches() && !APP.matcher(name).matches() && !INJECT.matcher(name).matches())
+            if (!DEX.equals(name) && !JAR.equals(name) && !versionCode.contains(name) && !SOURCE.matcher(name).matches() && !LICENSE.matcher(name).matches() && !APP.matcher(name).matches() && !INJECT.matcher(name).matches())
                 throw error("Unsupported native code/source/license path: " + name);
             byte[] value = archive.get(name);
             if (!sha256(value).equals(file.getValue())) throw error("Native package payload checksum mismatch: " + name);
@@ -337,6 +349,12 @@ public final class PackageArchive {
         if (!classes.contains("L" + entry.replace('.', '/') + ";")) throw error("Native Android entry class is missing");
         for (String name : classes) if (reservedClass(name.substring(1, name.length() - 1))) throw error("Native package cannot replace platform/Spring/runtime classes");
         checkJar(payloads.get(JAR), entry);
+        for (String name : versionCode) {
+            if (name.endsWith(".jar")) { checkJar(payloads.get(name), entry); continue; }
+            List<String> other = dexClasses(payloads.get(name));
+            if (!other.contains("L" + entry.replace('.', '/') + ";")) throw error("Native Android entry class is missing for " + name);
+            for (String c : other) if (reservedClass(c.substring(1, c.length() - 1))) throw error("Native package cannot replace platform/Spring/runtime classes");
+        }
         JSONArray bundled = new JSONArray();
         Set<String> appIds = new HashSet<>();
         for (String app : apps) {

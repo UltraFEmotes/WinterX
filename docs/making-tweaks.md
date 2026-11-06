@@ -207,6 +207,7 @@ If something goes wrong, see [Debugging](#debugging). If Spring itself won't beh
 | `previews` | no | Up to 5 PNG/JPEG screenshots inside `assets/` |
 | `apps` | no | Up to 4 Spring apps to install with the tweak, as `apps/<Name>.sapp` (see [Bundling an app](#bundling-an-app)) |
 | `inject` | no | Up to 16 `{ "apps": [...], "script": "inject/<name>.js" }` entries: scripts to run inside those apps (see [Running code inside apps](#running-code-inside-apps)) |
+| `spring` | no | The Spring versions your tweak supports, e.g. `["0.8.1", "0.9-preview1"]`. Leave it out for 0.8.1 only (see [Supporting several Spring versions](#supporting-several-spring-versions)) |
 | `files` | written by the builder | SHA-256 of every code, source and notice file. Don't write it yourself |
 
 Hook and feature names are lowercase words joined by `.` or `-`, such as `render.icon.begin`.
@@ -567,6 +568,32 @@ Tweaks can't see each other's classes (each has its own classloader). To talk to
 ## Artwork
 
 Put PNG or JPEG files under `assets/` and reference them with `icon` and `previews` (up to 5). Ruby shows them on the package page.
+
+## Supporting several Spring versions
+
+WinterX runs on **Spring 0.8.1** and **Spring 0.9 Preview 1**. Spring is obfuscated, and every release renames its classes, methods and fields, so code written against one version's names won't run on another as-is. You still write your tweak once, against 0.8.1's names (the same SDK and `spring-api.jar` as always), and list the versions it supports:
+
+```json
+"spring": ["0.8.1", "0.9-preview1"]
+```
+
+When you build, give the builder a core for each extra version and it translates your compiled code automatically:
+
+```sh
+python3 extensions/build.py package my-tweak out/my-tweak.springys \
+  --sdk out/core/winterx-native-api.jar --spring-api out/core/spring-api.jar \
+  --version-core out/core-0.9
+```
+
+The builder renames every Spring class, method and field your code uses (including method-hook signatures written as strings) through a name map (`tools/spring-maps/`), then checks that each one really exists in that version. If something has no counterpart, the build stops and names it instead of shipping a tweak that would crash.
+
+**Writing different code for a version.** When a version needs different behaviour, or the translation can't map something your tweak uses, put your own build for it in `code/<version>/classes.dex` and `code/<version>/classes.jar`. The builder uses yours instead of translating.
+
+**What users see.** Ruby shows the supported versions on the tweak's page, and greys out Install with "Not for Spring …" on a version the tweak doesn't list. The core refuses to install or load it there too.
+
+**Building a core for 0.9.** `python3 extensions/build.py runtime Spring-0.9-Prev1.apk out/core-0.9 --base out/core` builds it from a finished 0.8.1 core. It applies WinterX's patches through the same map (`patches/port.py`, with the hand-ported spots in `patches/port09.py`) and checks every name the inserted code references exists in 0.9.
+
+**Mapping a new Spring version** uses `tools/spring_map.py OLD_DECODED NEW_DECODED map.json` on two apktool-decoded APKs. It matches classes by their strings and structure, then methods and fields by signature and code similarity, and you can pin anything it gets wrong in an overrides file.
 
 ## Bundling an app
 

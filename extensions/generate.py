@@ -25,7 +25,12 @@ def java_type(value):
 def name(point): return point.replace('.', '_').replace('-', '_')
 
 
-def generate(decoded, output):
+def generate(decoded, output, overrides=None):
+    """overrides (another Spring version): {'extra': {point: [descriptor, fallback]}, 'defaults': {point: expr}, 'tiles': 'A.o'}."""
+    overrides = overrides or {}
+    extra = {k: tuple(v) for k, v in overrides.get('extra', {}).items()} or EXTRA
+    defaults = dict(DEFAULTS, **overrides.get('defaults', {}))
+    tiles = overrides.get('tiles', 'A.o')
     paths = sorted((Path(decoded) / 'smali').rglob('*.smali'))
     texts = {path: path.read_text() for path in paths}
     bindings, contracts = {}, {}
@@ -41,7 +46,7 @@ def generate(decoded, output):
             if point is None: continue
             bindings[symbol] = 'Lwinterx/extension/NativeHooks;->' + name(point) + descriptor
             contracts[(point, descriptor)] = {'point': point, 'descriptor': descriptor, 'legacy': symbol}
-    for point, (descriptor, fallback) in EXTRA.items():
+    for point, (descriptor, fallback) in extra.items():
         contracts[(point, descriptor)] = {'point': point, 'descriptor': descriptor, 'fallback': fallback}
     source = ['package winterx.extension;', '', '/** Generated typed bindings. Actual tweak behavior is installed separately through Ruby. */', 'public final class NativeHooks {', '    private NativeHooks() {}']
     for (_, _), contract in sorted(contracts.items()):
@@ -50,7 +55,7 @@ def generate(decoded, output):
         arguments = ', '.join('p' + str(index) for index in range(len(parameters)))
         signature = ', '.join(java_type(value) + ' p' + str(index) for index, value in enumerate(parameters))
         return_type = java_type(result)
-        fallback = contract.get('fallback', DEFAULTS.get(point, '' if result == 'V' else 'false' if result == 'Z' else '0' if result in PRIMITIVES else 'null'))
+        fallback = contract.get('fallback', defaults.get(point, '' if result == 'V' else 'false' if result == 'Z' else '0' if result in PRIMITIVES else 'null'))
         policy = POLICIES.get(point, 'all' if result == 'V' else 'first')
         contract.update(fallback=fallback, policy=policy)
         source.append('    public static ' + return_type + ' ' + name(point) + '(' + signature + ') {')
@@ -68,7 +73,7 @@ def generate(decoded, output):
             if result == 'V': source.append('        ' + dispatch + ';')
             else: source.append('        return (' + BOXES.get(return_type, return_type) + ') ' + dispatch + ';')
         source.append('    }')
-    source += ['    public static A.o cache_tiles(A.o original) { return cache_tiles_allowed() ? original : null; }', '}']
+    source += ['    public static ' + tiles + ' cache_tiles(' + tiles + ' original) { return cache_tiles_allowed() ? original : null; }', '}']
     target = Path(output) / 'winterx/extension/NativeHooks.java'; target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text('\n'.join(source) + '\n')
     for path, text in texts.items():

@@ -33,6 +33,7 @@ function liveStatus() {
       var codeRuntime = capabilities.nativePackages === true && capabilities.nativeApi === "winterx-native-hooks-v1";
       if (codeRuntime) return { active:true, native:true, safeModeSupported:true, nativePackagesSupported:true,
         packageManager:capabilities.packageManager === "winterx-pm-v1",
+        springVersion:typeof capabilities.springVersion === "string" ? capabilities.springVersion : "0.8.1",
         safeMode:files.exists("winterx/ruby/safe-mode.enabled") };
       var mode = "wave";
       if (files.exists("winterx/ruby/animaper.mode")) mode = files.read("winterx/ruby/animaper.mode").trim();
@@ -278,6 +279,14 @@ function previewPackage(path) {
   screen.add(new UIImageView({ frame: [0, 0, 320, 420], image: "files/" + path, contentMode: "scaleAspectFit" }));
   activeNav().push(screen);
 }
+// Supported Spring versions: a code package lists them in "spring" (none listed means 0.8.1 only).
+function springLabel(version) { return version === "0.9-preview1" ? "0.9 Preview 1" : version; }
+function springVersions(item) { return item.runtime === "java" && item.spring && item.spring.length ? item.spring : ["0.8.1"]; }
+function springSupports(item, native) {
+  if (item.runtime !== "java") return true;
+  var current = native && native.springVersion ? native.springVersion : "0.8.1";
+  return springVersions(item).indexOf(current) >= 0;
+}
 function appPackageState() {
   try { return files.readJSON("app-packages.json"); }
   catch (e) { return { installed: {}, pending: {} }; }
@@ -298,6 +307,7 @@ function packageDetail(selectedItem, installedOnly) {
   var actionRows = [];
   if (blockedLegacy) actionRows.push({title:"Use the source-backed code package",selectable:false});
   else if (needsCore) actionRows.push({title:"Native-code runtime required",selectable:false});
+  else if (!installed && !springSupports(item, native)) actionRows.push({title:"Not for Spring " + springLabel(native && native.springVersion ? native.springVersion : "0.8.1"),selectable:false});
   else if (appPending) actionRows.push({title:"Waiting for Spring installer",selectable:false});
   else if (isAnimaper && !installed && native && native.native) actionRows.push({title:"Install",accessory:"disclosure",onSelect:function () { nativeToggle("animaper.enabled", true); }});
   else if (isExplorer && !installed) actionRows.push({title:"Install",accessory:"disclosure",onSelect:function () {
@@ -331,6 +341,7 @@ function packageDetail(selectedItem, installedOnly) {
   if (item.type === "tweak") {
     sections[0].rows.push({ title:"Code", detail:item.runtime === "java" ? "Java / Android DEX" : "JavaScript", selectable:false });
     if (item.runtime === "java") sections[0].rows.push({ title:"Preferences", detail:"Spring Settings → WINTERX TWEAKS", selectable:false });
+    if (item.runtime === "java") sections[0].rows.push({ title:"Spring", detail:springVersions(item).map(springLabel).join(", "), selectable:false });
     var source = item.sourceCode || item.source;
     if (typeof source === "string" && /^https:\/\//.test(source)) sections[0].rows.push({ title:"Source Code", accessory:"disclosure", onSelect:function () {
       try { UIApplication.openURL(source); } catch (e) { UIAlertView.show({title:"Source Code",message:source,buttons:["OK"]}); }

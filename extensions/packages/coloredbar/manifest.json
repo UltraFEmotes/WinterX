@@ -5,15 +5,30 @@
   "api": "winterx.native/1",
   "id": "me.weirdmm.coloredbar",
   "name": "ColoredBar",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "WeirdMM",
   "license": "MIT",
   "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/coloredbar",
   "entry": "winterx.packages.ColoredBarEntry",
   "description": "Recolour navigation bars with presets, RGB colours and per-app exclusions. All tweak behavior ships as independent code. Ruby retains its own red appearance.",
   "settings_entry": "winterx-cb-page",
-  "capabilities": ["native.hooks"],
-  "features": ["appearance.navigation-bars"],
-  "exports": ["assets.app-bars", "assets.settings", "app.observe", "settings.page", "settings.handle", "settings.action"],
-  "previews": []
+  "capabilities": [
+    "native.hooks"
+  ],
+  "features": [
+    "appearance.navigation-bars"
+  ],
+  "exports": [
+    "assets.app-bars",
+    "assets.settings",
+    "app.observe",
+    "settings.page",
+    "settings.handle",
+    "settings.action"
+  ],
+  "previews": [],
+  "spring": [
+    "0.8.1",
+    "0.9-preview1"
+  ]
 }

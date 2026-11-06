@@ -5,15 +5,26 @@
   "api": "winterx.native/1",
   "id": "com.winterx.androidkeyboard",
   "name": "Android Keyboard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "WeirdMM",
   "license": "MIT",
   "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/androidkeyboard",
   "entry": "winterx.keyboard.KeyboardEntry",
   "description": "Type into Spring with your real keyboard (Mac.APK, or a keyboard plugged into your phone) and hide the iOS keyboard, or use your phone's own Android keyboard instead of it.",
   "settings_entry": "main",
-  "capabilities": ["native.hooks"],
-  "features": ["input.android-keyboard"],
-  "exports": ["settings.page", "settings.tap"],
-  "previews": []
+  "capabilities": [
+    "native.hooks"
+  ],
+  "features": [
+    "input.android-keyboard"
+  ],
+  "exports": [
+    "settings.page",
+    "settings.tap"
+  ],
+  "previews": [],
+  "spring": [
+    "0.8.1",
+    "0.9-preview1"
+  ]
 }

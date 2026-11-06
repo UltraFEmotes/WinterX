@@ -5,7 +5,7 @@
   "api": "winterx.native/1",
   "id": "com.winterx.legacybooter",
   "name": "LegacyBooter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "WeirdMM",
   "license": "MIT",
   "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/legacybooter",
@@ -24,5 +24,9 @@
   "previews": [],
   "apps": [
     "apps/IPhoneOS1.sapp"
+  ],
+  "spring": [
+    "0.8.1",
+    "0.9-preview1"
   ]
 }

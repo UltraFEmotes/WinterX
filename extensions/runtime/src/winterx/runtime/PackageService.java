@@ -285,6 +285,14 @@ public final class PackageService implements Runnable {
         String id = metadata.getString("id"), sha = metadata.getString("sha256");
         log.add("Verified " + metadata.optString("name", id) + " " + metadata.optString("version") + " (" + id + ")");
         log.add("Checksum " + sha.substring(0, 16) + "… matches");
+        if ("java".equals(metadata.optString("runtime"))) {        // Supported Spring versions (none listed: 0.8.1)
+            String running = SpringVersion.current();
+            org.json.JSONArray versions = metadata.optJSONArray("spring");
+            boolean supported = versions == null ? SpringVersion.DEFAULT.equals(running) : false;
+            for (int i = 0; versions != null && i < versions.length(); i++) supported |= running.equals(versions.optString(i));
+            if (!supported) throw new IOException((running.equals("0.9-preview1") ? "This tweak doesn't support Spring 0.9 Preview 1 yet"
+                                                   : "This tweak doesn't support Spring " + running));
+        }
         JSONObject before = index(), previous = before.optJSONObject(id);
         int peers = 0;
         for (Iterator<String> it = before.keys(); it.hasNext();) {

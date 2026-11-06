@@ -5,15 +5,42 @@
   "api": "winterx.native/1",
   "id": "com.winterx.freeme",
   "name": "FreeMe",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "WeirdMM",
   "license": "MIT",
   "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/freeme",
   "entry": "winterx.packages.FreeMeEntry",
   "description": "Keep gaps in Spring's normal Home grid, move icons across pages and preserve native folders. Sparse layout, hit testing, Settings and public grid API behavior are contained in this code package.",
   "settings_entry": "winterx-layout-p/freeme",
-  "capabilities": ["native.hooks"],
-  "features": ["home.sparse-grid", "home.grid"],
-  "exports": ["home.custom-grid-enabled", "home.entries", "folder.background-entries", "home.launch-location", "home.delete-hit", "home.location", "home.edit-location", "home.animated-location", "home.hover", "home.drag-begin", "home.before-drop", "home.pointer", "cache.folder-layers-allowed", "settings.page", "settings.action", "home.snapshot", "home.move"],
-  "previews": []
+  "capabilities": [
+    "native.hooks"
+  ],
+  "features": [
+    "home.sparse-grid",
+    "home.grid"
+  ],
+  "exports": [
+    "home.custom-grid-enabled",
+    "home.entries",
+    "folder.background-entries",
+    "home.launch-location",
+    "home.delete-hit",
+    "home.location",
+    "home.edit-location",
+    "home.animated-location",
+    "home.hover",
+    "home.drag-begin",
+    "home.before-drop",
+    "home.pointer",
+    "cache.folder-layers-allowed",
+    "settings.page",
+    "settings.action",
+    "home.snapshot",
+    "home.move"
+  ],
+  "previews": [],
+  "spring": [
+    "0.8.1",
+    "0.9-preview1"
+  ]
 }
