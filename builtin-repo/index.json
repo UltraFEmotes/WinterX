@@ -23,12 +23,12 @@
       "sha256": "6350c9d85ea55a88ca14680bcd605574c41c9c30e9c5b691dd5df939321f8af2"
     },
     {
-      "url": "packages/snowyhome-0.2.2.springys",
-      "sha256": "b20103d5a23c1e998fe9497f83dc5d2a1bc3fb4ddc999d1fa4048263a2c24b6f"
+      "url": "packages/snowyhome-0.2.3.springys",
+      "sha256": "18af0321eb2b01fabbf6fc0482f0af3fcb21888ecde1068f5561cf1b35af643f"
     },
     {
-      "url": "packages/ssh-0.2.1.springys",
-      "sha256": "b47e98595423082920091edbcd0e99d1e862dd9aabe81ce81010262e10303e42"
+      "url": "packages/ssh-0.2.2.springys",
+      "sha256": "383d2b231e9dd94ece517faffde849d6fa844f9e9a010b27f00726a27c8c3661"
     },
     {
       "url": "packages/gravity-0.1.1.springys",

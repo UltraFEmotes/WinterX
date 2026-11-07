@@ -160,6 +160,7 @@ public final class NativeRuntime {
         boolean supports = supported == null ? winterx.runtime.SpringVersion.DEFAULT.equals(version) : false;
         for (int i = 0; supported != null && i < supported.length(); i++) if (version.equals(supported.optString(i))) supports = true;
         if (!supports) throw new IOException("Doesn't support Spring " + version);
+        if (manifest.optBoolean("requires_root") && winterx.runtime.Install.rootless()) throw new IOException("Requires root");
         boolean android = "Dalvik".equals(System.getProperty("java.vm.name")) || "ART".equals(System.getProperty("java.vm.name"));
         String code = winterx.runtime.SpringVersion.codeDirectory();
         String relative = code + (android ? "classes.dex" : "classes.jar"), expected = payloads.getString(relative);

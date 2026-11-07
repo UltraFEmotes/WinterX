@@ -22,6 +22,7 @@ public final class Capabilities {
             byte[] payload = new JSONObject().put("abi", ABI).put("nativePackages", true).put("nativeApi", winterx.extension.NativeRuntime.ABI)
                 .put("packageManager", PackageService.ABI)
                 .put("springVersion", SpringVersion.current())
+                .put("install", Install.kind())
                 .put("features", new org.json.JSONArray(winterx.extension.NativeRuntime.features()))
                 .toString().getBytes(StandardCharsets.UTF_8);
             temporary = File.createTempFile(".capabilities-", ".tmp", ruby);

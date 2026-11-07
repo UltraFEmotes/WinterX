@@ -70,7 +70,7 @@ Message+ uses an alert spy; lifecycle uses a QuickJS JNI spy; SSH service/action
 - User-controlled combined-test trials: normal-grid gaps/cross-page drops, native dock/folders, launch origins, caches/rendered motion and Settings refresh, without discarding saved data.
 - Live Message+ UI and photo delivery; establish and implement the actual Messages video/reaction protocol rather than borrowing unrelated WhatsApp handling.
 - Real Android/Windows/Linux trials, private-folder permissions/SELinux, native QuickJS, signing-compatible deployment and runtime recovery. **Never uninstall/reinstall Spring to bypass signing.**
-- Rooted/rootless architecture remains unfinished; rootless must include a limited no-Shizuku baseline. No device/root/network setup or universal compatibility claim follows from these local checks.
+- Rootless Android (no Shizuku): `tools/rootless_launch.py` builds a renamed, debuggable copy of the user's own Spring with the core built in and installs it beside the original ([Rootless Android](rootless-android.md)). Verified on a non-rooted Android 10 ARM64 emulator with Spring 0.8.1: the copy boots WinterX (`install: rootless`) and all 12 built-in tweaks install and load. Not yet verified: physical phones, Linux/Windows hosts, and Spring 0.9 Preview 1 copies.
 - SSH Android compatibility and an explicitly authorized listener/auth/SFTP/exec trial; broader third-party home/animation APIs.
 - Native runtime deadline/heap/stack, concurrent alerts, multi-tweak isolation, update/uninstall and Safe Mode recovery; Ruby's always-red bars/Discord and expanded Settings/App Store/Phone coverage.
 

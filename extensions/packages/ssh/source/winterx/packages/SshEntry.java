@@ -6,6 +6,7 @@ import winterx.ssh.SshSettings;
 
 /** Installing this code never starts the listener. Native Settings owns explicit Start/Stop. */
 public final class SshEntry implements NativeTweak {
+    @Override public void start(winterx.extension.TweakContext context) { winterx.ssh.KeyImport.install(context); }
     public Object call(String point, Object[] arguments) {
         switch (point) {
             case "settings.page": return SshSettings.page((String)arguments[0]);

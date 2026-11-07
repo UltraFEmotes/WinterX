@@ -5,7 +5,7 @@
   "api": "winterx.native/1",
   "id": "com.winterx.ssh",
   "name": "SSH",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "WeirdMM",
   "license": "MIT; Apache-2.0; MIT (SLF4J)",
   "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/ssh",

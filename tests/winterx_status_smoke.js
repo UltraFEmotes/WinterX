@@ -19,7 +19,7 @@ function launch(saved, active) {
 const live=launch({},true);
 assert.strictEqual(live.message(),'Successfully Jailbroken');assert.strictEqual(live.jailbreak.enabled,false);
 live.ctx.active=false;live.ctx.refresh();assert.strictEqual(live.jailbreak.enabled,true);
-assert(live.message().includes('start the Ruby bridge')&&live.message().includes('Rooted Android'));
+assert(live.message().includes('Rooted Android')&&live.message().includes('Start WinterX Rootless'));
 // Both versions are offered; 0.8.1 is the default and old or unknown saved choices fall back to it.
 for (const version of [undefined,'0.8.1','0.9 Preview 1','0.9','unknown']) {
  const saved={'winterx.version.v1':version};
@@ -51,7 +51,7 @@ assert.strictEqual(on.message(),'Spring 0.9 Preview 1 is jailbroken. Tap Jailbre
 const unknown=launch({},true);assert.strictEqual(unknown.jailbreak.enabled,false);
 unknown.pick('Spring 0.9 Preview 1').onTap();assert.strictEqual(unknown.jailbreak.enabled,true);
 const manifest=JSON.parse(fs.readFileSync('RubyJailbreak/app.json','utf8'));
-assert.strictEqual(manifest.version,'0.8');assert.strictEqual(manifest.build,9);
+assert.strictEqual(manifest.version,'0.8');assert.strictEqual(manifest.build,10);
 assert(manifest.description.includes('Spring 0.9 Preview 1'));
 assert(manifest.description.includes('Android 10 ARM64 emulator'));
 assert(manifest.description.includes('https://github.com/UltraFEmotes/WinterX'));

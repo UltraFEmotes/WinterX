@@ -32,7 +32,7 @@ public final class SshService {
         try { return "winterx-ssh-prompt-v1".equals(Class.forName("winterx.ssh.SshServerEngine", false, SshService.class.getClassLoader()).getField("SHELL_ABI").get(null)); }
         catch (Exception | LinkageError unavailable) { return false; }
     }
-    private static File files() {
+    static File files() {
         try {
             Application app = ActivityThread.currentApplication();
             // Trust only the platform's files root, not links in ruby/ or SSH storage.

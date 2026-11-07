@@ -18,7 +18,9 @@ public final class SshSettings {
         if (!PAGE.equals(id) || !SshService.installed()) return null;
         List<V6> rows = new ArrayList<>();
         rows.add(row(ACTION + "start", "Start SSH for This Session")); rows.add(row(ACTION + "stop", "Stop SSH"));
-        String footer = SshService.status() + "\nPublic-key authentication only. Copy plain public keys into ruby/ssh/authorized_keys. "
+        rows.add(row(ACTION + "import-keys", "Import authorized_keys…"));
+        String footer = (KeyImport.note != null ? KeyImport.note + "\n" : "") + SshService.status()
+            + "\nPublic-key authentication only. Import a public key file above (or copy it into ruby/ssh/authorized_keys). "
             + "SFTP and Android shell exec run as Spring's UID, not root; an authorized key can change Spring data. "
             + "Loopback only; remote access needs an explicitly configured external tunnel. No passwords or forwarding. Safe Mode/removal/key changes stop this service.";
         if (SshActions.available()) footer += "\nBuilt-ins: neofetch and winterx-app --help. App actions target .sapp apps only; uploads go in ruby/ssh/inbox and require their SHA-256 plus --confirm.";
@@ -29,5 +31,6 @@ public final class SshSettings {
     public static void action(String id) {
         if ((ACTION + "start").equals(id)) SshService.request(true);
         else if ((ACTION + "stop").equals(id)) SshService.request(false);
+        else if ((ACTION + "import-keys").equals(id)) KeyImport.open();
     }
 }

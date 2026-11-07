@@ -34,6 +34,7 @@ function liveStatus() {
       if (codeRuntime) return { active:true, native:true, safeModeSupported:true, nativePackagesSupported:true,
         packageManager:capabilities.packageManager === "winterx-pm-v1",
         springVersion:typeof capabilities.springVersion === "string" ? capabilities.springVersion : "0.8.1",
+        install:typeof capabilities.install === "string" ? capabilities.install : "rooted",
         safeMode:files.exists("winterx/ruby/safe-mode.enabled") };
       var mode = "wave";
       if (files.exists("winterx/ruby/animaper.mode")) mode = files.read("winterx/ruby/animaper.mode").trim();
@@ -280,6 +281,8 @@ function previewPackage(path) {
   activeNav().push(screen);
 }
 // Supported Spring versions: a code package lists them in "spring" (none listed means 0.8.1 only).
+// Tweaks that can't work without root say so in their manifest (requires_root); rootless installs can't install them.
+function rootTitle(item) { return item.name + (item.requires_root === true ? " (Requires Root)" : ""); }
 function springLabel(version) { return version === "0.9-preview1" ? "0.9 Preview 1" : version; }
 function springVersions(item) { return item.runtime === "java" && item.spring && item.spring.length ? item.spring : ["0.8.1"]; }
 function springSupports(item, native) {
@@ -292,7 +295,7 @@ function appPackageState() {
   catch (e) { return { installed: {}, pending: {} }; }
 }
 function packageDetail(selectedItem, installedOnly) {
-  var page = new UITableViewController({ title: selectedItem.name, style: "grouped" });
+  var page = new UITableViewController({ title: rootTitle(selectedItem), style: "grouped" });
   function update() {
   var item = packageWithStatus(selectedItem);
   var isExplorer = item.hook === "app.iexplored" && item.id === "me.weirdmm.iexplored";
@@ -307,6 +310,7 @@ function packageDetail(selectedItem, installedOnly) {
   var actionRows = [];
   if (blockedLegacy) actionRows.push({title:"Use the source-backed code package",selectable:false});
   else if (needsCore) actionRows.push({title:"Native-code runtime required",selectable:false});
+  else if (!installed && item.requires_root === true && native && native.install === "rootless") actionRows.push({title:"Requires Root",selectable:false});
   else if (!installed && !springSupports(item, native)) actionRows.push({title:"Not for Spring " + springLabel(native && native.springVersion ? native.springVersion : "0.8.1"),selectable:false});
   else if (appPending) actionRows.push({title:"Waiting for Spring installer",selectable:false});
   else if (isAnimaper && !installed && native && native.native) actionRows.push({title:"Install",accessory:"disclosure",onSelect:function () { nativeToggle("animaper.enabled", true); }});
@@ -342,6 +346,7 @@ function packageDetail(selectedItem, installedOnly) {
     sections[0].rows.push({ title:"Code", detail:item.runtime === "java" ? "Java / Android DEX" : "JavaScript", selectable:false });
     if (item.runtime === "java") sections[0].rows.push({ title:"Preferences", detail:"Spring Settings → WINTERX TWEAKS", selectable:false });
     if (item.runtime === "java") sections[0].rows.push({ title:"Spring", detail:springVersions(item).map(springLabel).join(", "), selectable:false });
+    if (item.requires_root === true) sections[0].rows.push({ title:"Root", detail:"Required" + (item.root_note ? ": " + item.root_note : ""), selectable:false });
     var source = item.sourceCode || item.source;
     if (typeof source === "string" && /^https:\/\//.test(source)) sections[0].rows.push({ title:"Source Code", accessory:"disclosure", onSelect:function () {
       try { UIApplication.openURL(source); } catch (e) { UIAlertView.show({title:"Source Code",message:source,buttons:["OK"]}); }
@@ -368,11 +373,11 @@ function refreshLocal() {
   var data = packageData(), r = operation();
   var available = data.available || [], installed = data.installed || [];
   var installedRows = installed.map(function (item) {
-    return { title: item.name, subtitle: "Version " + item.version, image: item.icon ? "files/package-registry/" + item.icon : undefined,
+    return { title: rootTitle(item), subtitle: "Version " + item.version, image: item.icon ? "files/package-registry/" + item.icon : undefined,
       accessory: "disclosure", onSelect: function () { packageDetail(item, true); } };
   });
   var availableRows = available.map(function (item) {
-    return { title: item.name, subtitle: item.installedSha256 ? (item.installedSha256 === item.sha256 ? "Installed" : "Update available") : item.description,
+    return { title: rootTitle(item), subtitle: item.installedSha256 ? (item.installedSha256 === item.sha256 ? "Installed" : "Update available") : item.description,
       image: item.icon ? "files/" + item.icon : undefined, accessory: "disclosure", onSelect: function () { packageDetail(item, false); } };
   });
   localPackages.sections = [
@@ -451,7 +456,7 @@ function showRepositoryPackages(items, title) {
     var description = app && app.pending["com.winterx.iexplored"] ? "Restart needed" :
       app && app.installed["com.winterx.iexplored"] ? "Installed" :
       item.installedSha256 ? (item.installedSha256 === item.sha256 ? "Installed" : "Update available") : item.description;
-    return { title: item.name, subtitle: description,
+    return { title: rootTitle(item), subtitle: description,
       image: item.icon ? "files/" + item.icon : undefined, accessory: "disclosure", onSelect: function () { packageDetail(item, false); } };
   }) : [{ title: "No packages found", selectable: false }] }] });
   activeNav().push(page);
@@ -492,7 +497,7 @@ function refresh() {
   if (live && live.nativePackagesSupported) {
     var packages = codePackages();
     catalogue.sections = [localSection, { header:"WINTERX TWEAKS", footer:"Install code packages through Ruby. Open Spring Settings → WINTERX TWEAKS after reopening Spring.", rows:packages.length ? packages.map(function (item) {
-      return { title:item.name, subtitle:item.installedSha256 ? (item.installedSha256 === item.sha256 ? "Installed" : "Update available") : item.description, accessory:"disclosure", onSelect:function () { packageDetail(item, !item.filename); } };
+      return { title:rootTitle(item), subtitle:item.installedSha256 ? (item.installedSha256 === item.sha256 ? "Installed" : "Update available") : item.description, accessory:"disclosure", onSelect:function () { packageDetail(item, !item.filename); } };
     }) : [{ title:"Refresh Sources", subtitle:"Browse available code packages", accessory:"disclosure", onSelect:function () { packageRequest("refresh_repositories"); } }] }, repositoriesSection];
     return;
   }

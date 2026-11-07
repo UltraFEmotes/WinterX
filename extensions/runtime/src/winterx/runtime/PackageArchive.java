@@ -48,7 +48,7 @@ public final class PackageArchive {
     static final Pattern OBFUSCATED = Pattern.compile("(?:[A-Za-z]|[A-Za-z][0-9]+)/.*", Pattern.DOTALL);
     static final Set<String> META = new HashSet<>(Arrays.asList("format", "type", "runtime", "api", "entry", "id", "name", "version",
         "description", "author", "license", "source", "exports", "capabilities", "files", "icon", "previews", "features", "requires",
-        "settings_entry", "apps", "inject", "spring"));
+        "settings_entry", "apps", "inject", "spring", "requires_root", "root_note"));
     /** Trusted WinterX apps keep their pinned installs; a package can never replace them. */
     static final Set<String> RESERVED_APPS = new HashSet<>(Arrays.asList("com.ruby.manager", "com.ruby.jailbreak", "com.winterx.iexplored"));
 
@@ -287,6 +287,10 @@ public final class PackageArchive {
         List<String> versions = strings(manifest.opt("spring"), 8, SPRING_VERSION, 40);
         if (manifest.has("spring") && (versions == null || versions.isEmpty() || new HashSet<>(versions).size() != versions.size()))
             throw error("Invalid supported Spring versions");
+        // Optional: the tweak can't work without root (Ruby labels it; rootless installs refuse it), and what needs it.
+        if (manifest.has("requires_root") && !(manifest.opt("requires_root") instanceof Boolean)) throw error("requires_root must be true or false");
+        if (manifest.has("root_note") && (!(manifest.opt("root_note") instanceof String) || ((String)manifest.opt("root_note")).length() > 160
+            || ((String)manifest.opt("root_note")).trim().isEmpty())) throw error("root_note must be a short sentence");
         Set<String> versionCode = new HashSet<>();
         if (versions != null) for (String spring : versions) {
             if ("0.8.1".equals(spring)) continue;

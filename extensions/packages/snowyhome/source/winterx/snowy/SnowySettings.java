@@ -20,7 +20,7 @@ public final class SnowySettings {
         {"Green", "#34C759"}, {"Purple", "#AF52DE"}, {"Orange", "#FF9500"}, {"Graphite", "#2C2C2E"}};
     private static final String[] CORNERS = {"Stock", "Square", "Subtle", "Rounded", "Soft", "Circle"};
     private static final double[] RADII = {-1, 0, .10, .18, .30, .50};
-    private static volatile String importStatus = "Copy pack ZIPs into ruby/snowyhome/inbox, then choose one here. Imports do not select or delete packs.";
+    static volatile String importStatus = "Choose a pack ZIP, or copy ZIPs into ruby/snowyhome/inbox and pick one here. Imports do not select or delete packs.";
     private static final java.util.concurrent.atomic.AtomicBoolean importing = new java.util.concurrent.atomic.AtomicBoolean();
     private SnowySettings() {}
     private static V6 row(String id, String title) { return Z3.g(Z3.a, id, title, null, null, null, 0x18); }
@@ -54,6 +54,7 @@ public final class SnowySettings {
             for (IconPack pack : packs().values()) rows.add(row(ACTION + "pack/" + pack.revision, (selected.equals(pack.revision) ? "✓ " : "") + pack.name));
             title = "Icon Pack"; footer = "Import a ZIP from the private inbox, then select its verified revision. Missing or invalid icons fall back to Spring originals. Shows up to 32 revisions.";
         } else if (id.equals(PAGE + "import")) {
+            rows.add(row(ACTION + "pick", "Choose a ZIP…"));
             for (Map.Entry<String, String> pack : PackImport.inbox().entrySet()) rows.add(row(ACTION + "import/" + pack.getKey(), pack.getValue()));
             title = "Import Icon Pack"; footer = importStatus;
         } else if (id.equals(PAGE + "badges")) {
@@ -79,6 +80,7 @@ public final class SnowySettings {
                 finally { importing.set(false); }
             }, "WinterX-pack-import"); worker.setDaemon(true); worker.start(); return true;
         }
+        if (suffix.equals("pick")) { PackPicker.open(); return true; }
         if (suffix.equals("labels")) return SnowyHome.select("hideLabels", !SnowyHome.preferences().optBoolean("hideLabels"));
         if (suffix.matches("badge/[0-6]")) return SnowyHome.select("badge", COLORS[suffix.charAt(suffix.length() - 1) - '0'][1]);
         if (suffix.matches("corners/[0-5]")) return SnowyHome.select("corners", RADII[suffix.charAt(suffix.length() - 1) - '0']);

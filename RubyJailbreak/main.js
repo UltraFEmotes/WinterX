@@ -28,7 +28,7 @@ function selectVersion(id) {
   choices.forEach(function (choice, i) { choice.title = (VERSIONS[i].id === id ? "\u2713 " : "") + VERSIONS[i].name; });
   refresh();
 }
-var setupMessage = "Mac.APK: start the Ruby bridge, then tap Jailbreak. Rooted Android: launch Spring with the rooted WinterX bridge on your computer.";
+var setupMessage = "Mac.APK: tap Jailbreak. Rooted Android: launch Spring with the rooted WinterX bridge. No root: run Start WinterX Rootless on your computer.";
 var message = screen.add(new UILabel({ frame: [25, 220, 270, 72], text: setupMessage, size: 14, lines: 4, align: "center", color: "#555555" }));
 var button = screen.add(new UIButton({ frame: [45, 300, 230, 44], title: "Jailbreak", onTap: jailbreak }));
 screen.add(new UIButton({ frame: [85, 356, 150, 38], title: "Check Status", onTap: refresh }));

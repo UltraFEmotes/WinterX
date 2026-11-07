@@ -5,6 +5,7 @@ import winterx.snowy.SnowyHome;
 import winterx.snowy.SnowySettings;
 
 public final class SnowyHomeEntry implements NativeTweak {
+    @Override public void start(winterx.extension.TweakContext context) { winterx.snowy.PackPicker.install(context); }
     public Object call(String point, Object[] a) {
         switch (point) {
             case "render.custom-icons-enabled": return SnowyHome.enabled();

@@ -318,6 +318,63 @@ def package(source, destination, sdk, spring_api=None, library=None, version_cor
     return metadata
 
 
+# The rootless clone: a finished core, renamed so it installs beside the original Spring, made debuggable (so the
+# computer can reach its files over adb run-as), zip-aligned and signed with the user's own key.
+CLONE_LABELS = ('Spring Launcher', 'Spring Launcher badges', 'Spring Launcher Double-Tap to Sleep')
+
+
+def clone(core, output, package, keystore, password_file, debuggable=True):
+    sys.path.insert(0, str(ROOT / 'patches'))
+    import axml, package_rename
+    core = Path(core).resolve(strict=True); output = Path(output).resolve()
+    engines = sorted(core.glob('WinterX-core-*.apk'))
+    if len(engines) != 1: raise ValueError('Expected one WinterX-core-*.apk in ' + str(core))
+    if output.exists(): raise ValueError('Clone output must be a new file')
+    old = package_rename.PACKAGE
+    if not re.fullmatch(r'[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+', package) or package == old: raise ValueError('Invalid clone package name')
+    manifest_names = {old: package}
+    for suffix in ('.sappcapture', '.androidx-startup', '.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'): manifest_names[old + suffix] = package + suffix
+    for label in CLONE_LABELS: manifest_names[label] = label.replace('Spring Launcher', 'Spring Launcher (WinterX)', 1)
+    with tempfile.TemporaryDirectory(prefix='winterx-clone-') as directory:
+        work = Path(directory)
+        # Spring's own DEX files: rename the bare package literal.
+        with zipfile.ZipFile(engines[0]) as archive:
+            names = [n for n in archive.namelist() if re.fullmatch(r'classes\d*\.dex', n)]
+            spring_dex = [n for n in names if n != 'classes3.dex' or b'winterx/extension/NativeRuntime' not in archive.read(n)]
+            wrapped = work / 'spring.apk'
+            with zipfile.ZipFile(wrapped, 'w') as out:
+                for n in spring_dex: out.writestr(n, archive.read(n))
+            manifest = archive.read('AndroidManifest.xml')
+        decoded = work / 'decoded'; run(*toolchain.apktool(), 'd', '--no-res', '-f', '-o', decoded, wrapped)
+        renamed, unknown = 0, set()
+        for path in decoded.rglob('*.smali'):
+            text = path.read_text()
+            if old not in text: continue
+            text, count, odd = package_rename.rename(text, package)
+            renamed += count; unknown |= set(odd)
+            if count: path.write_text(text)
+        if unknown: raise ValueError('Unreviewed package-name strings in Spring: ' + ', '.join(sorted(unknown)))
+        if renamed == 0: raise ValueError('Spring no longer names its own package; review package_rename.py')
+        rebuilt = work / 'rebuilt.apk'; run(*toolchain.apktool(), 'b', decoded, '-o', rebuilt)
+        with zipfile.ZipFile(rebuilt) as archive: dex = {n: archive.read(n) for n in spring_dex}
+        edited = axml.edit(manifest, manifest_names, debuggable)
+        unsigned = work / 'unsigned.apk'
+        with zipfile.ZipFile(engines[0]) as original, zipfile.ZipFile(unsigned, 'x', allowZip64=True) as out:
+            for info in original.infolist():
+                if info.filename == 'AndroidManifest.xml': out.writestr(info, edited)
+                elif info.filename in dex: out.writestr(info, dex[info.filename])
+                else:
+                    with original.open(info) as src, out.open(info, 'w') as dst: shutil.copyfileobj(src, dst, 1024 * 1024)
+        aligned = work / 'aligned.apk'
+        run(toolchain.build_tool('zipalign'), '-P', '16', '-f', '4', unsigned, aligned)
+        env = dict(os.environ, WINTERX_KS_PASS=Path(password_file).read_text().strip())
+        run(toolchain.build_tool('apksigner'), 'sign', '--ks', keystore, '--ks-pass', 'env:WINTERX_KS_PASS',
+            '--v1-signing-enabled', 'false', '--v2-signing-enabled', 'true', '--v3-signing-enabled', 'true',
+            '--out', output, aligned, env=env)
+        run(toolchain.build_tool('apksigner'), 'verify', output)
+    return {'apk': str(output), 'package': package, 'renamedLiterals': renamed, 'debuggable': debuggable, 'sha256': sha(output)}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__); sub = parser.add_subparsers(dest='command', required=True)
     core = sub.add_parser('runtime'); core.add_argument('apk', type=Path); core.add_argument('output', type=Path)
@@ -325,7 +382,14 @@ def main():
     module = sub.add_parser('package'); module.add_argument('source', type=Path); module.add_argument('output', type=Path)
     module.add_argument('--sdk', type=Path, required=True); module.add_argument('--spring-api', type=Path); module.add_argument('--library', type=Path)
     module.add_argument('--version-core', type=Path, action='append', help='a built core for another Spring version the package supports (repeatable)')
+    copy = sub.add_parser('clone', help='a built core as an installable rootless clone (renamed, debuggable, signed)')
+    copy.add_argument('core', type=Path); copy.add_argument('output', type=Path)
+    copy.add_argument('--package', default='com.winterx.spring'); copy.add_argument('--keystore', type=Path, required=True)
+    copy.add_argument('--password-file', type=Path, required=True); copy.add_argument('--not-debuggable', action='store_true')
     args = parser.parse_args()
+    if args.command == 'clone':
+        print(json.dumps(clone(args.core, args.output, args.package, args.keystore, args.password_file, not args.not_debuggable), indent=2))
+        return
     if args.command == 'runtime':
         if sha(args.apk) in VERSIONS:
             if not args.base: raise SystemExit('This Spring version builds from a 0.8.1 core: pass --base')

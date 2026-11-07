@@ -14,7 +14,8 @@ MAX_FILE = 24 * 1024 * 1024
 SAFE_PART = re.compile(r'^[A-Za-z0-9_.-]+$')
 SERIAL = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$')
 PACKAGE = 'com.guille.spring'
-APP_ROOT = re.compile(r'^/data/(?:data|user/[0-9]+)/com\.guille\.spring/files$')
+CLONE = 'com.winterx.spring'                               # the rootless clone (tools/rootless_launch.py)
+APP_ROOT = re.compile(r'^/data/(?:data|user/[0-9]+)/(com\.guille\.spring|com\.winterx\.spring)/files$')
 MISSING = 44
 RESERVED = {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}
 
@@ -157,7 +158,7 @@ class AdbFiles:
         if self.access == 'su':
             remote = ['su', '-c', script]
         elif self.access == 'run-as':
-            remote = ['run-as', PACKAGE, 'sh', '-c', script]
+            remote = ['run-as', APP_ROOT.fullmatch(self.root).group(1), 'sh', '-c', script]
         else:
             remote = ['sh', '-c', script]
         # ADB executes a remote command string, not a preserved argv vector. Quote the
@@ -197,8 +198,9 @@ class AdbFiles:
         if len(lines) != 4 or not lines[0].startswith('/') or not re.fullmatch(r'[0-9]+', lines[1]) or not re.fullmatch(r'[0-9]+:[0-9]+', lines[2]):
             raise AccessError('Unexpected Android private-folder identity response')
         relative_path(lines[0][1:])
-        if not APP_ROOT.fullmatch(lines[0]):
-            raise AccessError('Resolved path is not a private files directory')
+        resolved = APP_ROOT.fullmatch(lines[0])
+        if not resolved or resolved.group(1) != APP_ROOT.fullmatch(self.root).group(1):
+            raise AccessError('Resolved path is not this app\'s private files directory')
         uid = int(lines[1]); owner, group = map(int, lines[2].split(':'))
         if lines[3] != 'rw' or uid not in (0, owner) or owner == 0:
             raise AccessError('Need writable access as Spring\'s app UID or root; permissions/SELinux still apply')

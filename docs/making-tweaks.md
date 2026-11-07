@@ -208,6 +208,8 @@ If something goes wrong, see [Debugging](#debugging). If Spring itself won't beh
 | `apps` | no | Up to 4 Spring apps to install with the tweak, as `apps/<Name>.sapp` (see [Bundling an app](#bundling-an-app)) |
 | `inject` | no | Up to 16 `{ "apps": [...], "script": "inject/<name>.js" }` entries: scripts to run inside those apps (see [Running code inside apps](#running-code-inside-apps)) |
 | `spring` | no | The Spring versions your tweak supports, e.g. `["0.8.1", "0.9-preview1"]`. Leave it out for 0.8.1 only (see [Supporting several Spring versions](#supporting-several-spring-versions)) |
+| `requires_root` | no | `true` if the tweak can't work without root. Ruby shows "(Requires Root)" and rootless installs refuse it (see [Rootless installs](#rootless-installs)) |
+| `root_note` | no | One short sentence (up to 160 characters) on what needs root, shown on the tweak's page |
 | `files` | written by the builder | SHA-256 of every code, source and notice file. Don't write it yourself |
 
 Hook and feature names are lowercase words joined by `.` or `-`, such as `render.icon.begin`.
@@ -594,6 +596,47 @@ The builder renames every Spring class, method and field your code uses (includi
 **Building a core for 0.9.** `python3 extensions/build.py runtime Spring-0.9-Prev1.apk out/core-0.9 --base out/core` builds it from a finished 0.8.1 core. It applies WinterX's patches through the same map (`patches/port.py`, with the hand-ported spots in `patches/port09.py`) and checks every name the inserted code references exists in 0.9.
 
 **Mapping a new Spring version** uses `tools/spring_map.py OLD_DECODED NEW_DECODED map.json` on two apktool-decoded APKs. It matches classes by their strings and structure, then methods and fields by signature and code similarity, and you can pin anything it gets wrong in an overrides file.
+
+## Rootless installs
+
+Without root, WinterX runs in **"Spring Launcher (WinterX)"**, a copy of the user's own Spring that their computer builds with WinterX's core inside, installed beside the original Spring (see [Rootless Android](rootless-android.md)). Your tweak runs there exactly as it does anywhere else: the same hooks, hook points, Settings pages, data folder and `spring` versions. **Most tweaks support rootless installs without changing anything**: every tweak in the built-in repository does.
+
+What's different without root:
+
+- **Nobody can put files into Spring's private folder for the user.** On a rooted phone, or on Mac.APK, a user can copy a file into `files/ruby/...` by hand; without root they can't. If your tweak reads a file the user supplies (keys, packs, media), let them pick it with the system file picker instead, as LivePaper, SSH and SnowyHome do. See the pattern below.
+- **The app ID is `com.winterx.spring`**, not `com.guille.spring`. Use `getPackageName()` or `getFilesDir()` rather than writing either one out.
+- **Nothing outside Spring.** Your code runs as the Spring copy's own user, which can't reach other apps, the system, or `su`, and can't attach to other processes. (That's also true on rooted installs: WinterX never gives tweaks root.)
+
+**Letting the user pick a file.** Open the picker from a Settings action, and claim your own result code from Spring's activity results:
+
+```java
+static final String LOOP = "Lcom/guille/spring/LauncherActivity;->startAnimationLoop()V";
+static final String RESULT = "Lcom/guille/spring/LauncherActivity;->onActivityResult(IILandroid/content/Intent;)V";
+static final int REQUEST = 0x4D59;                 // your own code: two letters, so it never clashes with Spring's
+private static volatile Activity activity;
+
+public void start(TweakContext context) {
+    context.hook(LOOP, call -> { activity = (Activity)call.self; return call.proceed(); });
+    context.hook(RESULT, call -> {
+        if (((Number)call.args[0]).intValue() != REQUEST) return call.proceed();   // everyone else's results
+        Intent data = (Intent)call.args[2];
+        if (((Number)call.args[1]).intValue() == Activity.RESULT_OK && data != null && data.getData() != null)
+            new Thread(() -> copyInto(context.data("picked.bin"), data.getData())).start();   // validate, then write atomically
+        return null;
+    });
+}
+
+static void pick() {                               // from a Settings action
+    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*");
+    new Handler(Looper.getMainLooper()).post(() -> activity.startActivityForResult(intent, REQUEST));
+}
+```
+
+On Mac.APK the picker is a real macOS file dialog. Full examples: `extensions/packages/livepaper` (`LivePaperEntry.java`), `extensions/packages/ssh` (`KeyImport.java`) and `extensions/packages/snowyhome` (`PackPicker.java`).
+
+**Checking at run time.** `winterx.runtime.Install.kind()` returns `"rootless"`, `"rooted"` or `"macapk"` (also published as `install` in `ruby/capabilities-v1.json`), for the rare tweak that wants to hide an option that can't work without root, or explain it.
+
+**When it really needs root**, add `"requires_root": true` and a `root_note` saying what for. Ruby then shows **"(Requires Root)"** next to the tweak's name and a Root row on its page. Rootless installs show "Requires Root" instead of Install, and skip the tweak if it's already installed. Mark only what truly can't work: a tweak with one root-only option is better off hiding that option on rootless installs.
 
 ## Bundling an app
 

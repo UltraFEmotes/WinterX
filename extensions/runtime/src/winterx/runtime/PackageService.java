@@ -293,6 +293,8 @@ public final class PackageService implements Runnable {
             if (!supported) throw new IOException((running.equals("0.9-preview1") ? "This tweak doesn't support Spring 0.9 Preview 1 yet"
                                                    : "This tweak doesn't support Spring " + running));
         }
+        if (metadata.optBoolean("requires_root") && Install.rootless())
+            throw new IOException("This tweak requires root, and this WinterX is rootless");
         JSONObject before = index(), previous = before.optJSONObject(id);
         int peers = 0;
         for (Iterator<String> it = before.keys(); it.hasNext();) {

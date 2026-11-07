@@ -27,8 +27,18 @@ MAX_APPS = 4
 # Trusted WinterX apps keep their pinned installs; a package can never replace them.
 RESERVED_APPS = frozenset(('com.ruby.manager', 'com.ruby.jailbreak', 'com.winterx.iexplored'))
 META = frozenset(('format', 'type', 'runtime', 'api', 'entry', 'id', 'name', 'version', 'description', 'author',
-                  'license', 'source', 'exports', 'capabilities', 'files', 'icon', 'previews', 'features', 'requires', 'settings_entry', 'apps', 'inject', 'spring'))
+                  'license', 'source', 'exports', 'capabilities', 'files', 'icon', 'previews', 'features', 'requires', 'settings_entry', 'apps', 'inject', 'spring',
+                  'requires_root', 'root_note'))
 SPRING_VERSION = re.compile(r'^[0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[a-z0-9]+)?$')
+
+
+def root_fields(manifest):
+    """requires_root (true/false) and root_note (a short sentence), both optional."""
+    if 'requires_root' in manifest and not isinstance(manifest['requires_root'], bool):
+        raise ValueError('requires_root must be true or false')
+    note = manifest.get('root_note')
+    if 'root_note' in manifest and (not isinstance(note, str) or len(note) > 160 or not note.strip()):
+        raise ValueError('root_note must be a short sentence')
 
 
 def version_code(manifest):
@@ -174,6 +184,8 @@ def inspect_archive(archive, digest, include_code=False):
             or any(not isinstance(value, str) or not re.fullmatch('[0-9a-f]{64}', value) for value in declared.values())):
         raise error('Native package must pin both Android DEX and JVM code')
     try: per_version = version_code(manifest)
+    except ValueError as bad: raise error(str(bad))
+    try: root_fields(manifest)
     except ValueError as bad: raise error(str(bad))
     for name in per_version:
         if name not in declared: raise error('Missing code for Spring ' + name.split('/')[1])

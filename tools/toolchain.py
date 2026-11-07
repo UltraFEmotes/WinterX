@@ -10,6 +10,8 @@ Every value can be overridden with an environment variable, so any layout works:
   WINTERX_APKTOOL      apktool command or apktool .jar (default: apktool on PATH)
   WINTERX_DEX2JAR      dex2jar's d2j-dex2jar script (default: on PATH; used when Mac.APK isn't installed)
   WINTERX_MACAPK       Mac.APK.app folder (macOS only; enables Mac.APK's converter and JVM checks)
+  WINTERX_APKSIGNER, WINTERX_ZIPALIGN, WINTERX_AAPT2
+                       Android build-tools for the rootless clone (default: newest build-tools/*/)
 """
 import os
 from pathlib import Path
@@ -89,6 +91,16 @@ def d8():
     raise SystemExit('d8 not found: run "sdkmanager \\"build-tools;36.0.0\\"" or set WINTERX_D8.')
 
 
+def build_tool(name):
+    """apksigner, zipalign or aapt2 from the newest Android build-tools."""
+    explicit = _env_path('WINTERX_' + name.upper())
+    if explicit: return explicit
+    suffix = '.bat' if WINDOWS and name == 'apksigner' else EXE
+    found = _newest(list((android_sdk() / 'build-tools').glob('*/' + name + suffix)))
+    if found: return found
+    raise SystemExit('%s not found: run "sdkmanager \\"build-tools;36.0.0\\"" or set WINTERX_%s.' % (name, name.upper()))
+
+
 def adb():
     found = shutil.which('adb')
     if found: return Path(found)
@@ -132,6 +144,8 @@ def describe():
     rows = []
     for label, finder in (('java', lambda: jdk_tool('java')), ('javac', lambda: jdk_tool('javac')), ('Android SDK', android_sdk),
                           ('android.jar', android_jar), ('d8', d8), ('adb', adb), ('apktool', lambda: ' '.join(apktool())),
+                          ('apksigner', lambda: build_tool('apksigner')), ('zipalign', lambda: build_tool('zipalign')),
+                          ('keytool', lambda: jdk_tool('keytool')),
                           ('Mac.APK', lambda: macapk() or 'not installed (fine on Linux/Windows)')):
         try: rows.append((label, str(finder())))
         except SystemExit as missing: rows.append((label, 'MISSING: ' + str(missing)))

@@ -236,3 +236,23 @@ context.pending=null;
 context.packageRequest('refresh_repositories');
 assert.strictEqual(alerts[alerts.length-1].title,'Bridge Needed','source refresh must still require the bridge');
 console.log('Bridgeless install requests and newest-build selection passed');
+
+// A tweak that needs root: labelled everywhere, and not installable on a rootless install.
+{
+  const rootOnly={id:'me.example.rooty',name:'Rooty',version:'0.1.0',author:'Example',description:'Needs root',type:'tweak',
+    format:'winterx.springys/3',runtime:'java',filename:'rooty.springys',sha256:'rooty',previews:[],source:'winterx:built-in',
+    requires_root:true,root_note:'Changes system settings',spring:['0.8.1']};
+  data['winterx/ruby/boot-ok-v1']='';
+  data['winterx/ruby/capabilities-v1.json']={abi:'winterx-capabilities-v1',nativePackages:true,nativeApi:'winterx-native-hooks-v1',
+    packageManager:'winterx-pm-v1',springVersion:'0.8.1',install:'rootless'};
+  context.pending=null;
+  context.packageDetail(rootOnly,false);
+  const page=views.filter(view=>view.title==='Rooty (Requires Root)').pop();
+  assert(page,'detail title lacks (Requires Root)');
+  const rows=[].concat(...page.sections.map(section=>section.rows));
+  const blocked=rows.find(row=>row.title==='Requires Root');
+  assert(blocked&&blocked.selectable===false,'rootless install offered Install for a root-only tweak');
+  assert(!rows.some(row=>row.title==='Install'),'Install shown on rootless');
+  assert.strictEqual(rows.find(row=>row.title==='Root').detail,'Required: Changes system settings');
+  console.log('Root-only tweaks are labelled and blocked on rootless installs');
+}
