@@ -11,7 +11,7 @@ Without root nothing can get into an app you already have: Android won't let one
 You need a computer (macOS, Linux or Windows) with adb, a JDK, apktool and the Android build-tools (the same tools as for [making tweaks](making-tweaks.md#1-get-the-tools)), and the phone with **USB debugging** on and Spring 0.8.1 or 0.9 Preview 1 installed.
 
 1. Connect the phone and run **Start WinterX Rootless** (`Start WinterX Rootless.command` on macOS, `start-winterx-rootless.sh` on Linux, `start-winterx-rootless.bat` on Windows), or `python3 tools/rootless_launch.py start`.
-2. It reads the installed Spring APK (no root needed), checks it's a supported version, builds the copy and installs it. The first build takes a few minutes; later runs reuse it until Spring or WinterX changes. For Spring 0.9 Preview 1 the first build also needs a Spring 0.8.1 APK: add `--base-apk Spring-0.8.1.apk`.
+2. It reads the installed Spring APK (no root needed), checks it's a supported version, builds the copy and installs it. The first build takes a few minutes; later runs reuse it until Spring or WinterX changes. Spring 0.9 Preview 1 works the same way: only the phone's own Spring is needed.
 3. On the phone, sign in to Spring in the copy. If Android asks which app should open the sign-in link, choose **Spring Launcher (WinterX)**.
 4. In the Home app settings that open, choose **Spring Launcher (WinterX)**.
 5. Install tweaks from Ruby, as anywhere else. Every tweak in the built-in repository works rootless.

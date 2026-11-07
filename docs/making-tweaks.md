@@ -593,7 +593,7 @@ The builder renames every Spring class, method and field your code uses (includi
 
 **What users see.** Ruby shows the supported versions on the tweak's page, and greys out Install with "Not for Spring …" on a version the tweak doesn't list. The core refuses to install or load it there too.
 
-**Building a core for 0.9.** `python3 extensions/build.py runtime Spring-0.9-Prev1.apk out/core-0.9 --base out/core` builds it from a finished 0.8.1 core. It applies WinterX's patches through the same map (`patches/port.py`, with the hand-ported spots in `patches/port09.py`) and checks every name the inserted code references exists in 0.9.
+**Building a core for 0.9.** `python3 extensions/build.py runtime Spring-0.9-Prev1.apk out/core-0.9` builds it from the 0.9 APK alone, using WinterX's runtime already translated for 0.9 (`extensions/prebuilt/`). Add `--base out/core` (a finished 0.8.1 core) after changing the runtime or the name map: that recompiles and translates the runtime, and saves a new `runtime-0.9-preview1.dex/.json` to copy into `extensions/prebuilt/`. It applies WinterX's patches through the same map (`patches/port.py`, with the hand-ported spots in `patches/port09.py`) and checks every name the inserted code references exists in 0.9.
 
 **Mapping a new Spring version** uses `tools/spring_map.py OLD_DECODED NEW_DECODED map.json` on two apktool-decoded APKs. It matches classes by their strings and structure, then methods and fields by signature and code similarity, and you can pin anything it gets wrong in an overrides file.
 

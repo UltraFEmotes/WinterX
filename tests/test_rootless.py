@@ -60,6 +60,16 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(before, after)
 
 
+class PrebuiltRuntimeTests(unittest.TestCase):
+    def test_shipped_runtime_matches_this_source(self):
+        """Release check: after changing the runtime or a name map, rebuild the 0.9 core with --base and copy its
+        runtime-<version>.dex/.json into extensions/prebuilt/, or 0.9-only users can't build."""
+        sys.path.insert(0, str(ROOT / 'extensions'))
+        import build
+        for version in build.VERSIONS.values():
+            self.assertIsNotNone(build.prebuilt_runtime(version), 'extensions/prebuilt is stale for Spring ' + version['name'])
+
+
 class RootFieldTests(unittest.TestCase):
     def test_valid_and_invalid(self):
         native_package.root_fields({})

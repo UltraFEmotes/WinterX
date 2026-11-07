@@ -11,8 +11,8 @@ must be signed with the same key) and is debuggable, so this computer can reach 
     python3 tools/rootless_launch.py safe-mode on|off      recovery, if a tweak keeps it from starting
     python3 tools/rootless_launch.py backup FILE.tar       the copy's data (layouts, apps, tweaks)
 
-Needs adb (USB debugging on), a JDK, apktool and the Android build-tools (see docs/making-tweaks.md). Building for
-Spring 0.9 Preview 1 also needs a Spring 0.8.1 APK (--base-apk) the first time. Docs: docs/rootless-android.md.
+Needs adb (USB debugging on), a JDK, apktool and the Android build-tools (see docs/making-tweaks.md). Works for Spring
+0.8.1 and 0.9 Preview 1 from just the phone's own Spring. Docs: docs/rootless-android.md.
 """
 import argparse
 import hashlib
@@ -100,12 +100,21 @@ def build(device, base_apk=None):
         if not base.is_dir(): run(*builder, 'runtime', apk, base)
         core = base
     else:
-        if not base.is_dir():
-            if not base_apk or sha(base_apk) != SOURCE_SHA:
-                raise SystemExit('Building for Spring %s also needs a Spring 0.8.1 APK the first time: pass --base-apk PATH.' % version)
+        # WinterX's runtime for this version ships ready-made (extensions/prebuilt); a 0.8.1 APK is only needed when
+        # it's missing or out of date (a development checkout).
+        if base_apk and not base.is_dir():
+            if sha(base_apk) != SOURCE_SHA: raise SystemExit('--base-apk must be the Spring 0.8.1 APK.')
             run(*builder, 'runtime', base_apk, base)
         core = cores / ('%s-%s' % (version, core_version()))
-        if not core.is_dir(): run(*builder, 'runtime', apk, core, '--base', base)
+        if not core.is_dir():
+            if base.is_dir(): run(*builder, 'runtime', apk, core, '--base', base)
+            else:
+                sys.path.insert(0, str(ROOT / 'extensions'))
+                import build as core_build
+                if core_build.prebuilt_runtime(core_build.VERSIONS[sha(apk)]) is None:
+                    raise SystemExit('This checkout has no current prebuilt runtime for Spring %s. Pass --base-apk with a '
+                                     'Spring 0.8.1 APK to build it.' % version)
+                run(*builder, 'runtime', apk, core)
     ensure_key()
     run(*builder, 'clone', core, output, '--package', CLONE, '--keystore', KEYS, '--password-file', PASSWORD, stdout=subprocess.DEVNULL)
     print('Built', output.name)

@@ -164,13 +164,58 @@ VERSIONS = {
 GENERATED = ('winterx/extension/NativeHooks', 'winterx/extension/MethodTable', 'winterx/appearance/BootArtData', 'winterx/runtime/SpringVersionData')
 
 
-def runtime_version(apk, destination, base):
-    """A core for another Spring version. base: a finished 0.8.1 core build (its spring-api.jar compiles the runtime,
-    which is then translated). The patches, hook tables and method table come from this version's own code."""
+PREBUILT = HERE / 'prebuilt'
+
+
+def runtime_source_hash(version):
+    """What a prebuilt translated runtime was made from: the runtime source and the name map for this version."""
+    digest = hashlib.sha256()
+    for path in sorted((HERE / 'runtime/src').rglob('*.java')):
+        digest.update(path.relative_to(HERE).as_posix().encode()); digest.update(path.read_bytes())
+    for path in (version['map'], version['contracts']): digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def prebuilt_runtime(version):
+    """WinterX's own runtime, already compiled and translated to this Spring version (no Spring code in it), so users
+    without a Spring 0.8.1 APK can build. Refused when the runtime source or map has changed since it was made."""
+    record = PREBUILT / ('runtime-%s.json' % version['name']); dex = PREBUILT / ('runtime-%s.dex' % version['name'])
+    if not record.is_file() or not dex.is_file(): return None
+    meta = json.loads(record.read_text())
+    if meta.get('source') != runtime_source_hash(version) or meta.get('sha256') != sha(dex): return None
+    return dex
+
+
+def translate_runtime(decoded, base, work, mapping, translated):
+    """The runtime is written against 0.8.1: compile it there (base's generated classes only as classpath), then
+    translate it to this version's names. Returns the 0.8.1-compiled jar (classpath for the generated tables)."""
+    import spring_translate
+    classes = work / 'classes'; classes.mkdir()
+    run(toolchain.jdk_tool('javac'), '--release', '8', '-cp', compile_path(base / 'spring-api.jar', base / 'winterx-native-api.jar'),
+        '-d', classes, *sorted((HERE / 'runtime/src').rglob('*.java')))
+    runtime_jar = work / 'runtime.jar'; class_jar(classes, runtime_jar)
+    dex_a = work / 'dex-a'; dex_a.mkdir()
+    run(toolchain.jdk_tool('java'), '-Xmx1g', '-cp', toolchain.d8(), 'com.android.tools.r8.D8', '--min-api', '26',
+        '--classpath', base / 'spring-api.jar', '--classpath', base / 'winterx-native-api.jar', '--lib', toolchain.android_jar(), '--output', dex_a, runtime_jar)
+    result = spring_translate.translate_dex(mapping, str(decoded), dex_a / 'classes.dex', translated,
+                                            skip={'L' + name + ';' for name in GENERATED})
+    if not result['ok']: raise ValueError('Core runtime did not translate: ' + json.dumps(result, indent=1))
+    return runtime_jar
+
+
+def runtime_version(apk, destination, base=None):
+    """A core for another Spring version. The patches, hook tables and method table come from this version's own code.
+    WinterX's runtime comes from base, a finished 0.8.1 core (its spring-api.jar compiles the runtime, which is then
+    translated; the result is saved for extensions/prebuilt/), or without base from extensions/prebuilt/."""
     import spring_translate, spring_verify
-    apk = Path(apk).resolve(strict=True); destination = Path(destination).resolve(); base = Path(base).resolve(strict=True)
+    apk = Path(apk).resolve(strict=True); destination = Path(destination).resolve()
     version = VERSIONS.get(sha(apk))
     if version is None: raise ValueError('Unsupported Spring input APK')
+    shipped = None
+    if base is None:
+        shipped = prebuilt_runtime(version)
+        if shipped is None: raise ValueError('No current prebuilt runtime for Spring %s: build from a 0.8.1 core with --base' % version['name'])
+    else: base = Path(base).resolve(strict=True)
     if destination.exists(): raise ValueError('Runtime output must be a new directory')
     mapping = json.loads(version['map'].read_text())
     translator_classes = mapping['classes']
@@ -211,18 +256,17 @@ def runtime_version(apk, destination, base):
         import gzip
         index = {cls: [sorted(members), parent] for cls, (members, parent) in spring_translate.declared(str(decoded)).items()}
         with gzip.open(destination / 'spring-declared.json.gz', 'wt') as out: json.dump({'version': version['name'], 'classes': index}, out)
-        # The runtime is written against 0.8.1: compile it there (base's generated classes only as classpath), then translate.
-        classes = work / 'classes'; classes.mkdir()
-        run(toolchain.jdk_tool('javac'), '--release', '8', '-cp', compile_path(base / 'spring-api.jar', base / 'winterx-native-api.jar'),
-            '-d', classes, *sorted((HERE / 'runtime/src').rglob('*.java')))
-        runtime_jar = work / 'runtime.jar'; class_jar(classes, runtime_jar)
-        dex_a = work / 'dex-a'; dex_a.mkdir()
-        run(toolchain.jdk_tool('java'), '-Xmx1g', '-cp', toolchain.d8(), 'com.android.tools.r8.D8', '--min-api', '26',
-            '--classpath', base / 'spring-api.jar', '--classpath', base / 'winterx-native-api.jar', '--lib', toolchain.android_jar(), '--output', dex_a, runtime_jar)
         translated = work / 'runtime-translated.dex'
-        result = spring_translate.translate_dex(mapping, str(decoded), dex_a / 'classes.dex', translated,
-                                                skip={'L' + name + ';' for name in GENERATED})
-        if not result['ok']: raise ValueError('Core runtime did not translate: ' + json.dumps(result, indent=1))
+        if shipped is not None:
+            # The shipped runtime, already translated; generated tables compile against its JVM form.
+            shutil.copyfile(shipped, translated)
+            runtime_jar = work / 'runtime.jar'; toolchain.dex_to_jar(translated, runtime_jar)
+        else:
+            runtime_jar = translate_runtime(decoded, base, work, mapping, translated)
+            # Kept so a release can ship it (extensions/prebuilt/) for users without a Spring 0.8.1 APK.
+            shutil.copyfile(translated, destination / ('runtime-%s.dex' % version['name']))
+            (destination / ('runtime-%s.json' % version['name'])).write_text(json.dumps(
+                {'source': runtime_source_hash(version), 'sha256': sha(translated)}, indent=2) + '\n')
         # The generated tables are this version's own: compile them against it.
         gen_classes = work / 'gen-classes'; gen_classes.mkdir()
         run(toolchain.jdk_tool('javac'), '--release', '8', '-cp', compile_path(api, runtime_jar), '-d', gen_classes, *sorted(generated.rglob('*.java')))
@@ -257,7 +301,7 @@ def runtime_version(apk, destination, base):
             'files': {name: sha(payload / name) for name in ('spring-hooks.dex', 'winterx-core.dex')},
             'preinstalledTweaks': [], 'earlyClasses': early}
         (payload / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-        shutil.copy2(base / 'winterx-native-api.jar', destination / 'winterx-native-api.jar')   # tweaks still compile against 0.8.1
+        if base is not None: shutil.copy2(base / 'winterx-native-api.jar', destination / 'winterx-native-api.jar')   # tweaks still compile against 0.8.1
         audit = {'apk': str(engine), 'apk_sha256': sha(engine), 'spring_version': version['name'], 'core_classes': defined,
                  'bundled_tweak_classes': forbidden, 'preinstalled_tweaks': [], 'hook_contracts': len(contracts),
                  'runtime_dex_sha256': sha(payload / 'winterx-core.dex')}
@@ -392,8 +436,7 @@ def main():
         return
     if args.command == 'runtime':
         if sha(args.apk) in VERSIONS:
-            if not args.base: raise SystemExit('This Spring version builds from a 0.8.1 core: pass --base')
-            runtime_version(args.apk, args.output, args.base)
+            runtime_version(args.apk, args.output, args.base)     # without --base: the shipped runtime (extensions/prebuilt)
         else: runtime(args.apk, args.output)
     else: package(args.source, args.output, args.sdk, args.spring_api, args.library, args.version_core)
 
