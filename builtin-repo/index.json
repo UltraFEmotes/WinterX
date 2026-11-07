@@ -39,12 +39,16 @@
       "sha256": "345187dbec1254767bb1de9502a0c3eae2b1d1fc425a7d10f4e140b5384ea7ae"
     },
     {
-      "url": "packages/androidkeyboard-0.1.1.springys",
-      "sha256": "8c78165d6e28c9a11baa3675f76731a50f84bfb5c88e0c7c0040dd0bda9c5c41"
+      "url": "packages/androidkeyboard-0.1.2.springys",
+      "sha256": "16ff0f1bd49ecd8dc83b2760247df2ffd02a4827978c5d7d7b4e51f0ed26e841"
     },
     {
       "url": "packages/legacybooter-0.1.1.springys",
       "sha256": "fe30f1c2ca596aa18c04e61dc7535627889edf6babb94718dd0c92f043ec042d"
+    },
+    {
+      "url": "packages/livepaper-0.1.0.springys",
+      "sha256": "4b613c937ce408adb37a9f35ac89f26d4151f507623be2b16665dd0a40977fd8"
     }
   ]
 }

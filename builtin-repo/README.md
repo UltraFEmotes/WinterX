@@ -1,6 +1,6 @@
 # Ruby's built-in repository
 
-This local index is Ruby's always-present **built-in source**. It lists the eleven official source-backed Java/Dex code packages: **Animaper, ColoredBar, DockIn, FreeMe, Message+, SnowyHome and SSH** (0.2.x), **Gravity** (0.1.1), **Harlem Shake** (0.1.3), **Android Keyboard** (0.1.1) and **LegacyBooter** (0.1.1). All of them support Spring 0.8.1 and Spring 0.9 Preview 1. Ruby shows it as "Ruby's Built-in Repository" on Mac.APK and in rooted Android sessions (`tools/android_runtime.py` uses this folder by default).
+This local index is Ruby's always-present **built-in source**. It lists the twelve official source-backed Java/Dex code packages: **Animaper, ColoredBar, DockIn, FreeMe, Message+, SnowyHome and SSH** (0.2.x), **Gravity** (0.1.1), **Harlem Shake** (0.1.3), **Android Keyboard** (0.1.2), **LegacyBooter** (0.1.1) and **LivePaper** (0.1.0). All of them support Spring 0.8.1 and Spring 0.9 Preview 1. Ruby shows it as "Ruby's Built-in Repository" on Mac.APK and in rooted Android sessions (`tools/android_runtime.py` uses this folder by default).
 
 Listing a package never installs it. A fresh WinterX core ships with **zero tweaks installed**; each package is installed only when the user taps Install in Ruby, then loads after Spring is reopened through WinterX. Preferences for every installed package live in Spring Settings → **WINTERX TWEAKS**. Each package needs a WinterX core with the native package runtime (`winterx-native-hooks-v1`); older engines show it as unavailable.
 

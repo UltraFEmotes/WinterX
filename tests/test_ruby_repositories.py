@@ -60,7 +60,7 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual([p['id'] for p in data['packages']], ['me.weirdmm.animaper', 'me.weirdmm.coloredbar', 'com.winterx.dockin',
             'com.winterx.freeme', 'com.winterx.messageplus', 'com.winterx.snowyhome', 'com.winterx.ssh',
             'com.winterx.gravity', 'com.winterx.harlemshake', 'com.winterx.androidkeyboard',
-            'com.winterx.legacybooter'])
+            'com.winterx.legacybooter', 'com.winterx.livepaper'])
         self.assertEqual({p['format'] for p in data['packages']}, {'winterx.springys/3'})
         self.assertTrue(all(p['sourceCode'].startswith('https://github.com/UltraFEmotes/Ruby-Repo/') for p in data['packages']))
         self.assertIsNone(data['sources'][0]['error'])

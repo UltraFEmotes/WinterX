@@ -20,14 +20,15 @@ import winterx.extension.TweakContext;
  *
  * Spring has one typing path for every built-in app and .sapp: its keyboard calls x1.i1.H1(text) to type ("\n" is
  * Return) and x1.i1.x1(false) to delete. Where the iOS keyboard sits comes from x1.i1.Z1(time), which also decides
- * whether a touch lands on the keyboard or the app, and I1.v.b draws it. Hiding it means reporting it as off screen
- * and not drawing it.
+ * where its keys are, and I1.v.b draws it. Whether a touch is on the keyboard at all is x1.i1.G1(y): a fixed band at the
+ * bottom of the screen. Hiding it means reporting it as off screen, not drawing it and giving that band to the app.
  */
 final class RealKeyboard {
     static final String TYPE = "Lx1/i1;->H1(Ljava/lang/String;)V";
     static final String TOP = "Lx1/i1;->Z1(J)F";
     static final String DRAW = "LI1/v;->b(Landroid/graphics/Canvas;LE1/o6;Ljava/util/Map;FJF)V";
     static final String PRESS = "Lx1/i1;->K1(FF)V", RELEASE = "Lx1/i1;->L1(FF)V";
+    static final String ON_KEYBOARD = "Lx1/i1;->G1(F)Z";
     static final String KEYS = "Lcom/guille/spring/LauncherActivity;->dispatchKeyEvent(Landroid/view/KeyEvent;)Z";
     static final float SCREEN = 480f;                        // Spring's screen height in points; the keyboard top when hidden
 
@@ -52,6 +53,7 @@ final class RealKeyboard {
             return SCREEN + spring.e();
         });
         context.hook(DRAW, call -> context.active() && hideIos ? null : call.proceed());
+        context.hook(ON_KEYBOARD, call -> hiddenKeys() ? Boolean.FALSE : call.proceed());
         context.hook(PRESS, call -> hiddenKeys() ? null : call.proceed());
         context.hook(RELEASE, call -> hiddenKeys() ? null : call.proceed());
         context.hook(KEYS, call -> {
@@ -73,8 +75,8 @@ final class RealKeyboard {
         } catch (ReflectiveOperationException | RuntimeException unavailable) { return null; }
     }
 
-    /** Touches where the hidden keyboard would be must not press its invisible keys. */
-    private boolean hiddenKeys() { return context.active() && hideIos && androidKeyboard; }
+    /** Touches where the hidden keyboard would be must not press its invisible keys; they belong to the app. */
+    private boolean hiddenKeys() { return context.active() && hideIos; }
 
     private boolean typing() { return spring != null && spring.Y != null && spring.Y.a; }
 
@@ -87,6 +89,8 @@ final class RealKeyboard {
         if (event.isCtrlPressed() || event.isMetaPressed()) return false;
         if (code == KeyEvent.KEYCODE_DEL) { delete(1); return true; }
         if (code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_NUMPAD_ENTER) { type("\n"); return true; }
+        // Mac.APK doesn't always give Space a character, so it would be handed back to Spring and lost.
+        if (code == KeyEvent.KEYCODE_SPACE) { type(" "); return true; }
         int unicode = event.getUnicodeChar(event.getMetaState());
         if (unicode == 0 || (unicode & android.view.KeyCharacterMap.COMBINING_ACCENT) != 0) return false;
         type(new String(Character.toChars(unicode)));
@@ -96,7 +100,7 @@ final class RealKeyboard {
     /** Key-ups of keys we typed are ours too, so Spring never sees half a key press. */
     private static boolean isTypingKey(KeyEvent event) {
         int code = event.getKeyCode();
-        return code == KeyEvent.KEYCODE_DEL || code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_NUMPAD_ENTER
+        return code == KeyEvent.KEYCODE_DEL || code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_NUMPAD_ENTER || code == KeyEvent.KEYCODE_SPACE
             || (!event.isCtrlPressed() && !event.isMetaPressed() && event.getUnicodeChar(event.getMetaState()) != 0);
     }
 

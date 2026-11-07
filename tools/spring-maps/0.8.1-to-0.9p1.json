@@ -20151,7 +20151,10 @@
   "LI1/h0;->k(LE1/q6;JLE1/i6;FILI1/d0;LE1/S1;LE1/l4;LA/o;LI1/I0;Ljava/util/Map;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Paint;FLandroid/graphics/Canvas;)V": "LE1/o0;->l(Ly1/c7;JLy1/U6;FILE1/k0;Ly1/O1;Ly1/o4;LD/a;LE0/c;LE1/e1;Ljava/util/Map;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Paint;FLandroid/graphics/Canvas;)V",
   "LI1/j1;->e(Landroid/graphics/Canvas;Landroid/graphics/Paint;LE1/q6;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Bitmap;Ljava/util/Map;LI1/I0;Ljava/util/Map;)V": "Ll2/d;->w(Landroid/graphics/Canvas;Landroid/graphics/Paint;Ly1/c7;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Bitmap;Ljava/util/Map;LE1/e1;Ljava/util/Map;)V",
   "LE1/H1;->a(Ljava/lang/Object;)Ljava/lang/Object;": "LC1/D0;->a(Ljava/lang/Object;)Ljava/lang/Object;",
-  "LE1/t;->G(FFLjava/util/List;ZIIZLE1/H1;Z)LE1/j2;": "Ly1/u;->M(FFLjava/util/List;ZIIZLC1/D0;Z)Ly1/j2;"
+  "LE1/t;->G(FFLjava/util/List;ZIIZLE1/H1;Z)LE1/j2;": "Ly1/u;->M(FFLjava/util/List;ZIIZLC1/D0;Z)Ly1/j2;",
+  "LI1/T0;->e(JLE1/q6;Landroid/graphics/Canvas;)V": "LE1/r1;->e(JLandroid/graphics/Canvas;Ly1/c7;)V",
+  "LF2/g;->g(Landroid/content/res/AssetManager;Ljava/lang/String;)Landroid/graphics/Bitmap;": "Lu2/g;->u(Landroid/content/res/AssetManager;Ljava/lang/String;)Landroid/graphics/Bitmap;",
+  "LI1/j1;->winterxStockE(Landroid/graphics/Canvas;Landroid/graphics/Paint;LE1/q6;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Bitmap;Ljava/util/Map;LI1/I0;Ljava/util/Map;)V": "Ll2/d;->winterxStockE(Landroid/graphics/Canvas;Landroid/graphics/Paint;Ly1/c7;Ljava/util/concurrent/ConcurrentHashMap;Landroid/graphics/Bitmap;Ljava/util/Map;LE1/e1;Ljava/util/Map;)V"
  },
  "fields": {
   "LA/a;->a:LB/c;": "Lz/a;->a:LA/c;",
@@ -22644,7 +22647,6 @@
   "LE1/L3;->a:Ljava/lang/String;": "Ly1/P3;->a:Ljava/lang/String;",
   "LE1/L3;->b:Ljava/lang/String;": "Ly1/P3;->b:Ljava/lang/String;",
   "LE1/L3;->c:Ljava/lang/String;": "Ly1/P3;->c:Ljava/lang/String;",
-  "LE1/L3;->d:Z": "Ly1/P3;->d:Z",
   "LE1/L3;->e:Ljava/lang/String;": "Ly1/P3;->f:Ljava/lang/String;",
   "LE1/L3;->f:Ljava/lang/Boolean;": "Ly1/P3;->g:Ljava/lang/Boolean;",
   "LE1/L3;->g:Ljava/lang/Float;": "Ly1/P3;->h:Ljava/lang/Float;",
@@ -24677,7 +24679,6 @@
   "LE1/s2;->h:Ljava/util/ArrayList;": "Ly1/s2;->h:Ljava/util/ArrayList;",
   "LE1/s3;->q:Ljava/lang/String;": "Ly1/y3;->r:Ljava/lang/String;",
   "LE1/s4;->A:F": "Ly1/w4;->G:F",
-  "LE1/s4;->B:Z": "Ly1/w4;->H:Z",
   "LE1/s4;->C:J": "Ly1/w4;->I:J",
   "LE1/s4;->D:Z": "Ly1/w4;->J:Z",
   "LE1/s4;->E:LE1/G5;": "Ly1/w4;->K:Ly1/U5;",
@@ -36642,6 +36643,8 @@
   "LE1/q6;->Y:Ljava/util/List;": "Ly1/c7;->d0:Ljava/util/List;",
   "LE1/q6;->d0:I": "Ly1/c7;->i0:I",
   "LE1/q6;->e0:I": "Ly1/c7;->j0:I",
-  "LE1/q6;->E0:LE1/r1;": "Ly1/c7;->L0:Ly1/n1;"
+  "LE1/q6;->E0:LE1/r1;": "Ly1/c7;->L0:Ly1/n1;",
+  "LE1/L3;->d:Z": "Ly1/P3;->d:Z",
+  "LE1/s4;->B:Z": "Ly1/w4;->H:Z"
  }
 }

@@ -1,0 +1,30 @@
+{
+  "format": "winterx.springys/3",
+  "type": "tweak",
+  "runtime": "java",
+  "api": "winterx.native/1",
+  "id": "com.winterx.livepaper",
+  "name": "LivePaper",
+  "version": "0.1.0",
+  "author": "WeirdMM",
+  "license": "MIT",
+  "source": "https://github.com/UltraFEmotes/Ruby-Repo/tree/main/sources/livepaper",
+  "entry": "winterx.livepaper.LivePaperEntry",
+  "description": "Make any video your Home and Lock screen wallpaper. Pick it with the system file picker in LivePaper's Settings page; it plays muted, on a loop, and pauses whenever the wallpaper isn't showing.",
+  "settings_entry": "main",
+  "capabilities": [
+    "native.hooks"
+  ],
+  "features": [
+    "appearance.live-wallpaper"
+  ],
+  "exports": [
+    "settings.page",
+    "settings.tap"
+  ],
+  "previews": [],
+  "spring": [
+    "0.8.1",
+    "0.9-preview1"
+  ]
+}
